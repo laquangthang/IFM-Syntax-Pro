@@ -1,0 +1,799 @@
+* Encoding: UTF-8.
+*Count Statement.
+count count_Q1 = Q1R1 to Q1R99 (1 thru 99).
+count count_Q4 = Q4R1 to Q4R99 (1 thru 99).
+count count_Q7_1 = Q7_1R1 to Q7_1R100 (1 thru 100).
+count count_Q7_2 = Q7_2R1 to Q7_2R100 (1 thru 100).
+count count_Q8_1 = Q8_1R1 to Q8_1R99 (1 thru 99).
+count count_Q8_2 = Q8_2R1 to Q8_2R99 (1 thru 99).
+count count_Q8_3 = Q8_3R1 to Q8_3R99 (1 thru 99).
+count count_Q8_4 = Q8_4R1 to Q8_4R99 (1 thru 99).
+count count_Q8_5 = Q8_5R1 to Q8_5R99 (1 thru 99).
+count count_Q8_6 = Q8_6R1 to Q8_6R99 (1 thru 99).
+count count_Q8_7 = Q8_7R1 to Q8_7R99 (1 thru 99).
+count count_Q8_99 = Q8_99R1 to Q8_99R99 (1 thru 99).
+count count_Q12 = Q12R1 to Q12R99 (1 thru 99).
+count count_Q13 = Q13R1 to Q13R99 (1 thru 99).
+count count_Q15_rank1 = Q15_1 to Q15_99 (1).
+count count_Q15_rank2 = Q15_1 to Q15_99 (2).
+count count_Q15_rank3 = Q15_1 to Q15_99 (3).
+count count_Q15_rank4 = Q15_1 to Q15_99 (4).
+count count_Q15_rank5 = Q15_1 to Q15_99 (5).
+
+count count_Q16_1 = Q16_1R1 to Q16_1R99 (1 thru 99).
+count count_Q16_2 = Q16_2R1 to Q16_2R99 (1 thru 99).
+count count_Q16_3 = Q16_3R1 to Q16_3R99 (1 thru 99).
+count count_Q16_4 = Q16_4R1 to Q16_4R99 (1 thru 99).
+count count_Q16_9 = Q16_9R1 to Q16_9R99 (1 thru 99).
+count count_Q16_6 = Q16_6R1 to Q16_6R99 (1 thru 99).
+count count_Q16_7 = Q16_7R1 to Q16_7R99 (1 thru 99).
+count count_Q16_8 = Q16_8R1 to Q16_8R99 (1 thru 99).
+count count_Q16_91 = Q16_91R1 to Q16_91R99 (1 thru 99).
+count count_Q16_92 = Q16_92R1 to Q16_92R99 (1 thru 99).
+count count_Q16_93 = Q16_93R1 to Q16_93R99 (1 thru 99).
+count count_Q16_94 = Q16_94R1 to Q16_94R99 (1 thru 99).
+count count_Q16_95 = Q16_95R1 to Q16_95R99 (1 thru 99).
+count count_Q16_96 = Q16_96R1 to Q16_96R99 (1 thru 99).
+count count_Q16_97 = Q16_97R1 to Q16_97R99 (1 thru 99).
+count count_Q16_98 = Q16_98R1 to Q16_98R99 (1 thru 99).
+count count_Q16_10 = Q16_10R1 to Q16_10R99 (1 thru 99).
+count count_Q16_11 = Q16_11R1 to Q16_11R99 (1 thru 99).
+
+count count_Q17_1 = Q17_1R1 to Q17_1R99 (1 thru 99).
+count count_Q17_2 = Q17_2R1 to Q17_2R99 (1 thru 99).
+count count_Q17_3 = Q17_3R1 to Q17_3R99 (1 thru 99).
+count count_Q17_4 = Q17_4R1 to Q17_4R99 (1 thru 99).
+count count_Q17_9 = Q17_9R1 to Q17_9R99 (1 thru 99).
+count count_Q17_6 = Q17_6R1 to Q17_6R99 (1 thru 99).
+count count_Q17_7 = Q17_7R1 to Q17_7R99 (1 thru 99).
+count count_Q17_8 = Q17_8R1 to Q17_8R99 (1 thru 99).
+count count_Q17_91 = Q17_91R1 to Q17_91R99 (1 thru 99).
+count count_Q17_92 = Q17_92R1 to Q17_92R99 (1 thru 99).
+count count_Q17_93 = Q17_93R1 to Q17_93R99 (1 thru 99).
+count count_Q17_94 = Q17_94R1 to Q17_94R99 (1 thru 99).
+count count_Q17_95 = Q17_95R1 to Q17_95R99 (1 thru 99).
+count count_Q17_96 = Q17_96R1 to Q17_96R99 (1 thru 99).
+count count_Q17_97 = Q17_97R1 to Q17_97R99 (1 thru 99).
+count count_Q17_98 = Q17_98R1 to Q17_98R99 (1 thru 99).
+count count_Q17_10 = Q17_10R1 to Q17_10R99 (1 thru 99).
+count count_Q17_11 = Q17_11R1 to Q17_11R99 (1 thru 99).
+
+count count_Q19 = Q19R1 to Q19R99 (1 thru 99).
+count count_Q20 = Q20R1 to Q20R99 (1 thru 99).
+count count_Q22 = Q22R1 to Q22R99 (1 thru 99).
+count count_Q26 = Q26R1 to Q26R99 (1 thru 99).
+count count_Q27 = Q27R1 to Q27R99 (1 thru 99).
+
+count count_Q25 = Q25R1 to Q25R99 (1 thru 99).
+count count_Q25 = Q25R1 to Q25R99 (1 thru 99).
+*======================Chủ nhà==============.
+count count_H3A = H3AR1 to H3AR99 (1 thru 99).
+count count_H7 = H7R1 to H7R99 (1 thru 99).
+
+count count_H8_1 = H8_1R1 to H8_1R100 (1 thru 100).
+count count_H8_2 = H8_2R1 to H8_2R101 (1 thru 101).
+
+count count_H9_1 = H9_1R1 to H9_1R99 (1 thru 99).
+count count_H9_2 = H9_2R1 to H9_2R99 (1 thru 99).
+count count_H9_3 = H9_3R1 to H9_3R99 (1 thru 99).
+count count_H9_4 = H9_4R1 to H9_4R99 (1 thru 99).
+count count_H9_5 = H9_5R1 to H9_5R99 (1 thru 99).
+count count_H9_6 = H9_6R1 to H9_6R99 (1 thru 99).
+count count_H9_7 = H9_7R1 to H9_7R99 (1 thru 99).
+count count_H9_99 = H9_99R1 to H9_99R99 (1 thru 99).
+
+count count_H14_rank1 = H14_1 to H14_99 (1).
+count count_H14_rank2 = H14_1 to H14_99 (2).
+count count_H14_rank3 = H14_1 to H14_99 (3).
+count count_H14_rank4 = H14_1 to H14_99 (4).
+count count_H14_rank5 = H14_1 to H14_99 (5).
+
+count count_H15_1 = H15_1R1 to H15_1R99 (1 thru 99).
+count count_H15_2 = H15_2R1 to H15_2R99 (1 thru 99).
+count count_H15_3 = H15_3R1 to H15_3R99 (1 thru 99).
+count count_H15_4 = H15_4R1 to H15_4R99 (1 thru 99).
+count count_H15_9 = H15_9R1 to H15_9R99 (1 thru 99).
+count count_H15_6 = H15_6R1 to H15_6R99 (1 thru 99).
+count count_H15_7 = H15_7R1 to H15_7R99 (1 thru 99).
+count count_H15_8 = H15_8R1 to H15_8R99 (1 thru 99).
+count count_H15_91 = H15_91R1 to H15_91R99 (1 thru 99).
+count count_H15_92 = H15_92R1 to H15_92R99 (1 thru 99).
+count count_H15_93 = H15_93R1 to H15_93R99 (1 thru 99).
+count count_H15_94 = H15_94R1 to H15_94R99 (1 thru 99).
+count count_H15_95 = H15_95R1 to H15_95R99 (1 thru 99).
+count count_H15_96 = H15_96R1 to H15_96R99 (1 thru 99).
+count count_H15_97 = H15_97R1 to H15_97R99 (1 thru 99).
+count count_H15_98 = H15_98R1 to H15_98R99 (1 thru 99).
+count count_H15_10 = H15_10R1 to H15_10R99 (1 thru 99).
+count count_H15_11 = H15_11R1 to H15_11R99 (1 thru 99).
+
+count count_H16_1 = H16_1R1 to H16_1R99 (1 thru 99).
+count count_H16_2 = H16_2R1 to H16_2R99 (1 thru 99).
+count count_H16_3 = H16_3R1 to H16_3R99 (1 thru 99).
+count count_H16_4 = H16_4R1 to H16_4R99 (1 thru 99).
+count count_H16_9 = H16_9R1 to H16_9R99 (1 thru 99).
+count count_H16_6 = H16_6R1 to H16_6R99 (1 thru 99).
+count count_H16_7 = H16_7R1 to H16_7R99 (1 thru 99).
+count count_H16_8 = H16_8R1 to H16_8R99 (1 thru 99).
+count count_H16_91 = H16_91R1 to H16_91R99 (1 thru 99).
+count count_H16_92 = H16_92R1 to H16_92R99 (1 thru 99).
+count count_H16_93 = H16_93R1 to H16_93R99 (1 thru 99).
+count count_H16_94 = H16_94R1 to H16_94R99 (1 thru 99).
+count count_H16_95 = H16_95R1 to H16_95R99 (1 thru 99).
+count count_H16_96 = H16_96R1 to H16_96R99 (1 thru 99).
+count count_H16_97 = H16_97R1 to H16_97R99 (1 thru 99).
+count count_H16_98 = H16_98R1 to H16_98R99 (1 thru 99).
+count count_H16_10 = H16_10R1 to H16_10R99 (1 thru 99).
+count count_H16_11 = H16_11R1 to H16_11R99 (1 thru 99).
+
+count count_H17 = H17R1 to H17R99 (1 thru 99).
+count count_H19 = H19R1 to H19R99 (1 thru 99).
+count count_H20 = H20R1 to H20R99 (1 thru 99).
+
+count count_H23 = H23R1 to H23R99 (1 thru 99).
+count count_H25 = H25R1 to H25R99 (1 thru 99).
+count count_H27 = H27R1 to H27R99 (1 thru 99).
+count count_H28 = H28R1 to H28R99 (1 thru 99).
+
+
+recode H5 (1 = 40) (2 = 90) (3 = 125) (4 = 175) (5 = 250) (6 = 300) into H5_means.
+recode H12 (1 = 20 )(2 = 35) (3 = 60) (4 = 85) (5 = 110) (6 = 135) (7 = 150) into H12_means.
+
+*Check Statment.
+*Q1.
+if Q00 = 2 and count_Q1 = 0 check_mis_Q1 = 1.
+if Q00 = 2 and mis(Q1R1) and mis(Q1R2) check_Q1R1_R2 = 1.
+if Q1R99 = 99 and Q1R99_O = "" check_Q1R99_O = 1.
+
+*Q2.
+if Q00 = 2 and mis(Q2) check_mis_Q2 = 1.
+if Q2 = 1 check_Q2_code1 = 1.
+
+*Q3.
+if Q00 = 2 and mis(Q3) check_mis_Q3 = 1.
+if Q3 = 1 and Q3_1_O ="" check_Q3_1_O = 1.
+if Q3 = 4 and Q3_4_O ="" check_Q3_4_O = 1.
+
+*Q4.
+if Q00 = 2 and count_Q4 = 0 check_mis_Q4 = 1.
+if Q4R99 = 99 and Q4R99_O ="" check_Q4R99_O = 1.
+
+*Q5.
+if Q00 = 2 and nvalid(Q5_1 to Q5_7) <> 7 check_mis_Q5 = 1.
+if Q00 = 2 and sum(Q5_1 to Q5_7) <> 100 check_sum_Q5 = 1.
+if Q5_7 <> 0 and Q5_O = "" check_Q5_O = 1.
+
+*Q6.
+if Q00 = 2 and mis(Q6) check_mis_Q6 = 1.
+if Q6 = 0 and Q6_O ="" check_Q6_O = 1.
+
+*Q7.
+if Q00 = 2 and count_Q7_1 = 0 check_mis_Q7_1 = 1.
+if Q7_1R100 = 100 check_Q7_1R100 = 1.
+if Q00 = 2 and count_Q7_2 = 0 check_mis_Q7_2 = 1. 
+if Q7_1R99 = 99 and Q7_1R99_O = "" check_Q7_1R99_O = 1.
+if Q7_2R99 = 99 and Q7_2R99_O = "" check_Q7_2R99_O = 1.
+
+
+*Q8.
+if Q7_1R1 = 1 and count_Q8_1 = 0 check_Q7_Q8_code1 = 1.
+if Q7_1R2 = 2 and count_Q8_2 = 0 check_Q7_Q8_code2 = 1.
+if Q7_1R3 = 3 and count_Q8_3 = 0 check_Q7_Q8_code3 = 1.
+if Q7_1R4 = 4 and count_Q8_4 = 0 check_Q7_Q8_code4 = 1.
+if Q7_1R5 = 5 and count_Q8_5 = 0 check_Q7_Q8_code5 = 1.
+if Q7_1R6 = 6 and count_Q8_6 = 0 check_Q7_Q8_code6 = 1.
+if Q7_1R7 = 7 and count_Q8_7 = 0 check_Q7_Q8_code7 = 1.
+if Q7_1R99 = 99 and count_Q8_99 = 0 check_Q7_Q8_code99 = 1.
+
+if count_Q8_1 > 0 and mis(Q7_1R1) check_Q8_Q7_code1 = 1.
+if count_Q8_2 > 0 and mis(Q7_1R2) check_Q8_Q7_code2 = 1.
+if count_Q8_3 > 0 and mis(Q7_1R3) check_Q8_Q7_code3 = 1.
+if count_Q8_4 > 0 and mis(Q7_1R4) check_Q8_Q7_code4 = 1.
+if count_Q8_5 > 0 and mis(Q7_1R5) check_Q8_Q7_code5 = 1.
+if count_Q8_6 > 0 and mis(Q7_1R6) check_Q8_Q7_code6 = 1.
+if count_Q8_7 > 0 and mis(Q7_1R7) check_Q8_Q7_code7 = 1.
+if count_Q8_99 > 0 and mis(Q7_1R99) check_Q8_Q7_code99 = 1.
+
+
+if Q8_1R99 = 99 and Q8_1R99_O = "" check_Q8_1R99_O = 1.
+if Q8_2R99 = 99 and Q8_2R99_O = "" check_Q8_2R99_O = 1.
+if Q8_3R99 = 99 and Q8_3R99_O = "" check_Q8_3R99_O = 1.
+if Q8_4R99 = 99 and Q8_4R99_O = "" check_Q8_4R99_O = 1.
+if Q8_5R99 = 99 and Q8_5R99_O = "" check_Q8_5R99_O = 1.
+if Q8_6R99 = 99 and Q8_6R99_O = "" check_Q8_6R99_O = 1.
+if Q8_7R99 = 99 and Q8_7R99_O = "" check_Q8_7R99_O = 1.
+if Q8_99R99 = 99 and Q8_99R99_O = "" check_Q8_99R99_O = 1.
+
+
+*Q8.1.
+if mis(Q8_1R1) and mis(Q8_1a) check_mis_Q8_1a = 1.
+if mis(Q8_2R1) and mis(Q8_1b) check_mis_Q8_1b = 1.
+if mis(Q8_3R1) and mis(Q8_1c) check_mis_Q8_1c = 1.
+if mis(Q8_4R1) and mis(Q8_1d) check_mis_Q8_1d = 1.
+if mis(Q8_5R1) and mis(Q8_1e) check_mis_Q8_1e = 1.
+if mis(Q8_6R1) and mis(Q8_1f) check_mis_Q8_1f = 1.
+if mis(Q8_7R1) and mis(Q8_1g) check_mis_Q8_1g = 1.
+if mis(Q8_99R1) and mis(Q8_1h) check_mis_Q8_1h = 1.
+
+*Cau gia Q8.
+if any(1, Q8_1R1, Q8_2R1, Q8_3R1, Q8_4R1, Q8_5R1, Q8_6R1, Q8_7R1) and mis(Q8_VLR1) check_mis_VL_code1 = 1.
+if any(2, Q8_1R2, Q8_2R2, Q8_3R2, Q8_4R2, Q8_5R2, Q8_6R2, Q8_7R2) and mis(Q8_VLR2) check_mis_VL_code2 = 1.
+if any(3, Q8_1R3, Q8_2R3, Q8_3R3, Q8_4R3, Q8_5R3, Q8_6R3, Q8_7R3) and mis(Q8_VLR3) check_mis_VL_code3 = 1.
+if any(4, Q8_1R4, Q8_2R4, Q8_3R4, Q8_4R4, Q8_5R4, Q8_6R4, Q8_7R4) and mis(Q8_VLR4) check_mis_VL_code4 = 1.
+if any(9, Q8_1R9, Q8_2R9, Q8_3R9, Q8_4R9, Q8_5R9, Q8_6R9, Q8_7R9) and mis(Q8_VLR9) check_mis_VL_code9 = 1.
+if any(6, Q8_1R6, Q8_2R6, Q8_3R6, Q8_4R6, Q8_5R6, Q8_6R6, Q8_7R6) and mis(Q8_VLR6) check_mis_VL_code6 = 1.
+if any(7, Q8_1R7, Q8_2R7, Q8_3R7, Q8_4R7, Q8_5R7, Q8_6R7, Q8_7R7) and mis(Q8_VLR7) check_mis_VL_code7 = 1.
+if any(8, Q8_1R8, Q8_2R8, Q8_3R8, Q8_4R8, Q8_5R8, Q8_6R8, Q8_7R8) and mis(Q8_VLR8) check_mis_VL_code8 = 1.
+if any(10, Q8_1R10, Q8_2R10, Q8_3R10, Q8_4R10, Q8_5R10, Q8_6R10, Q8_7R10) and mis(Q8_VLR10) check_mis_VL_code10 = 1.
+if any(11, Q8_1R11, Q8_2R11, Q8_3R11, Q8_4R11, Q8_5R11, Q8_6R11, Q8_7R11) and mis(Q8_VLR11) check_mis_VL_code11 = 1.
+
+
+if Q8_1R99 = 99 and mis(Q8_VLR91) check_mis_VL_code91 = 1.
+if Q8_2R99 = 99 and mis(Q8_VLR92) check_mis_VL_code92 = 1.
+if Q8_3R99 = 99 and mis(Q8_VLR93) check_mis_VL_code93 = 1.
+if Q8_4R99 = 99 and mis(Q8_VLR94) check_mis_VL_code94 = 1.
+if Q8_5R99 = 99 and mis(Q8_VLR95) check_mis_VL_code95 = 1.
+if Q8_6R99 = 99 and mis(Q8_VLR96) check_mis_VL_code96 = 1.
+if Q8_7R99 = 99 and mis(Q8_VLR97) check_mis_VL_code97 = 1.
+if Q8_99R99 = 99 and mis(Q8_VLR98) check_mis_VL_code98 = 1.
+
+
+*Q9.
+if Q00 = 2 and mis(Q9) check_mis_Q9 = 1.
+if Q9 = 99 and Q9_O = "" check_Q9_O = 1.
+
+
+*Q10.
+if Q8_VLR1 = 1 and mis(Q10_1) check_mis_Q10_1 = 1.
+if Q8_VLR2 = 2 and mis(Q10_2) check_mis_Q10_2 = 1.
+if Q8_VLR3 = 3 and mis(Q10_3) check_mis_Q10_3 = 1.
+if Q8_VLR4 = 4 and mis(Q10_4) check_mis_Q10_4 = 1.
+if Q8_VLR9 = 9 and mis(Q10_9) check_mis_Q10_9 = 1.
+if Q8_VLR6 = 6 and mis(Q10_6) check_mis_Q10_6 = 1.
+if Q8_VLR7 = 7 and mis(Q10_7) check_mis_Q10_7 = 1.
+if Q8_VLR8 = 8 and mis(Q10_8) check_mis_Q10_8 = 1.
+if Q8_VLR91 = 91 and mis(Q10_91) check_mis_Q10_91 = 1.
+if Q8_VLR92 = 92 and mis(Q10_92) check_mis_Q10_92 = 1.
+if Q8_VLR93 = 93 and mis(Q10_93) check_mis_Q10_93 = 1.
+if Q8_VLR94 = 94 and mis(Q10_94) check_mis_Q10_94 = 1.
+if Q8_VLR95 = 95 and mis(Q10_95) check_mis_Q10_95 = 1.
+if Q8_VLR96 = 96 and mis(Q10_96) check_mis_Q10_96 = 1.
+if Q8_VLR97 = 97 and mis(Q10_97) check_mis_Q10_97 = 1.
+if Q8_VLR98 = 98 and mis(Q10_98) check_mis_Q10_98 = 1.
+if Q8_VLR10 = 10 and mis(Q10_10) check_mis_Q10_10 = 1.
+if Q8_VLR11 = 11 and mis(Q10_11) check_mis_Q10_11 = 1.
+
+
+*Q11.
+if Q8_VLR1 = 1 and (mis(Q11a1) or mis(Q11b1)) check_mis_Q11_code1 = 1.
+if Q8_VLR2 = 2 and (mis(Q11a2) or mis(Q11b2)) check_mis_Q11_code2 = 1.
+if Q8_VLR3 = 3 and (mis(Q11a3) or mis(Q11b3)) check_mis_Q11_code3 = 1.
+if Q8_VLR4 = 4 and (mis(Q11a4) or mis(Q11b4)) check_mis_Q11_code4 = 1.
+if Q8_VLR9 = 9 and (mis(Q11a9) or mis(Q11b9)) check_mis_Q11_code9 = 1.
+if Q8_VLR6 = 6 and (mis(Q11a6) or mis(Q11b6)) check_mis_Q11_code6 = 1.
+if Q8_VLR7 = 7 and (mis(Q11a7) or mis(Q11b7)) check_mis_Q11_code7 = 1.
+if Q8_VLR8 = 8 and (mis(Q11a8) or mis(Q11b8)) check_mis_Q11_code8 = 1.
+if Q8_VLR91 = 91 and (mis(Q11a91) or mis(Q11b91)) check_mis_Q11_code91 = 1.
+if Q8_VLR92 = 92 and (mis(Q11a92) or mis(Q11b92)) check_mis_Q11_code92 = 1.
+if Q8_VLR93 = 93 and (mis(Q11a93) or mis(Q11b93)) check_mis_Q11_code93 = 1.
+if Q8_VLR94 = 94 and (mis(Q11a94) or mis(Q11b94)) check_mis_Q11_code94 = 1.
+if Q8_VLR95 = 95 and (mis(Q11a95) or mis(Q11b95)) check_mis_Q11_code95 = 1.
+if Q8_VLR96 = 96 and (mis(Q11a96) or mis(Q11b96)) check_mis_Q11_code96 = 1.
+if Q8_VLR97 = 97 and (mis(Q11a97) or mis(Q11b97)) check_mis_Q11_code97 = 1.
+if Q8_VLR98 = 98 and (mis(Q11a98) or mis(Q11b98)) check_mis_Q11_code98 = 1.
+if Q8_VLR10 = 10 and (mis(Q11a10) or mis(Q11b10)) check_mis_Q11_code10 = 1.
+if Q8_VLR11 = 11 and (mis(Q11a11) or mis(Q11b11)) check_mis_Q11_code11 = 1.
+
+*Q12.
+if Q00 = 2 and count_Q12 = 0 check_mis_Q12 = 1.
+if Q12R99 = 99 and Q12R99_O = "" check_Q12R99_O = 1.
+
+*Q13. 
+if Q00 = 2 and count_Q13 = 0 check_mis_Q13 = 1.
+if Q13R99 = 99 and Q13R99_O = "" check_Q13R99_O = 1.
+
+*Q14.
+if Q00 = 2 and nvalid(Q14_1 to Q14_11) <> 10 check_mis_Q14 = 1.
+
+if Q00 = 2 and mis(Q14_a) check_mis_Q14_a = 1.
+if Q14_a = 1 and (mis(Q14_b) or mis(Q14_c)) check_mis_Q14_b_c = 1.
+
+
+*Q15.
+if Q00 = 2 and count_Q15_rank1 <> 1 check_Q15_rank1 = 1.
+if Q00 = 2 and count_Q15_rank2 <> 1 check_Q15_rank2 = 1.
+if Q00 = 2 and count_Q15_rank3 <> 1 check_Q15_rank3 = 1.
+if Q00 = 2 and count_Q15_rank4 <> 1 check_Q15_rank4 = 1.
+if Q00 = 2 and count_Q15_rank5 <> 1 check_Q15_rank5 = 1.
+
+*Q16.
+if Q8_VLR1 = 1 and count_Q16_1 = 0 check_mis_Q16_code1 = 1.
+if Q8_VLR2 = 2 and count_Q16_2 = 0 check_mis_Q16_code2 = 1.
+if Q8_VLR3 = 3 and count_Q16_3 = 0 check_mis_Q16_code3 = 1.
+if Q8_VLR4 = 4 and count_Q16_4 = 0 check_mis_Q16_code4 = 1.
+if Q8_VLR9 = 9 and count_Q16_9 = 0 check_mis_Q16_code9 = 1.
+if Q8_VLR6 = 6 and count_Q16_6 = 0 check_mis_Q16_code6 = 1.
+if Q8_VLR7 = 7 and count_Q16_7 = 0 check_mis_Q16_code7 = 1.
+if Q8_VLR8 = 8 and count_Q16_8 = 0 check_mis_Q16_code8 = 1.
+if Q8_VLR91 = 91 and count_Q16_91 = 0 check_mis_Q16_code91 = 1.
+if Q8_VLR92 = 92 and count_Q16_92 = 0 check_mis_Q16_code92 = 1.
+if Q8_VLR93 = 93 and count_Q16_93 = 0 check_mis_Q16_code93 = 1.
+if Q8_VLR94 = 94 and count_Q16_94 = 0 check_mis_Q16_code94 = 1.
+if Q8_VLR95 = 95 and count_Q16_95 = 0 check_mis_Q16_code95 = 1.
+if Q8_VLR96 = 96 and count_Q16_96 = 0 check_mis_Q16_code96 = 1.
+if Q8_VLR97 = 97 and count_Q16_97 = 0 check_mis_Q16_code97 = 1.
+if Q8_VLR98 = 98 and count_Q16_98 = 0 check_mis_Q16_code98 = 1.
+if Q8_VLR10 = 10 and count_Q16_10 = 0 check_mis_Q16_code10 = 1.
+if Q8_VLR11 = 11 and count_Q16_11 = 0 check_mis_Q16_code11 = 1.
+
+if count_Q16_1 > 0 and mis(Q8_VLR1) check_Q16_Q8_code1 = 1.
+if count_Q16_2 > 0 and mis(Q8_VLR2) check_Q16_Q8_code2 = 1.
+if count_Q16_3 > 0 and mis(Q8_VLR3) check_Q16_Q8_code3 = 1.
+if count_Q16_4 > 0 and mis(Q8_VLR4) check_Q16_Q8_code4 = 1.
+if count_Q16_9 > 0 and mis(Q8_VLR9) check_Q16_Q8_code9 = 1.
+if count_Q16_6 > 0 and mis(Q8_VLR6) check_Q16_Q8_code6 = 1.
+if count_Q16_7 > 0 and mis(Q8_VLR7) check_Q16_Q8_code7 = 1.
+if count_Q16_8 > 0 and mis(Q8_VLR8) check_Q16_Q8_code8 = 1.
+if count_Q16_91 > 0 and mis(Q8_VLR91) check_Q16_Q8_code91 = 1.
+if count_Q16_92 > 0 and mis(Q8_VLR92) check_Q16_Q8_code92 = 1.
+if count_Q16_93 > 0 and mis(Q8_VLR93) check_Q16_Q8_code93 = 1.
+if count_Q16_94 > 0 and mis(Q8_VLR94) check_Q16_Q8_code94 = 1.
+if count_Q16_95 > 0 and mis(Q8_VLR95) check_Q16_Q8_code95 = 1.
+if count_Q16_96 > 0 and mis(Q8_VLR96) check_Q16_Q8_code96 = 1.
+if count_Q16_97 > 0 and mis(Q8_VLR97) check_Q16_Q8_code97 = 1.
+if count_Q16_98 > 0 and mis(Q8_VLR98) check_Q16_Q8_code98 = 1.
+if count_Q16_10 > 0 and mis(Q8_VLR10) check_Q16_Q8_code10 = 1.
+if count_Q16_11 > 0 and mis(Q8_VLR11) check_Q16_Q8_code11 = 1.
+
+
+*Q17.
+if Q8_VLR1 = 1 and count_Q17_1 = 0 check_mis_Q17_code1 = 1.
+if Q8_VLR2 = 2 and count_Q17_2 = 0 check_mis_Q17_code2 = 1.
+if Q8_VLR3 = 3 and count_Q17_3 = 0 check_mis_Q17_code3 = 1.
+if Q8_VLR4 = 4 and count_Q17_4 = 0 check_mis_Q17_code4 = 1.
+if Q8_VLR9 = 9 and count_Q17_9 = 0 check_mis_Q17_code9 = 1.
+if Q8_VLR6 = 6 and count_Q17_6 = 0 check_mis_Q17_code6 = 1.
+if Q8_VLR7 = 7 and count_Q17_7 = 0 check_mis_Q17_code7 = 1.
+if Q8_VLR8 = 8 and count_Q17_8 = 0 check_mis_Q17_code8 = 1.
+if Q8_VLR91 = 91 and count_Q17_91 = 0 check_mis_Q17_code91 = 1.
+if Q8_VLR92 = 92 and count_Q17_92 = 0 check_mis_Q17_code92 = 1.
+if Q8_VLR93 = 93 and count_Q17_93 = 0 check_mis_Q17_code93 = 1.
+if Q8_VLR94 = 94 and count_Q17_94 = 0 check_mis_Q17_code94 = 1.
+if Q8_VLR95 = 95 and count_Q17_95 = 0 check_mis_Q17_code95 = 1.
+if Q8_VLR96 = 96 and count_Q17_96 = 0 check_mis_Q17_code96 = 1.
+if Q8_VLR97 = 97 and count_Q17_97 = 0 check_mis_Q17_code97 = 1.
+if Q8_VLR98 = 98 and count_Q17_98 = 0 check_mis_Q17_code98 = 1.
+if Q8_VLR10 = 10 and count_Q17_10 = 0 check_mis_Q17_code10 = 1.
+if Q8_VLR11 = 11 and count_Q17_11 = 0 check_mis_Q17_code11 = 1.
+
+if count_Q17_1 > 0 and mis(Q8_VLR1) check_Q17_Q8_code1 = 1.
+if count_Q17_2 > 0 and mis(Q8_VLR2) check_Q17_Q8_code2 = 1.
+if count_Q17_3 > 0 and mis(Q8_VLR3) check_Q17_Q8_code3 = 1.
+if count_Q17_4 > 0 and mis(Q8_VLR4) check_Q17_Q8_code4 = 1.
+if count_Q17_9 > 0 and mis(Q8_VLR9) check_Q17_Q8_code9 = 1.
+if count_Q17_6 > 0 and mis(Q8_VLR6) check_Q17_Q8_code6 = 1.
+if count_Q17_7 > 0 and mis(Q8_VLR7) check_Q17_Q8_code7 = 1.
+if count_Q17_8 > 0 and mis(Q8_VLR8) check_Q17_Q8_code8 = 1.
+if count_Q17_91 > 0 and mis(Q8_VLR91) check_Q17_Q8_code91 = 1.
+if count_Q17_92 > 0 and mis(Q8_VLR92) check_Q17_Q8_code92 = 1.
+if count_Q17_93 > 0 and mis(Q8_VLR93) check_Q17_Q8_code93 = 1.
+if count_Q17_94 > 0 and mis(Q8_VLR94) check_Q17_Q8_code94 = 1.
+if count_Q17_95 > 0 and mis(Q8_VLR95) check_Q17_Q8_code95 = 1.
+if count_Q17_96 > 0 and mis(Q8_VLR96) check_Q17_Q8_code96 = 1.
+if count_Q17_97 > 0 and mis(Q8_VLR97) check_Q17_Q8_code97 = 1.
+if count_Q17_98 > 0 and mis(Q8_VLR98) check_Q17_Q8_code98 = 1.
+if count_Q17_10 > 0 and mis(Q8_VLR10) check_Q17_Q8_code10 = 1.
+if count_Q17_11 > 0 and mis(Q8_VLR11) check_Q17_Q8_code11 = 1.
+
+
+*Q18.
+if Q8_VLR1 = 1 and mis(Q18_1) check_mis_Q18_1 = 1.
+if Q8_VLR2 = 2 and mis(Q18_2) check_mis_Q18_2 = 1.
+if Q8_VLR3 = 3 and mis(Q18_3) check_mis_Q18_3 = 1.
+if Q8_VLR4 = 4 and mis(Q18_4) check_mis_Q18_4 = 1.
+if Q8_VLR9 = 9 and mis(Q18_9) check_mis_Q18_9 = 1.
+if Q8_VLR6 = 6 and mis(Q18_6) check_mis_Q18_6 = 1.
+if Q8_VLR7 = 7 and mis(Q18_7) check_mis_Q18_7 = 1.
+if Q8_VLR8 = 8 and mis(Q18_8) check_mis_Q18_8 = 1.
+if Q8_VLR91 = 91 and mis(Q18_91) check_mis_Q18_91 = 1.
+if Q8_VLR92 = 92 and mis(Q18_92) check_mis_Q18_92 = 1.
+if Q8_VLR93 = 93 and mis(Q18_93) check_mis_Q18_93 = 1.
+if Q8_VLR94 = 94 and mis(Q18_94) check_mis_Q18_94 = 1.
+if Q8_VLR95 = 95 and mis(Q18_95) check_mis_Q18_95 = 1.
+if Q8_VLR96 = 96 and mis(Q18_96) check_mis_Q18_96 = 1.
+if Q8_VLR97 = 97 and mis(Q18_97) check_mis_Q18_97 = 1.
+if Q8_VLR98 = 98 and mis(Q18_98) check_mis_Q18_98 = 1.
+if Q8_VLR10 = 10 and mis(Q18_10) check_mis_Q18_10 = 1.
+if Q8_VLR11 = 11 and mis(Q18_11) check_mis_Q18_11 = 1.
+
+if ~mis(Q18_2) and mis(Q8_VLR2) check_Q18_Q8_code2 = 1.
+if ~mis(Q18_3) and mis(Q8_VLR3) check_Q18_Q8_code3 = 1.
+if ~mis(Q18_4) and mis(Q8_VLR4) check_Q18_Q8_code4 = 1.
+if ~mis(Q18_9) and mis(Q8_VLR9) check_Q18_Q8_code9 = 1.
+if ~mis(Q18_6) and mis(Q8_VLR6) check_Q18_Q8_code6 = 1.
+if ~mis(Q18_7) and mis(Q8_VLR7) check_Q18_Q8_code7 = 1.
+if ~mis(Q18_8) and mis(Q8_VLR8) check_Q18_Q8_code8 = 1.
+if ~mis(Q18_91) and mis(Q8_VLR91) check_Q18_Q8_code91 = 1.
+if ~mis(Q18_92) and mis(Q8_VLR92) check_Q18_Q8_code92 = 1.
+if ~mis(Q18_93) and mis(Q8_VLR93) check_Q18_Q8_code93 = 1.
+if ~mis(Q18_94) and mis(Q8_VLR94) check_Q18_Q8_code94 = 1.
+if ~mis(Q18_95) and mis(Q8_VLR95) check_Q18_Q8_code95 = 1.
+if ~mis(Q18_96) and mis(Q8_VLR96) check_Q18_Q8_code96 = 1.
+if ~mis(Q18_97) and mis(Q8_VLR97) check_Q18_Q8_code97 = 1.
+if ~mis(Q18_98) and mis(Q8_VLR98) check_Q18_Q8_code98 = 1.
+if ~mis(Q18_10) and mis(Q8_VLR10) check_Q18_Q8_code10 = 1.
+if ~mis(Q18_11) and mis(Q8_VLR11) check_Q18_Q8_code11 = 1.
+
+
+*Q19.
+if Q00 = 2 and count_Q19 = 0 check_mis_Q19 = 1.
+if Q19R99 = 99 and Q19R99_O = "" check_Q19R99_O = 1.
+
+
+*Q20.
+if Q8_VLR1 = 1 and count_Q20 = 0 check_mis_Q20 = 1.
+if Q20R99 = 99 and Q20R99_O = "" check_Q20R99_O = 1.
+
+
+*Q21.
+if Q00 = 2 and Q21 ="" check_mis_Q21 = 1.
+
+
+*Q22.
+if Q00 = 2 and count_Q22 = 0 check_mis_Q22 = 1.
+if Q22R99 = 99 and Q22R99_O = "" check_Q22R99_O = 1.
+
+
+*Q26.
+if Q00 = 2 and count_Q26 = 0 check_mis_Q26 = 1.
+if Q26R99 = 99 and Q26R99_O = "" check_Q26R99_O = 1.
+
+
+*Q27.
+if Q00 = 2 and mis(Q26R100) and count_Q27 = 0 check_mis_Q27 = 1.
+
+if Q27R1 = 1 and mis(Q26R1) check_Q27_Q26_code1 = 1.
+if Q27R2 = 2 and mis(Q26R2) check_Q27_Q26_code2 = 1.
+if Q27R3 = 3 and mis(Q26R3) check_Q27_Q26_code3 = 1.
+if Q27R4 = 4 and mis(Q26R4) check_Q27_Q26_code4 = 1.
+if Q27R5 = 5 and mis(Q26R5) check_Q27_Q26_code5 = 1.
+if Q27R99 = 99 and mis(Q26R99) check_Q27_Q26_code99 = 1.
+
+*Q28.
+if Q00 = 2 and mis(Q26R100) and mis(Q28) check_mis_Q28 = 1.
+if Q28 = 1 and mis(Q27R1) check_Q28_Q27_code1 = 1.
+if Q28 = 2 and mis(Q27R2) check_Q28_Q27_code2 = 1.
+if Q28 = 3 and mis(Q27R3) check_Q28_Q27_code3 = 1.
+if Q28 = 4 and mis(Q27R4) check_Q28_Q27_code4 = 1.
+if Q28 = 5 and mis(Q27R5) check_Q28_Q27_code5 = 1.
+if Q28 = 99 and mis(Q27R99) check_Q28_Q27_code99 = 1.
+
+*Q29.
+if ~mis(Q28) and mis(Q29) check_mis_Q29 = 1.
+
+*Q23.
+if Q00 = 2 and mis(Q23) check_mis_Q23 = 1.
+if Q23 = 99 and Q23_O = "" check_Q23_O = 1.
+
+*Q24.
+if Q00 = 2 and mis(Q24) check_mis_Q24 = 1.
+
+*Q25.
+if Q00 = 2 and count_Q25 = 0 check_mis_Q25 = 1.
+if Q25R99 = 99 and count_Q25 <> 1 check_Q25_code99 = 1.
+
+
+
+*=======================================================================
+
+*H3.
+if Q00 = 1 and Source = 2 and mis(H3) check_mis_H3 = 1.
+if H3= 3 check_H3_code3 = 1.
+
+if Q00 = 1 and Source = 1 and count_H3A < 0 check_mis_H3A = 1.
+*H4.
+if Q00 = 1 and mis(H4) check_mis_H4 = 1.
+if H4 = 3 check_H4_code3 = 1.
+
+*H5.
+if Q00 = 1 and mis(H5) check_mis_H5 = 1.
+if H5 = 1 check_H5_code1 = 1.
+if H5 = 99 and H5_O = "" check_H5_O = 1.
+
+
+*H6.
+if Q00 = 1 and (H3 = 1 or H3AR9 = 9) and mis(H6) check_mis_H6 = 1.
+if H6 = 2 check_H6_code2 = 1.
+
+
+*H7.
+if H3 = 2 and count_H7 = 0 check_mis_H7 = 1.
+if H7R99 = 99 and H7R99_O = "" check_H7R99_O = 1.
+if Q00 = 1 and (Q3 = 2 or H3AR10 = 10)  and mis(H7R1) check_H7_code1 = 1.
+
+
+*H8.
+if Q00 = 1 and count_H8_1 = 0 check_mis_H8_1 = 1.
+if H8_1R100 = 100 check_H8_1R100 = 1.
+if Q00 = 1 and count_H8_2 = 0 check_mis_H8_2 = 1. 
+if H8_2R101 = 101 and count_H8_2 <> 1 check_H8_2R101 = 1.
+if H8_1R99 = 99 and H8_1R99_O = "" check_H8_1R99_O = 1.
+if H8_2R99 = 99 and H8_2R99_O = "" check_H8_2R99_O = 1.
+
+if Q3 = 1 and (H8_1R99 = 99 or H8_2R99 = 99) check_Q8_Q3_code99 =  1.
+
+
+
+*H9.
+if H8_1R1 = 1 and count_H9_1 = 0 check_H8_H9_code1 = 1.
+if H8_1R2 = 2 and count_H9_2 = 0 check_H8_H9_code2 = 1.
+if H8_1R3 = 3 and count_H9_3 = 0 check_H8_H9_code3 = 1.
+if H8_1R4 = 4 and count_H9_4 = 0 check_H8_H9_code4 = 1.
+if H8_1R5 = 5 and count_H9_5 = 0 check_H8_H9_code5 = 1.
+if H8_1R6 = 6 and count_H9_6 = 0 check_H8_H9_code6 = 1.
+if H8_1R7 = 7 and count_H9_7 = 0 check_H8_H9_code7 = 1.
+if H8_1R99 = 99 and count_H9_99 = 0 check_H8_H9_code99 = 1.
+
+if count_H9_1 > 0 and mis(H8_1R1) check_H9_H8_code1 = 1.
+if count_H9_2 > 0 and mis(H8_1R2) check_H9_H8_code2 = 1.
+if count_H9_3 > 0 and mis(H8_1R3) check_H9_H8_code3 = 1.
+if count_H9_4 > 0 and mis(H8_1R4) check_H9_H8_code4 = 1.
+if count_H9_5 > 0 and mis(H8_1R5) check_H9_H8_code5 = 1.
+if count_H9_6 > 0 and mis(H8_1R6) check_H9_H8_code6 = 1.
+if count_H9_7 > 0 and mis(H8_1R7) check_H9_H8_code7 = 1.
+if count_H9_99 > 0 and mis(H8_1R99) check_H9_H8_code99 = 1.
+
+
+if H9_1R99 = 99 and H9_1R99_O = "" check_H9_1R99_O = 1.
+if H9_2R99 = 99 and H9_2R99_O = "" check_H9_2R99_O = 1.
+if H9_3R99 = 99 and H9_3R99_O = "" check_H9_3R99_O = 1.
+if H9_4R99 = 99 and H9_4R99_O = "" check_H9_4R99_O = 1.
+if H9_5R99 = 99 and H9_5R99_O = "" check_H9_5R99_O = 1.
+if H9_6R99 = 99 and H9_6R99_O = "" check_H9_6R99_O = 1.
+if H9_7R99 = 99 and H9_7R99_O = "" check_H9_7R99_O = 1.
+if H9_99R99 = 99 and H9_99R99_O = "" check_H9_99R99_O = 1.
+
+
+*H9.a.
+if mis(H9_1R1) and mis(H9_1a) check_mis_H9_1a = 1.
+if mis(H9_2R1) and mis(H9_2a) check_mis_H9_2a = 1.
+if mis(H9_3R1) and mis(H9_3a) check_mis_H9_3a = 1.
+if mis(H9_4R1) and mis(H9_4a) check_mis_H9_4a = 1.
+if mis(H9_5R1) and mis(H9_5a) check_mis_H9_5a = 1.
+if mis(H9_6R1) and mis(H9_6a) check_mis_H9_6a = 1.
+if mis(H9_7R1) and mis(H9_7a) check_mis_H9_7a = 1.
+if mis(H9_99R1) and mis(H9_8a) check_mis_H9_8a = 1.
+
+
+*Cau gia H9.
+if any(1, H9_1R1, H9_2R1, H9_3R1, H9_4R1, H9_5R1, H9_6R1, H9_7R1) and mis(H9_VLR1) check_mis_VL_code1 = 1.
+if any(2, H9_1R2, H9_2R2, H9_3R2, H9_4R2, H9_5R2, H9_6R2, H9_7R2) and mis(H9_VLR2) check_mis_VL_code2 = 1.
+if any(3, H9_1R3, H9_2R3, H9_3R3, H9_4R3, H9_5R3, H9_6R3, H9_7R3) and mis(H9_VLR3) check_mis_VL_code3 = 1.
+if any(4, H9_1R4, H9_2R4, H9_3R4, H9_4R4, H9_5R4, H9_6R4, H9_7R4) and mis(H9_VLR4) check_mis_VL_code4 = 1.
+if any(9, H9_1R9, H9_2R9, H9_3R9, H9_4R9, H9_5R9, H9_6R9, H9_7R9) and mis(H9_VLR9) check_mis_VL_code9 = 1.
+if any(6, H9_1R6, H9_2R6, H9_3R6, H9_4R6, H9_5R6, H9_6R6, H9_7R6) and mis(H9_VLR6) check_mis_VL_code6 = 1.
+if any(7, H9_1R7, H9_2R7, H9_3R7, H9_4R7, H9_5R7, H9_6R7, H9_7R7) and mis(H9_VLR7) check_mis_VL_code7 = 1.
+if any(8, H9_1R8, H9_2R8, H9_3R8, H9_4R8, H9_5R8, H9_6R8, H9_7R8) and mis(H9_VLR8) check_mis_VL_code8 = 1.
+if any(10, H9_1R10, H9_2R10, H9_3R10, H9_4R10, H9_5R10, H9_6R10, H9_7R10) and mis(H9_VLR10) check_mis_VL_code10 = 1.
+if any(11, H9_1R11, H9_2R11, H9_3R11, H9_4R11, H9_5R11, H9_6R11, H9_7R11) and mis(H9_VLR11) check_mis_VL_code11 = 1.
+
+if H9_1R99 = 99 and mis(H9_VLR91) check_mis_VL_code91 = 1.
+if H9_2R99 = 99 and mis(H9_VLR92) check_mis_VL_code92 = 1.
+if H9_3R99 = 99 and mis(H9_VLR93) check_mis_VL_code93 = 1.
+if H9_4R99 = 99 and mis(H9_VLR94) check_mis_VL_code94 = 1.
+if H9_5R99 = 99 and mis(H9_VLR95) check_mis_VL_code95 = 1.
+if H9_6R99 = 99 and mis(H9_VLR96) check_mis_VL_code96 = 1.
+if H9_7R99 = 99 and mis(H9_VLR97) check_mis_VL_code97 = 1.
+if H9_99R99 = 99 and mis(H9_VLR98) check_mis_VL_code98 = 1.
+
+
+*H10.
+if Q00 = 1 and mis(H10) check_H10 = 1.
+if H10 = 99 and H10_O = "" check_H10_O = 1.
+
+*H11.
+
+*H12.
+if Q00 = 1 and mis(H12) check_H12 = 1.
+if H12 = 99 and H12_O = "" check_H12_O = 1.
+
+*H13.
+if H9_VLR1 = 1 and mis(H13_1) check_mis_H13_1 = 1.
+if H9_VLR2 = 2 and mis(H13_2) check_mis_H13_2 = 1.
+if H9_VLR3 = 3 and mis(H13_3) check_mis_H13_3 = 1.
+if H9_VLR4 = 4 and mis(H13_4) check_mis_H13_4 = 1.
+if H9_VLR9 = 9 and mis(H13_9) check_mis_H13_9 = 1.
+if H9_VLR6 = 6 and mis(H13_6) check_mis_H13_6 = 1.
+if H9_VLR7 = 7 and mis(H13_7) check_mis_H13_7 = 1.
+if H9_VLR8 = 8 and mis(H13_8) check_mis_H13_8 = 1.
+if H9_VLR91 = 91 and mis(H13_91) check_mis_H13_91 = 1.
+if H9_VLR92 = 92 and mis(H13_92) check_mis_H13_92 = 1.
+if H9_VLR93 = 93 and mis(H13_93) check_mis_H13_93 = 1.
+if H9_VLR94 = 94 and mis(H13_94) check_mis_H13_94 = 1.
+if H9_VLR95 = 95 and mis(H13_95) check_mis_H13_95 = 1.
+if H9_VLR96 = 96 and mis(H13_96) check_mis_H13_96 = 1.
+if H9_VLR97 = 97 and mis(H13_97) check_mis_H13_97 = 1.
+if H9_VLR98 = 98 and mis(H13_98) check_mis_H13_98 = 1.
+if H9_VLR10 = 10 and mis(H13_10) check_mis_H13_10 = 1.
+if H9_VLR11 = 11 and mis(H13_11) check_mis_H13_11 = 1.
+
+
+if Q00 = 1 and count_H14_rank1 <> 1 check_H14_rank1 = 1.
+if Q00 = 1 and count_H14_rank2 <> 1 check_H14_rank2 = 1.
+if Q00 = 1 and count_H14_rank3 <> 1 check_H14_rank3 = 1.
+if Q00 = 1 and count_H14_rank4 <> 1 check_H14_rank4 = 1.
+if Q00 = 1 and count_H14_rank5 <> 1 check_H14_rank5 = 1.
+
+if ~mis(H14_99) and H14_O = "" check_H14_O = 1.
+
+*H15.
+if H9_VLR1 = 1 and count_H15_1 = 0 check_mis_H15_code1 = 1.
+if H9_VLR2 = 2 and count_H15_2 = 0 check_mis_H15_code2 = 1.
+if H9_VLR3 = 3 and count_H15_3 = 0 check_mis_H15_code3 = 1.
+if H9_VLR4 = 4 and count_H15_4 = 0 check_mis_H15_code4 = 1.
+if H9_VLR9 = 9 and count_H15_9 = 0 check_mis_H15_code9 = 1.
+if H9_VLR6 = 6 and count_H15_6 = 0 check_mis_H15_code6 = 1.
+if H9_VLR7 = 7 and count_H15_7 = 0 check_mis_H15_code7 = 1.
+if H9_VLR8 = 8 and count_H15_8 = 0 check_mis_H15_code8 = 1.
+if H9_VLR91 = 91 and count_H15_91 = 0 check_mis_H15_code91 = 1.
+if H9_VLR92 = 92 and count_H15_92 = 0 check_mis_H15_code92 = 1.
+if H9_VLR93 = 93 and count_H15_93 = 0 check_mis_H15_code93 = 1.
+if H9_VLR94 = 94 and count_H15_94 = 0 check_mis_H15_code94 = 1.
+if H9_VLR95 = 95 and count_H15_95 = 0 check_mis_H15_code95 = 1.
+if H9_VLR96 = 96 and count_H15_96 = 0 check_mis_H15_code96 = 1.
+if H9_VLR97 = 97 and count_H15_97 = 0 check_mis_H15_code97 = 1.
+if H9_VLR98 = 98 and count_H15_98 = 0 check_mis_H15_code98 = 1.
+if H9_VLR10 = 10 and count_H15_10 = 0 check_mis_H15_code10 = 1.
+if H9_VLR11 = 11 and count_H15_11 = 0 check_mis_H15_code11 = 1.
+
+if count_H15_1 > 0 and mis(H9_VLR1) check_H15_H9_code1 = 1.
+if count_H15_2 > 0 and mis(H9_VLR2) check_H15_H9_code2 = 1.
+if count_H15_3 > 0 and mis(H9_VLR3) check_H15_H9_code3 = 1.
+if count_H15_4 > 0 and mis(H9_VLR4) check_H15_H9_code4 = 1.
+if count_H15_9 > 0 and mis(H9_VLR9) check_H15_H9_code9 = 1.
+if count_H15_6 > 0 and mis(H9_VLR6) check_H15_H9_code6 = 1.
+if count_H15_7 > 0 and mis(H9_VLR7) check_H15_H9_code7 = 1.
+if count_H15_8 > 0 and mis(H9_VLR8) check_H15_H9_code8 = 1.
+if count_H15_91 > 0 and mis(H9_VLR91) check_H15_H9_code91 = 1.
+if count_H15_92 > 0 and mis(H9_VLR92) check_H15_H9_code92 = 1.
+if count_H15_93 > 0 and mis(H9_VLR93) check_H15_H9_code93 = 1.
+if count_H15_94 > 0 and mis(H9_VLR94) check_H15_H9_code94 = 1.
+if count_H15_95 > 0 and mis(H9_VLR95) check_H15_H9_code95 = 1.
+if count_H15_96 > 0 and mis(H9_VLR96) check_H15_H9_code96 = 1.
+if count_H15_97 > 0 and mis(H9_VLR97) check_H15_H9_code97 = 1.
+if count_H15_98 > 0 and mis(H9_VLR98) check_H15_H9_code98 = 1.
+if count_H15_10 > 0 and mis(H9_VLR10) check_H15_H9_code10 = 1.
+if count_H15_11 > 0 and mis(H9_VLR11) check_H15_H9_code11 = 1.
+
+
+*H16.
+if H9_VLR1 = 1 and count_H16_1 = 0 check_mis_H16_code1 = 1.
+if H9_VLR2 = 2 and count_H16_2 = 0 check_mis_H16_code2 = 1.
+if H9_VLR3 = 3 and count_H16_3 = 0 check_mis_H16_code3 = 1.
+if H9_VLR4 = 4 and count_H16_4 = 0 check_mis_H16_code4 = 1.
+if H9_VLR9 = 9 and count_H16_9 = 0 check_mis_H16_code9 = 1.
+if H9_VLR6 = 6 and count_H16_6 = 0 check_mis_H16_code6 = 1.
+if H9_VLR7 = 7 and count_H16_7 = 0 check_mis_H16_code7 = 1.
+if H9_VLR8 = 8 and count_H16_8 = 0 check_mis_H16_code8 = 1.
+if H9_VLR91 = 91 and count_H16_91 = 0 check_mis_H16_code91 = 1.
+if H9_VLR92 = 92 and count_H16_92 = 0 check_mis_H16_code92 = 1.
+if H9_VLR93 = 93 and count_H16_93 = 0 check_mis_H16_code93 = 1.
+if H9_VLR94 = 94 and count_H16_94 = 0 check_mis_H16_code94 = 1.
+if H9_VLR95 = 95 and count_H16_95 = 0 check_mis_H16_code95 = 1.
+if H9_VLR96 = 96 and count_H16_96 = 0 check_mis_H16_code96 = 1.
+if H9_VLR97 = 97 and count_H16_97 = 0 check_mis_H16_code97 = 1.
+if H9_VLR98 = 98 and count_H16_98 = 0 check_mis_H16_code98 = 1.
+if H9_VLR10 = 10 and count_H16_10 = 0 check_mis_H16_code10 = 1.
+if H9_VLR11 = 11 and count_H16_11 = 0 check_mis_H16_code11 = 1.
+
+if count_H16_1 > 0 and mis(H9_VLR1) check_H16_H9_code1 = 1.
+if count_H16_2 > 0 and mis(H9_VLR2) check_H16_H9_code2 = 1.
+if count_H16_3 > 0 and mis(H9_VLR3) check_H16_H9_code3 = 1.
+if count_H16_4 > 0 and mis(H9_VLR4) check_H16_H9_code4 = 1.
+if count_H16_9 > 0 and mis(H9_VLR9) check_H16_H9_code9 = 1.
+if count_H16_6 > 0 and mis(H9_VLR6) check_H16_H9_code6 = 1.
+if count_H16_7 > 0 and mis(H9_VLR7) check_H16_H9_code7 = 1.
+if count_H16_8 > 0 and mis(H9_VLR8) check_H16_H9_code8 = 1.
+if count_H16_91 > 0 and mis(H9_VLR91) check_H16_H9_code91 = 1.
+if count_H16_92 > 0 and mis(H9_VLR92) check_H16_H9_code92 = 1.
+if count_H16_93 > 0 and mis(H9_VLR93) check_H16_H9_code93 = 1.
+if count_H16_94 > 0 and mis(H9_VLR94) check_H16_H9_code94 = 1.
+if count_H16_95 > 0 and mis(H9_VLR95) check_H16_H9_code95 = 1.
+if count_H16_96 > 0 and mis(H9_VLR96) check_H16_H9_code96 = 1.
+if count_H16_97 > 0 and mis(H9_VLR97) check_H16_H9_code97 = 1.
+if count_H16_98 > 0 and mis(H9_VLR98) check_H16_H9_code98 = 1.
+if count_H16_10 > 0 and mis(H9_VLR10) check_H16_H9_code10 = 1.
+if count_H16_11 > 0 and mis(H9_VLR11) check_H16_H9_code11 = 1.
+
+
+*H17.
+if Q00 = 1 and any(1, H9_1R1, H9_2R1,  H9_3R1,  H9_4R1,  H9_5R1,  H9_6R1,  H9_7R1,  H9_99R1) and count_H17 > 0 check_H17_H9 = 1.
+
+if Q00 = 1 and count_H17 = 0 and nvalid(H9_1R1, H9_2R1, H9_3R1,  H9_4R1, H9_5R1, H9_6R1, H9_7R1, H9_99R1) = 0 check_mis_H17 = 1.
+
+
+if H17R99 = 99 and H17R99_O = "" check_H17R99_O = 1.
+
+
+*H18.
+if Q00 = 1 and H18 = "" check_mis_H18 = 1.
+
+
+*H19.
+if Q00 = 1 and any(1, H9_1R1, H9_2R1,  H9_3R1,  H9_4R1,  H9_5R1, H9_6R1,  H9_7R1,  H9_99R1) and count_H19 = 0 check_mis_H19 = 1.
+if Q00 = 1 and count_Q19 > 0 and nvalid( H9_1R1, H9_2R1, H9_3R1, H9_4R1, H9_5R1, H9_6R1, H9_7R1, H9_99R1) = 0 check_H19_VLR1 = 1.
+
+
+*H20.
+if Q00 = 1 and any(1, H9_1R1, H9_2R1,  H9_3R1,  H9_4R1,  H9_5R1,  H9_6R1,  H9_7R1,  H9_99R1) and count_H20 = 0 check_mis_H20 = 1.
+if Q00 = 1 and count_H20 > 0 and nvalid( H9_1R1, H9_2R1,  H9_3R1,  H9_4R1,  H9_5R1,  H9_6R1,  H9_7R1,  H9_99R1) = 0 check_H19_VLR1 = 1.
+
+
+if H20R1 = 1 and mis(H19R1) check_H20_H19_code1 = 1.
+if H20R2 = 2 and mis(H19R2) check_H20_H19_code2 = 1.
+if H20R3 = 3 and mis(H19R3) check_H20_H19_code3 = 1.
+if H20R4 = 4 and mis(H19R4) check_H20_H19_code4 = 1.
+if H20R5 = 5 and mis(H19R5) check_H20_H19_code5 = 1.
+if H20R99 = 99 and mis(H19R99) check_H20_H19_code99 = 1.
+ 
+*H21.
+if any(1, H9_1R1, H9_2R1,  H9_3R1,  H9_4R1,  H9_5R1,  H9_6R1,  H9_7R1,  H9_99R1) and (mis(H21a) or mis(H21b)) check_mis_H21 = 1.
+
+*H22.
+if any(1, H9_1R1, H9_2R1,  H9_3R1,  H9_4R1,  H9_5R1,  H9_6R1,  H9_7R1,  H9_99R1) and mis(H22) check_mis_H22 = 1.
+
+*H23.
+if Q00 = 1 and count_H23 = 0 check_mis_H23 = 1.
+if H23R99 = 99 and H23R99_O = '' check_H23R99_O = 1.
+
+*H24.
+if H23R1 = 1 and mis(H24_1) check_H23_H24_code1 = 1.
+if H23R2 = 2 and mis(H24_2) check_H23_H24_code2 = 1.
+if H23R3 = 3 and mis(H24_3) check_H23_H24_code3 = 1.
+if H23R4 = 4 and mis(H24_4) check_H23_H24_code4 = 1.
+if H23R5 = 5 and mis(H24_5) check_H23_H24_code5 = 1.
+if H23R6 = 6 and mis(H24_6) check_H23_H24_code6 = 1.
+if H23R99 = 99 and mis(H24_99) check_H23_H24_code99 = 1.
+
+*H25.
+
+if (Q23 = 4 or Q23 = 5) and count_H25 = 0 check_mis_H25 = 1.
+if H25R99 = 99 and H25R99_O = "" check_H25R99_O = 1.
+
+*H26.
+
+if (Q23 = 4 or Q23 = 5) and mis(H26) check_mis_H26 = 1.
+
+*H27.
+if Q00 = 1 and count_H27 = 0 check_mis_H27 = 1.
+if H27R99 = 99 and H27R99_O = "" check_H27R99_O = 1.
+if H23R3 = 3 and mis(H27R1) check_H23_H27_code1 = 1.
+if H23R4 = 4 and mis(H27R2) check_H23_H27_code2 = 1.
+if H23R5 = 5 and mis(H27R3) check_H23_H27_code3 = 1.
+
+*H28.
+if Q00 = 1 and count_H28 < 0 check_mis_H28 = 1.
+if H28R1 = 1 and mis(H27R1) check_H28_H27_code1 = 1.
+if H28R2 = 2 and mis(H27R2) check_H28_H27_code2 = 1.
+if H28R3 = 3 and mis(H27R3) check_H28_H27_code3 = 1.
+if H28R4 = 4 and mis(H27R4) check_H28_H27_code4 = 1.
+if H28R5 = 5 and mis(H27R5) check_H28_H27_code5 = 1.
+if H28R6 = 6 and mis(H27R6) check_H28_H27_code6 = 1.
+if H28R7 = 7 and mis(H27R7) check_H28_H27_code7 = 1.
+if H28R8 = 8 and mis(H27R8) check_H28_H27_code8 = 1.
+if H28R9 = 9 and mis(H27R9) check_H28_H27_code9 = 1.
+if H28R10 = 10 and mis(H27R10) check_H28_H27_code10 = 1.
+if H28R11 = 11 and mis(H27R11) check_H28_H27_code11 = 1.
+if H28R12 = 12 and mis(H27R12) check_H28_H27_code12 = 1.
+if H28R13 = 13 and mis(H27R13) check_H28_H27_code13 = 1.
+if H28R14 = 14 and mis(H27R14) check_H28_H27_code14 = 1.
+if H28R99 = 15 and mis(H27R99) check_H28_H27_code99 = 1.
+
+if (H23R4 = 4 or H23R5 = 5) and count_H27 > 0 and count_H28 = 0 check_H27_H28 = Vrid.
+
+*H30.
+if Q00 = 1 and mis(H30) check_mis_Q30 = 1.
+
+*H30.
+if Q00 = 1 and mis(H31) check_mis_Q31 = 1.
+if H31 = 10 and H31_O = "" check_H31_O = 1.

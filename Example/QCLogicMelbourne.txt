@@ -1,0 +1,142 @@
+*Count Statement.
+*===============================================================================.
+count count_Q5 = Q5R1 to Q5R99(1 thru 99).
+count count_Q6 = Q6R1 to Q6R10 (1 thru 10).
+count count_Q10 = Q10R1 to Q10R99 (1 thru 99).
+count count_Q11 = Q11R1 to Q11R99 (1 thru 99).
+count count_Q13 = Q13R1 to Q13R99 Q13R98 (1 thru 99) .
+count count_Q13B = Q13BR1 to  Q13BR5 (1 thru 5).
+count count_Q15 = Q15R1 to Q15R8 (1 thru 8).
+count count_Q16 = Q16R1 to Q16R7 (1 thru 7).
+count count_Q17_rank1 = Q17_1 to Q17_12 (1).
+count count_Q17_rank2 = Q17_1 to Q17_12 (2).
+count count_Q17_rank3 = Q17_1 to Q17_12 (3).
+
+*Check Statement.
+*===============================================================================.
+* Check test. 
+if var15 = 'test' check_test = 1.
+
+* Quota. 
+if not any(City, 24, 29) check_city = 1. 
+if var94 < 25 or var94 > 55 check_age=1.
+if (FIN_INCOME < 6) check_HHI = 1.
+
+*Screening.
+*Q5.
+if user = 0 check_user = 1.
+if count_Q5 = 0 check_mis_Q5 = 1.
+if Q5R15 = 15 or Q5R16 = 16 or Q5R17 = 17 or Q5R18 = 18 or Q5R19 = 19 or Q5R99 = 99 check_Q5_terminate = 1.
+
+*Q5B.
+if user = 0 and Q5B = 1 check_Q5B_code1 = 1.
+if user = 1 and mis(Q5B) check_mis_Q5B = 1.
+if user = 1 and Q5B = 2 check_Q5B_code2 = 1.
+
+*Q6.
+if user = 1 and count_Q6 > 0 check_Q5_Q6 = 1.
+if user = 0 and count_Q6 = 0 check_mis_Q6 = 1.
+
+*Main QRN
+*Q7.
+if user = 0 and not mis(Q7) check_Q7 = 1.
+if user = 1 and mis(Q7) check_mis_Q7 = 1.
+if Q7 = 3 check_Q7_terminate = 1.
+
+*Q8.
+if (user = 1 and (mis(Q8) or Q8 = "" )) check_mis_Q8 = 1.
+
+*Q10.
+if user = 1 and count_Q10 = 0 check_mis_Q10 = 1.
+if Q10R99 = 99 and Q10R99_99 = "" check_Q10R99_99 = 1.
+
+*Q11.
+if user = 1 and count_Q11 = 0 check_mis_Q11= 1.
+if count_Q11 > 10 check_10brand_Q11 = 1.
+
+if Q11R1 = 1 and mis(Q10R1) check_Q11_Q10_code1 = 1.
+if Q11R2 = 2 and mis(Q10R2) check_Q11_Q10_code2 = 1.
+if Q11R4 = 4 and mis(Q10R4) check_Q11_Q10_code4 = 1.
+if Q11R6 = 6 and mis(Q10R6) check_Q11_Q10_code6 = 1.
+if Q11R9 = 9 and mis(Q10R9) check_Q11_Q10_code9 = 1.
+if Q11R10 = 10 and mis(Q10R10) check_Q11_Q10_code10 = 1.
+if Q11R11 = 11 and mis(Q10R11) check_Q11_Q10_code11 = 1.
+if Q11R12 = 12 and mis(Q10R12) check_Q11_Q10_code12 = 1.
+if Q11R14 = 14 and mis(Q10R14) check_Q11_Q10_code14 = 1.
+if Q11R15 = 15 and mis(Q10R15) check_Q11_Q10_code15 = 1.
+if Q11R16 = 16 and mis(Q10R16) check_Q11_Q10_code16 = 1.
+if Q11R17 = 17 and mis(Q10R17) check_Q11_Q10_code17 = 1.
+if Q11R18 = 18 and mis(Q10R18) check_Q11_Q10_code18 = 1.
+if Q11R19 = 19 and mis(Q10R19) check_Q11_Q10_code19 = 1.
+if Q11R20 = 20 and mis(Q10R20) check_Q11_Q10_code20 = 1.
+if Q11R21 = 21 and mis(Q10R21) check_Q11_Q10_code21 = 1.
+if Q11R22 = 22 and mis(Q10R22) check_Q11_Q10_code22 = 1.
+if Q11R99 = 99 and mis(Q10R99) check_Q11_Q10_code99 = 1.
+
+*Q12.
+if user = 1 and mis(Q12) check_mis_Q12 = 1.
+
+if Q12 = 1 and mis(Q11R1) check_Q12_Q11_code1 = 1.
+if Q12 = 2 and mis(Q11R2) check_Q12_Q11_code2 = 1.
+if Q12 = 4 and mis(Q11R4) check_Q12_Q11_code4 = 1.
+if Q12 = 6 and mis(Q11R6) check_Q12_Q11_code6 = 1.
+if Q12 = 9 and mis(Q11R9) check_Q12_Q11_code9 = 1.
+if Q12 = 10 and mis(Q11R10) check_Q12_Q11_code10 = 1.
+if Q12 = 11 and mis(Q11R11) check_Q12_Q11_code11 = 1.
+if Q12 = 12 and mis(Q11R12) check_Q12_Q11_code12 = 1.
+if Q12 = 14 and mis(Q11R14) check_Q12_Q11_code14 = 1.
+if Q12 = 15 and mis(Q11R15) check_Q12_Q11_code15 = 1.
+if Q12 = 16 and mis(Q11R16) check_Q12_Q11_code16 = 1.
+if Q12 = 17 and mis(Q11R17) check_Q12_Q11_code17 = 1.
+if Q12 = 18 and mis(Q11R18) check_Q12_Q11_code18 = 1.
+if Q12 = 19 and mis(Q11R19) check_Q12_Q11_code19 = 1.
+if Q12 = 20 and mis(Q11R20) check_Q12_Q11_code20 = 1.
+if Q12 = 21 and mis(Q11R21) check_Q12_Q11_code21 = 1.
+if Q12 = 22 and mis(Q11R22) check_Q12_Q11_code22 = 1.
+if Q12 = 99 and mis(Q11R99) check_Q12_Q11_code99 = 1.
+
+*Q13.
+if user = 1 and count_Q13 = 0 check_mis_Q13 =1.
+
+if Q13R1 = 1 and mis(Q10R1) check_Q13_Q10_code1 = 1.
+if Q13R2 = 2 and mis(Q10R2) check_Q13_Q10_code2 = 1.
+if Q13R4 = 4 and mis(Q10R4) check_Q1_Q10_code4 = 1.
+if Q13R6 = 6 and mis(Q10R6) check_Q13_Q10_code6 = 1.
+if Q13R9 = 9 and mis(Q10R9) check_Q13_Q10_code9 = 1.
+if Q13R10 = 10 and mis(Q10R10) check_Q13_Q10_code10 = 1.
+if Q13R11 = 11 and mis(Q10R11) check_Q13_Q10_code11 = 1.
+if Q13R12 = 12 and mis(Q10R12) check_Q13_Q10_code12 = 1.
+if Q13R14 = 14 and mis(Q10R14) check_Q13_Q10_code14 = 1.
+if Q13R15 = 15 and mis(Q10R15) check_Q13_Q10_code15 = 1.
+if Q13R16 = 16 and mis(Q10R16) check_Q13_Q10_code16 = 1.
+if Q13R17 = 17 and mis(Q10R17) check_Q13_Q10_code17 = 1.
+if Q13R18 = 18 and mis(Q10R18) check_Q13_Q10_code18 = 1.
+if Q13R19 = 19 and mis(Q10R19) check_Q13_Q10_code19 = 1.
+if Q13R20 = 20 and mis(Q10R20) check_Q13_Q10_code20 = 1.
+if Q13R21 = 21 and mis(Q10R21) check_Q13_Q10_code21 = 1.
+if Q13R22 = 22 and mis(Q10R22) check_Q13_Q10_code22 = 1.
+if Q13R99 = 99 and mis(Q10R99) check_Q13_Q10_code99 = 1.
+
+
+*Q13B.
+IF Q13R1=1 AND Count_Q13B=0 CHECK_Q13B=1.
+IF sysmis(Q13R1) AND Count_Q13B>0 CHECK_Q13B=1. 
+
+*Q14.
+if user = 1 and mis(Q14) check_mis_Q14 = 1.
+
+*Q15.
+if user = 1 and count_Q15 = 0 check_mis_Q15 = 1.
+if Q15R8 = 8 and Q15R8_99 ="" check_Q15R8_99 = 1.
+
+*Q16.
+if user = 1 and count_Q16 = 0 check_mis_Q16 = 1.
+if Q16R7 = 7 and Q16R7_99 ="" check_Q16R7_99 = 1.
+
+if any (Q12, 4, 6,11, 12, 22) and Q16R3 = 3 check_Q12_Q16_code3 = 1.
+
+
+*Q17.
+if count_Q17_rank1 <> 1 check_Q17_rank1 = 1.
+if count_Q17_rank2 <> 1 check_Q17_rank2 = 1.
+if count_Q17_rank3 <> 1 check_Q17_rank3 = 1.

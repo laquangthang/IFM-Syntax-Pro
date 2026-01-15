@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LogicModel AI - Label Refinery &amp; Variable Mapper</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#330df2",
+                        "primary-glow": "#4d2bf5",
+                        "background-light": "#f6f5f8",
+                        "background-dark": "#131022",
+                        "glass-border": "rgba(255, 255, 255, 0.08)",
+                        "glass-bg": "rgba(19, 16, 34, 0.8)",
+                        "neon-purple": "#a855f7",
+                        "neon-cyan": "#06b6d4",
+                        "neon-amber": "#f59e0b",
+                        "code-bg": "#0d0b16",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"],
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+                    boxShadow: {
+                        'neon': '0 0 20px rgba(51, 13, 242, 0.15)',
+                        'neon-strong': '0 0 30px rgba(51, 13, 242, 0.3)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .glass-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .glass-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        .glass-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .bg-grid {
+            background-size: 50px 50px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden h-screen flex">
+<aside class="w-[280px] h-full flex flex-col bg-[#121118] border-r border-[#2b2839] shrink-0 z-50">
+<div class="p-6">
+<div class="flex gap-3 items-center mb-8">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-10 shadow-lg shadow-primary/20" data-alt="Abstract geometric purple logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuC3wbXvBvCavqF-7JteL3Mi7sOVAbhlXQp-qaDt90L-KKaF2mbEFEYcv5RluDNf6BosJyp3Kk11RHg5PNWbzYMm6WOsXc81-bs0WIMXg0nsyV3nv7dY4K0WAsOH9_dTtsiIvORmRpIvQ8r8ILJadVl7a00Rrc-Optux9WEHg8TAzyRbUh-U0OVd45ie79fXNPjxfxk2g77S_9IuFiSZJfOfOXVHvknkma4Fsp3Te5gZBKZ-crFMXc1Z8UlX9laY7Min0HnTHekBtiD4");'></div>
+<div class="flex flex-col">
+<h1 class="text-white text-base font-bold leading-normal tracking-wide">LogicModel AI</h1>
+<p class="text-[#a19cba] text-xs font-normal">Enterprise Plan</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2">
+<div class="flex items-center gap-3 px-3 py-2 text-[#a19cba] hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<p class="text-sm font-medium">Dashboard</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 text-[#a19cba] hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[20px]">upload_file</span>
+<p class="text-sm font-medium">Data Import</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20 text-white cursor-pointer relative overflow-hidden group">
+<div class="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors"></div>
+<span class="material-symbols-outlined text-[20px] text-primary relative z-10">hub</span>
+<p class="text-sm font-medium relative z-10">Label Refinery</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 text-[#a19cba] hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[20px]">package_2</span>
+<p class="text-sm font-medium">Logic Models</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 text-[#a19cba] hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[20px]">download</span>
+<p class="text-sm font-medium">Exports</p>
+</div>
+</nav>
+</div>
+<div class="mt-auto p-6 border-t border-[#2b2839]">
+<div class="flex items-center gap-3 px-3 py-2 text-[#a19cba] hover:text-white cursor-pointer">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<p class="text-sm font-medium">Global Settings</p>
+</div>
+</div>
+</aside>
+<div class="flex-1 flex flex-col h-full relative overflow-hidden bg-[#0c0a15]">
+<div class="absolute inset-0 bg-grid opacity-50 pointer-events-none"></div>
+<div class="absolute top-[-20%] left-[20%] w-[500px] h-[500px] bg-primary/10 blur-[120px] rounded-full pointer-events-none"></div>
+<div class="absolute bottom-[-20%] right-[10%] w-[600px] h-[600px] bg-neon-purple/10 blur-[150px] rounded-full pointer-events-none"></div>
+<header class="h-16 flex items-center justify-between px-8 border-b border-[#2b2839] bg-[#121118]/80 backdrop-blur-sm z-40">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2 text-[#a19cba] text-sm font-medium">
+<a class="hover:text-white" href="#">Projects</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<a class="hover:text-white" href="#">Project Alpha</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-white bg-[#2b2839] px-2 py-0.5 rounded text-xs">Label Refinery</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center bg-[#2b2839] rounded-lg h-9 px-3 border border-white/5">
+<span class="material-symbols-outlined text-[#a19cba] text-[18px]">search</span>
+<input class="bg-transparent border-none text-sm text-white focus:ring-0 placeholder-[#a19cba] w-48" placeholder="Search QID or Var..." type="text"/>
+</div>
+<div class="h-8 w-[1px] bg-[#2b2839]"></div>
+<button class="flex items-center justify-center size-9 rounded-full bg-[#2b2839] text-white hover:bg-[#383549] transition-colors relative">
+<div class="absolute top-0 right-0 size-2.5 bg-red-500 border-2 border-[#121118] rounded-full"></div>
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-9 border border-white/10" data-alt="User profile picture showing a person in professional attire" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD4vy-J5B7Fpo0w8aErVW3WFn95LwP47oAN0Mf3Ky27G4B1IWZEnAZKLDjkYbMv77-ygCetv7iAabVkZ1yFKzHbqH3BqqB9RoSHu9hRwxXaLkM3-SKpO-_RcoZByw6qM0B2g4JiuROdfCexZrJB9fCjpS7_e3VLXQOFUt8w4RgkL0fJVJUVYEIcgnjudpLKgMrNltJuePtrpG8PsviXpUy0g0rVfV_C5073OlEIBPTg4LeNntXcJhsrEdI5Q4k6zjMmHK_NrCt_FHaz");'></div>
+</div>
+</header>
+<main class="flex-1 p-6 relative flex flex-col overflow-hidden">
+<div class="flex-1 flex gap-6 min-h-0 mb-6">
+<div class="w-[280px] flex flex-col rounded-xl bg-glass-bg backdrop-blur-xl border border-glass-border shadow-2xl relative">
+<div class="p-4 border-b border-white/10 flex justify-between items-center bg-white/5 rounded-t-xl">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-neon-purple text-[20px]">auto_awesome</span>
+<h3 class="text-white font-bold text-sm tracking-wide uppercase">AI Insights</h3>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto glass-scroll p-2 space-y-2">
+<div class="p-3 rounded-lg bg-white/5 border border-white/5 hover:border-primary/50 transition-colors group cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="text-xs font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">QID: 10425</span>
+<span class="text-[10px] text-neon-purple border border-neon-purple/20 px-1 rounded">MA</span>
+</div>
+<p class="text-xs text-[#a19cba] line-clamp-2 group-hover:text-white transition-colors">Which of the following brands do you consume on a weekly basis?</p>
+</div>
+<div class="p-3 rounded-lg bg-white/5 border border-white/5 hover:border-primary/50 transition-colors group cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="text-xs font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">QID: 10426</span>
+<span class="text-[10px] text-neon-cyan border border-neon-cyan/20 px-1 rounded">SA</span>
+</div>
+<p class="text-xs text-[#a19cba] line-clamp-2 group-hover:text-white transition-colors">Please confirm your gender.</p>
+</div>
+<div class="p-3 rounded-lg bg-white/5 border border-white/5 hover:border-primary/50 transition-colors group cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="text-xs font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">QID: 10427</span>
+<span class="text-[10px] text-neon-amber border border-neon-amber/20 px-1 rounded">Grid</span>
+</div>
+<p class="text-xs text-[#a19cba] line-clamp-2 group-hover:text-white transition-colors">Rate the following attributes on a scale of 1-10.</p>
+</div>
+<div class="p-3 rounded-lg bg-white/5 border border-white/5 hover:border-primary/50 transition-colors group cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="text-xs font-mono text-primary bg-primary/10 px-1.5 py-0.5 rounded">QID: 10428</span>
+<span class="text-[10px] text-gray-400 border border-gray-500/20 px-1 rounded">OE</span>
+</div>
+<p class="text-xs text-[#a19cba] line-clamp-2 group-hover:text-white transition-colors">Why did you choose that brand? (Open End)</p>
+</div>
+</div>
+</div>
+<div class="flex-1 flex flex-col rounded-xl bg-[#1a1726]/90 backdrop-blur-2xl border border-primary/30 shadow-neon-strong relative z-10">
+<div class="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-80"></div>
+<div class="px-5 py-4 border-b border-white/10 flex justify-between items-center bg-gradient-to-b from-white/5 to-transparent rounded-t-xl">
+<div>
+<h2 class="text-base font-bold text-white tracking-tight">Mapping Station</h2>
+<p class="text-xs text-[#a19cba] mt-0.5">Paste Excel columns to auto-match</p>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-3 py-1.5 rounded bg-[#2b2839] hover:bg-[#353145] text-white text-xs font-medium border border-white/10 transition-colors">
+<span class="material-symbols-outlined text-[16px]">content_paste</span>
+                            Paste
+                        </button>
+<button class="flex items-center gap-2 px-3 py-1.5 rounded bg-[#2b2839] hover:bg-[#353145] text-white text-xs font-medium border border-white/10 transition-colors">
+<span class="material-symbols-outlined text-[16px]">table_view</span>
+                            Import XLS
+                        </button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto glass-scroll">
+<table class="w-full text-left border-collapse">
+<thead class="sticky top-0 bg-[#1a1726] z-10 shadow-lg">
+<tr class="text-xs text-[#a19cba] border-b border-white/10">
+<th class="px-4 py-3 font-medium w-16 text-center">Match</th>
+<th class="px-4 py-3 font-medium w-1/3">OLD Variable Name <span class="text-[10px] opacity-60">(Source)</span></th>
+<th class="px-4 py-3 font-medium text-center w-10">
+<span class="material-symbols-outlined text-[16px]">arrow_right_alt</span>
+</th>
+<th class="px-4 py-3 font-medium w-1/3">Matched QID <span class="text-[10px] opacity-60">(AI)</span></th>
+<th class="px-4 py-3 font-medium text-right w-20">Conf.</th>
+</tr>
+</thead>
+<tbody class="text-sm font-mono">
+<tr class="group border-b border-white/5 hover:bg-white/5 transition-colors">
+<td class="px-4 py-3 text-center">
+<div class="size-2 rounded-full bg-green-500 mx-auto shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+</td>
+<td class="px-4 py-3 text-white">
+<input class="w-full bg-transparent border-none focus:ring-0 text-white p-0 text-sm font-mono placeholder-white/20" type="text" value="Q4_brands_r1"/>
+</td>
+<td class="px-4 py-3 text-center text-[#a19cba]">
+<span class="material-symbols-outlined text-[16px] group-hover:text-primary transition-colors">link</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2 px-2 py-1 rounded border border-primary/30 bg-primary/10 w-fit">
+<span class="text-primary font-bold">10425</span>
+<span class="text-[10px] text-[#a19cba]">Brand Pref</span>
+</div>
+</td>
+<td class="px-4 py-3 text-right text-green-400 text-xs">98%</td>
+</tr>
+<tr class="group border-b border-white/5 hover:bg-white/5 transition-colors">
+<td class="px-4 py-3 text-center">
+<div class="size-2 rounded-full bg-green-500 mx-auto shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+</td>
+<td class="px-4 py-3 text-white">
+<input class="w-full bg-transparent border-none focus:ring-0 text-white p-0 text-sm font-mono placeholder-white/20" type="text" value="dem_gender"/>
+</td>
+<td class="px-4 py-3 text-center text-[#a19cba]">
+<span class="material-symbols-outlined text-[16px] group-hover:text-primary transition-colors">link</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2 px-2 py-1 rounded border border-primary/30 bg-primary/10 w-fit">
+<span class="text-primary font-bold">10426</span>
+<span class="text-[10px] text-[#a19cba]">Gender</span>
+</div>
+</td>
+<td class="px-4 py-3 text-right text-green-400 text-xs">95%</td>
+</tr>
+<tr class="group border-b border-white/5 hover:bg-white/5 transition-colors bg-white/[0.02]">
+<td class="px-4 py-3 text-center">
+<div class="size-2 rounded-full bg-yellow-500 mx-auto shadow-[0_0_8px_rgba(234,179,8,0.6)]"></div>
+</td>
+<td class="px-4 py-3 text-white">
+<input class="w-full bg-transparent border-none focus:ring-0 text-white p-0 text-sm font-mono placeholder-white/20" type="text" value="grid_r1_c1"/>
+</td>
+<td class="px-4 py-3 text-center text-[#a19cba]">
+<span class="material-symbols-outlined text-[16px] group-hover:text-yellow-500 transition-colors">link</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2 px-2 py-1 rounded border border-yellow-500/30 bg-yellow-500/10 w-fit cursor-pointer hover:bg-yellow-500/20">
+<span class="text-yellow-500 font-bold">10427_1</span>
+<span class="text-[10px] text-[#a19cba]">Grid: Taste</span>
+<span class="material-symbols-outlined text-[12px] text-yellow-500">edit</span>
+</div>
+</td>
+<td class="px-4 py-3 text-right text-yellow-500 text-xs">60%</td>
+</tr>
+<tr class="group border-b border-white/5 hover:bg-white/5 transition-colors">
+<td class="px-4 py-3 text-center">
+<div class="size-2 rounded-full bg-[#2b2839] mx-auto"></div>
+</td>
+<td class="px-4 py-3 text-white">
+<input class="w-full bg-transparent border-none focus:ring-0 text-white/50 p-0 text-sm font-mono placeholder-white/20 italic" placeholder="Paste variable..." type="text"/>
+</td>
+<td class="px-4 py-3 text-center text-[#a19cba]">
+<span class="material-symbols-outlined text-[16px] opacity-20">link_off</span>
+</td>
+<td class="px-4 py-3">
+<span class="text-[#a19cba] opacity-40 italic text-xs">Waiting for input...</span>
+</td>
+<td class="px-4 py-3 text-right text-[#a19cba] text-xs opacity-40">-</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="w-[320px] flex flex-col rounded-xl bg-glass-bg backdrop-blur-xl border border-glass-border shadow-2xl relative">
+<div class="p-4 border-b border-white/10 flex justify-between items-center bg-white/5 rounded-t-xl">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-green-400 text-[20px]">check_circle</span>
+<h3 class="text-white font-bold text-sm tracking-wide uppercase">Clean Workspace</h3>
+</div>
+</div>
+<div class="p-4 flex flex-col gap-5 overflow-y-auto glass-scroll flex-1">
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-center">
+<label class="text-[10px] font-bold text-[#a19cba] uppercase tracking-wider">Target Variable (New)</label>
+<span class="text-[10px] text-primary">Linked to 10425</span>
+</div>
+<input class="w-full bg-[#121118] border border-primary/50 rounded px-3 py-2 text-white text-sm font-mono focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-[0_0_10px_rgba(51,13,242,0.1)]" type="text" value="Var_Brand_Preference"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-[10px] font-bold text-[#a19cba] uppercase tracking-wider">Clean Label</label>
+<textarea class="w-full bg-[#121118] border border-[#2b2839] rounded px-3 py-2 text-white text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all h-20 resize-none leading-relaxed" spellcheck="false">Brand Preference: Weekly Consumption</textarea>
+</div>
+<div class="p-3 bg-white/5 rounded border border-white/10">
+<div class="flex justify-between items-center mb-2">
+<span class="text-[10px] font-bold text-[#a19cba] uppercase">Attribute Settings</span>
+</div>
+<div class="space-y-2">
+<label class="flex items-center gap-2 cursor-pointer group">
+<input checked="" class="rounded bg-[#2b2839] border-white/10 text-primary focus:ring-0 w-3 h-3" type="checkbox"/>
+<span class="text-xs text-white/80 group-hover:text-white">Measurement: Nominal</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="rounded bg-[#2b2839] border-white/10 text-primary focus:ring-0 w-3 h-3" type="checkbox"/>
+<span class="text-xs text-white/80 group-hover:text-white">Role: Input</span>
+</label>
+</div>
+</div>
+</div>
+<div class="p-4 border-t border-white/10 bg-black/20">
+<button class="w-full py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-glow shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[16px]">save</span>
+                        Confirm Mapping
+                    </button>
+</div>
+</div>
+</div>
+<div class="h-[140px] shrink-0 rounded-xl bg-code-bg border border-white/10 relative flex flex-col shadow-2xl">
+<div class="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-primary to-neon-purple rounded-l-xl"></div>
+<div class="px-4 py-2 border-b border-white/10 flex justify-between items-center bg-white/5 rounded-t-xl rounded-tl-none ml-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#a19cba] text-[18px]">terminal</span>
+<h3 class="text-xs font-bold text-[#a19cba] uppercase tracking-wider">Live Syntax Generation (SPSS)</h3>
+</div>
+<button class="text-[10px] text-primary hover:text-white transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">content_copy</span> Copy to Clipboard
+                </button>
+</div>
+<div class="p-4 overflow-y-auto glass-scroll flex-1 font-mono text-xs leading-relaxed ml-1">
+<div class="text-gray-400">
+<span class="text-neon-purple font-bold">RENAME VARIABLES</span> (Q4_brands_r1 = <span class="text-white">Var_Brand_Preference</span>).<br/>
+<span class="text-neon-cyan font-bold">VARIABLE LABELS</span> <span class="text-white">Var_Brand_Preference</span> <span class="text-yellow-200">'Brand Preference: Weekly Consumption'</span>.<br/>
+<span class="text-gray-500 italic">* Auto-generated mapping based on QID 10425 context.</span>
+</div>
+</div>
+</div>
+</main>
+<div class="h-8 bg-[#121118] border-t border-[#2b2839] flex items-center justify-between px-4 text-[10px] text-[#a19cba] z-50 shrink-0">
+<div class="flex items-center gap-4">
+<span class="flex items-center gap-1.5"><span class="size-1.5 rounded-full bg-green-500 animate-pulse"></span> AI Engine Active</span>
+<span>Latency: 24ms</span>
+</div>
+<div>
+            Auto-save: Enabled
+        </div>
+</div>
+</div>
+
+</body></html>

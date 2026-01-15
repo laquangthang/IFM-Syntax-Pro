@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SPSS Processing Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Noto+Sans:wght@400;500;700&amp;family=Fira+Code:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#590df2",
+                        "secondary": "#a742f5",
+                        "accent-blue": "#00e8ff",
+                        "background-light": "#f6f5f8",
+                        "background-dark": "#0b0a0e", 
+                        "sidebar-bg": "#121016",
+                        "console-bg": "#09080b", 
+                        "panel-border": "#282430",
+                        "syntax-keyword": "#ff5cff", 
+                        "syntax-value": "#e6db74", 
+                        "syntax-comment": "#75715e",
+                        "syntax-func": "#66d9ef", 
+                        "syntax-var": "#f8f8f2",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Noto Sans", "sans-serif"],
+                        "mono": ["Fira Code", "monospace"],
+                    },
+                    boxShadow: {
+                        'neon': '0 0 5px theme("colors.primary"), 0 0 20px theme("colors.primary")',
+                        '3d': '0 4px 0px #320691, 0 10px 10px rgba(0,0,0,0.2)', 
+                        '3d-active': '0 0px 0px #320691, 0 4px 4px rgba(0,0,0,0.1)',
+                        'industrial': 'inset 0 1px 0 0 rgba(255,255,255,0.05)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #09080b;
+            border-left: 1px solid #282430;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #2e2a36;
+            border: 2px solid #09080b;
+            border-radius: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #4a4555;
+        }
+        .code-line-numbers {
+            counter-reset: line;
+        }
+        .code-line::before {
+            counter-increment: line;
+            content: counter(line);
+            display: inline-block;
+            width: 36px;
+            margin-right: 20px;
+            text-align: right;
+            color: #444050;
+            font-size: 0.75rem;
+            user-select: none;
+            font-family: 'Fira Code', monospace;
+        }.blinking-cursor::after {
+            content: '█';
+            animation: blink 1s step-end infinite;
+            color: #590df2;
+            margin-left: 2px;
+            font-size: 0.9em;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .syntax-block:hover .copy-btn {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-background-dark text-gray-300 font-body overflow-hidden h-screen flex flex-col text-sm">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-panel-border bg-sidebar-bg px-4 py-2 shrink-0 z-20 h-14">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-8 rounded bg-primary/10 border border-primary/20 text-primary shadow-[0_0_10px_rgba(89,13,242,0.1)]">
+<span class="material-symbols-outlined text-[20px]">hub</span>
+</div>
+<div>
+<h2 class="text-white text-base font-bold font-display tracking-tight uppercase">SPSS Processing Hub</h2>
+</div>
+</div>
+<div class="h-6 w-px bg-panel-border mx-2"></div>
+<div class="flex items-center gap-3 px-3 py-1.5 rounded-md bg-[#09080b] border border-panel-border">
+<span class="material-symbols-outlined text-[16px] text-gray-500">folder_open</span>
+<span class="text-xs text-gray-400 font-mono">Coca-Cola Q3 Tracker / Logic / v2.4</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-xs font-mono text-gray-500">
+<span class="w-2 h-2 rounded-full bg-green-500/80 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
+<span>AI ENGINE CONNECTED</span>
+</div>
+<button class="flex items-center justify-center size-8 rounded-md hover:bg-white/5 transition-colors text-gray-400">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+<button class="flex items-center justify-center size-8 rounded-md hover:bg-white/5 transition-colors text-gray-400">
+<span class="material-symbols-outlined text-[20px]">account_circle</span>
+</button>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<nav class="w-64 bg-sidebar-bg border-r border-panel-border flex flex-col shrink-0 overflow-y-auto custom-scrollbar pb-6">
+<div class="p-4 pb-2">
+<div class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 font-display">Function Library</div>
+</div>
+<div class="mb-2">
+<button class="w-full flex items-center justify-between px-4 py-2 text-gray-400 hover:text-white hover:bg-white/5 transition-colors group">
+<span class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
+<span class="material-symbols-outlined text-[16px] text-primary group-hover:text-white transition-colors">settings_suggest</span>
+                        Basic Setup
+                    </span>
+<span class="material-symbols-outlined text-[14px]">expand_more</span>
+</button>
+<div class="pl-4 pr-2 py-1 space-y-0.5">
+<a class="flex items-center gap-2 px-3 py-1.5 rounded text-xs text-gray-400 hover:text-white hover:bg-[#1f1d26] transition-all border-l border-transparent hover:border-primary/50" href="#">
+                        Rename Variables
+                    </a>
+<a class="flex items-center gap-2 px-3 py-1.5 rounded text-xs text-gray-400 hover:text-white hover:bg-[#1f1d26] transition-all border-l border-transparent hover:border-primary/50" href="#">
+                        Variable Labels
+                    </a>
+<a class="flex items-center gap-2 px-3 py-1.5 rounded text-xs text-gray-400 hover:text-white hover:bg-[#1f1d26] transition-all border-l border-transparent hover:border-primary/50" href="#">
+                        Value Labels
+                    </a>
+</div>
+</div>
+<div class="mb-2">
+<button class="w-full flex items-center justify-between px-4 py-2 text-gray-400 hover:text-white hover:bg-white/5 transition-colors group">
+<span class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
+<span class="material-symbols-outlined text-[16px] text-accent-blue group-hover:text-white transition-colors">functions</span>
+                        Advanced Logic
+                    </span>
+<span class="material-symbols-outlined text-[14px]">expand_less</span>
+</button>
+<div class="pl-4 pr-2 py-1 space-y-0.5 block">
+<a class="flex items-center gap-2 px-3 py-1.5 rounded text-xs text-white bg-[#1f1d26] border-l-2 border-primary shadow-industrial" href="#">
+                        Recode
+                    </a>
+<a class="flex items-center gap-2 px-3 py-1.5 rounded text-xs text-gray-400 hover:text-white hover:bg-[#1f1d26] transition-all border-l border-transparent hover:border-accent-blue/50" href="#">
+                        Netting Logic
+                    </a>
+<a class="flex items-center gap-2 px-3 py-1.5 rounded text-xs text-gray-400 hover:text-white hover:bg-[#1f1d26] transition-all border-l border-transparent hover:border-accent-blue/50" href="#">
+                        Topbox / Bottombox
+                    </a>
+</div>
+</div>
+<div class="mb-2">
+<button class="w-full flex items-center justify-between px-4 py-2 text-gray-400 hover:text-white hover:bg-white/5 transition-colors group">
+<span class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
+<span class="material-symbols-outlined text-[16px] text-pink-500 group-hover:text-white transition-colors">transform</span>
+                        Structure
+                    </span>
+<span class="material-symbols-outlined text-[14px]">expand_more</span>
+</button>
+<div class="pl-4 pr-2 py-1 space-y-0.5">
+<a class="flex items-center gap-2 px-3 py-1.5 rounded text-xs text-gray-400 hover:text-white hover:bg-[#1f1d26] transition-all border-l border-transparent hover:border-pink-500/50" href="#">
+                        Reloop (MA Grid)
+                    </a>
+<a class="flex items-center gap-2 px-3 py-1.5 rounded text-xs text-gray-400 hover:text-white hover:bg-[#1f1d26] transition-all border-l border-transparent hover:border-pink-500/50" href="#">
+                        Rerank
+                    </a>
+<a class="flex items-center gap-2 px-3 py-1.5 rounded text-xs text-gray-400 hover:text-white hover:bg-[#1f1d26] transition-all border-l border-transparent hover:border-pink-500/50" href="#">
+                        Restructure (Vars to Cases)
+                    </a>
+</div>
+</div>
+<div class="mb-2">
+<button class="w-full flex items-center justify-between px-4 py-2 text-gray-400 hover:text-white hover:bg-white/5 transition-colors group">
+<span class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
+<span class="material-symbols-outlined text-[16px] text-yellow-500 group-hover:text-white transition-colors">analytics</span>
+                        Analysis Syntax
+                    </span>
+<span class="material-symbols-outlined text-[14px]">expand_more</span>
+</button>
+<div class="pl-4 pr-2 py-1 space-y-0.5">
+<a class="flex items-center gap-2 px-3 py-1.5 rounded text-xs text-gray-400 hover:text-white hover:bg-[#1f1d26] transition-all border-l border-transparent hover:border-yellow-500/50" href="#">
+                        CTables
+                    </a>
+<a class="flex items-center gap-2 px-3 py-1.5 rounded text-xs text-gray-400 hover:text-white hover:bg-[#1f1d26] transition-all border-l border-transparent hover:border-yellow-500/50" href="#">
+                        Coding OA
+                    </a>
+</div>
+</div>
+</nav>
+<main class="flex-1 flex overflow-hidden relative">
+<section class="w-80 min-w-[300px] border-r border-panel-border bg-[#121016] flex flex-col z-10">
+<div class="px-4 py-3 border-b border-panel-border bg-[#16141a]">
+<div class="flex items-center justify-between mb-3">
+<span class="text-xs font-bold text-gray-300 uppercase tracking-wide font-display">Variable Source</span>
+<span class="text-[10px] bg-primary/20 text-primary border border-primary/20 px-1.5 py-0.5 rounded font-mono">14 SELECTED</span>
+</div>
+<div class="relative">
+<input class="w-full bg-[#09080b] border border-[#2e2a36] text-gray-300 text-xs rounded shadow-inner focus:ring-1 focus:ring-primary focus:border-primary block pl-8 p-2 transition-all font-mono placeholder-gray-600" placeholder="Filter variables..."/>
+<div class="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none">
+<span class="material-symbols-outlined text-gray-600 text-[16px]">search</span>
+</div>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar">
+<div class="flex flex-col">
+<div class="flex items-center gap-2 px-4 py-1.5 bg-[#1a1820] border-b border-panel-border">
+<input class="w-3 h-3 text-gray-500 bg-transparent border-gray-600 rounded focus:ring-0 cursor-pointer" type="checkbox"/>
+<span class="text-[10px] text-gray-500 font-mono uppercase">Name / Label</span>
+</div>
+<div class="group flex items-start gap-3 px-4 py-2 border-b border-[#1a1820] hover:bg-[#1f1d26] cursor-pointer transition-colors">
+<input checked="" class="mt-1 w-3.5 h-3.5 text-primary bg-[#09080b] border-gray-600 rounded focus:ring-primary focus:ring-offset-0 transition-all cursor-pointer" type="checkbox"/>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-yellow-500/70">123</span>
+<span class="text-gray-200 text-xs font-mono font-medium group-hover:text-primary transition-colors truncate">Q1_Brand_Awareness</span>
+</div>
+<span class="text-[11px] text-gray-500 truncate mt-0.5 pl-6">Which of the following brands have you heard of?</span>
+</div>
+</div>
+<div class="group flex items-start gap-3 px-4 py-2 border-b border-[#1a1820] hover:bg-[#1f1d26] cursor-pointer transition-colors">
+<input checked="" class="mt-1 w-3.5 h-3.5 text-primary bg-[#09080b] border-gray-600 rounded focus:ring-primary focus:ring-offset-0 transition-all cursor-pointer" type="checkbox"/>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-yellow-500/70">123</span>
+<span class="text-gray-200 text-xs font-mono font-medium group-hover:text-primary transition-colors truncate">Q2_Purchase_Intent</span>
+</div>
+<span class="text-[11px] text-gray-500 truncate mt-0.5 pl-6">Likelihood to purchase in next 3 months</span>
+</div>
+</div>
+<div class="group flex items-start gap-3 px-4 py-2 bg-[#1f1d26]/50 border-l-2 border-l-primary border-b border-[#1a1820] cursor-pointer">
+<input checked="" class="mt-1 w-3.5 h-3.5 text-primary bg-[#09080b] border-primary rounded focus:ring-primary focus:ring-offset-0 transition-all cursor-pointer" type="checkbox"/>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-yellow-500/70">123</span>
+<span class="text-white text-xs font-mono font-medium truncate">Q3_Demographics_Age</span>
+</div>
+<span class="text-[11px] text-gray-400 truncate mt-0.5 pl-6">What is your age range?</span>
+</div>
+</div>
+<div class="group flex items-start gap-3 px-4 py-2 border-b border-[#1a1820] hover:bg-[#1f1d26] cursor-pointer transition-colors">
+<input class="mt-1 w-3.5 h-3.5 text-primary bg-[#09080b] border-gray-600 rounded focus:ring-primary focus:ring-offset-0 transition-all cursor-pointer" type="checkbox"/>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-pink-500/70">abc</span>
+<span class="text-gray-400 text-xs font-mono font-medium group-hover:text-gray-200 transition-colors truncate">Q4_Gender_Identity</span>
+</div>
+<span class="text-[11px] text-gray-600 truncate mt-0.5 pl-6">Self-identified gender</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="flex-1 bg-console-bg flex flex-col relative overflow-hidden">
+<div class="flex items-center justify-between px-4 py-2 bg-[#121016] border-b border-panel-border shrink-0">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-gray-300">
+<span class="material-symbols-outlined text-[18px] text-accent-blue">terminal</span>
+<span class="text-xs font-bold font-display uppercase tracking-wider">Script Forge</span>
+</div>
+<span class="text-[10px] px-2 py-0.5 rounded bg-panel-border text-gray-400 font-mono border border-white/5">READ-ONLY PREVIEW</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 px-2 py-1 hover:bg-white/5 rounded cursor-pointer transition-colors group">
+<span class="material-symbols-outlined text-[16px] text-gray-500 group-hover:text-gray-300">history</span>
+<span class="text-xs text-gray-500 font-mono group-hover:text-gray-300">Last run: 2m ago</span>
+</div>
+<div class="h-3 w-px bg-panel-border"></div>
+<span class="text-xs text-gray-500 font-mono">Ln 142, Col 44</span>
+<span class="text-xs text-gray-500 font-mono">UTF-8</span>
+</div>
+</div>
+<div class="flex-1 p-6 overflow-y-auto custom-scrollbar font-mono text-[13px] leading-6 text-gray-300 relative">
+<div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
+<div class="code-line-numbers select-text relative z-10">
+<div class="code-line"><span class="text-syntax-comment">* ------------------------------------------------------------------</span></div>
+<div class="code-line"><span class="text-syntax-comment">*  SPSS SYNTAX GENERATED BY AI ENGINE v2.4</span></div>
+<div class="code-line"><span class="text-syntax-comment">*  PROJECT: COCA-COLA Q3 TRACKER</span></div>
+<div class="code-line"><span class="text-syntax-comment">*  TIMESTAMP: 2023-10-27 14:32:01</span></div>
+<div class="code-line"><span class="text-syntax-comment">* ------------------------------------------------------------------.</span></div>
+<div class="code-line"><br/></div>
+<div class="syntax-block group relative rounded-lg hover:bg-[#1a1820] transition-colors -mx-2 px-2 py-2 border border-transparent hover:border-white/5 my-2">
+<button class="copy-btn absolute right-2 top-2 opacity-0 transform -translate-y-1 transition-all duration-200 bg-[#2e2a36] hover:bg-primary text-white p-1.5 rounded shadow-lg z-20 flex items-center gap-2 border border-white/10" title="Copy Block">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+<span class="text-[10px] font-bold pr-1">COPY</span>
+</button>
+<div class="code-line"><span class="text-syntax-comment">* --- RECODE LOGIC: Brand Awareness Top 2 Box ---.</span></div>
+<div class="code-line">
+<span class="text-syntax-keyword font-bold">RECODE</span>
+<span class="text-syntax-var">Q1_Brand_Awareness</span> 
+                                (<span class="text-syntax-value">1</span>=<span class="text-syntax-value">100</span>) 
+                                (<span class="text-syntax-value">2</span> <span class="text-syntax-keyword">thru</span> <span class="text-syntax-value">5</span>=<span class="text-syntax-value">0</span>) 
+                                <span class="text-syntax-keyword font-bold">INTO</span>
+<span class="text-syntax-var">Q1_Topbox</span>.
+                            </div>
+<div class="code-line">
+<span class="text-syntax-keyword font-bold">VARIABLE LABELS</span>
+<span class="text-syntax-var">Q1_Topbox</span>
+<span class="text-syntax-value">'Brand Awareness Top Box (T2B)'</span>.
+                            </div>
+<div class="code-line">
+<span class="text-syntax-keyword font-bold">FORMATS</span>
+<span class="text-syntax-var">Q1_Topbox</span> 
+                                (<span class="text-syntax-value">F8.0</span>).
+                            </div>
+<div class="code-line"><span class="text-syntax-keyword font-bold">EXECUTE</span>.</div>
+</div>
+<div class="code-line"><br/></div>
+<div class="syntax-block group relative rounded-lg hover:bg-[#1a1820] transition-colors -mx-2 px-2 py-2 border border-transparent hover:border-white/5 my-2">
+<button class="copy-btn absolute right-2 top-2 opacity-0 transform -translate-y-1 transition-all duration-200 bg-[#2e2a36] hover:bg-primary text-white p-1.5 rounded shadow-lg z-20 flex items-center gap-2 border border-white/10" title="Copy Block">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+<span class="text-[10px] font-bold pr-1">COPY</span>
+</button>
+<div class="code-line"><span class="text-syntax-comment">* --- RECODE LOGIC: Purchase Intent ---.</span></div>
+<div class="code-line">
+<span class="text-syntax-keyword font-bold">IF</span> 
+                                (<span class="text-syntax-var">Q2_Purchase_Intent</span> <span class="text-syntax-keyword">EQ</span> <span class="text-syntax-value">1</span>) 
+                                <span class="text-syntax-var">Intent_Group</span> = <span class="text-syntax-value">1</span>.
+                            </div>
+<div class="code-line">
+<span class="text-syntax-keyword font-bold">IF</span> 
+                                (<span class="text-syntax-var">Q2_Purchase_Intent</span> <span class="text-syntax-keyword">GE</span> <span class="text-syntax-value">2</span>) 
+                                <span class="text-syntax-var">Intent_Group</span> = <span class="text-syntax-value">2</span>.
+                            </div>
+<div class="code-line">
+<span class="text-syntax-keyword font-bold">VALUE LABELS</span>
+<span class="text-syntax-var">Intent_Group</span>
+<span class="text-syntax-value">1</span> <span class="text-syntax-value">'High Intent'</span>
+<span class="text-syntax-value">2</span> <span class="text-syntax-value">'Low/Medium Intent'</span>.
+                            </div>
+</div>
+<div class="code-line"><br/></div>
+<div class="syntax-block group relative rounded-lg hover:bg-[#1a1820] transition-colors -mx-2 px-2 py-2 border border-transparent hover:border-white/5 my-2">
+<button class="copy-btn absolute right-2 top-2 opacity-0 transform -translate-y-1 transition-all duration-200 bg-[#2e2a36] hover:bg-primary text-white p-1.5 rounded shadow-lg z-20 flex items-center gap-2 border border-white/10" title="Copy Block">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+<span class="text-[10px] font-bold pr-1">COPY</span>
+</button>
+<div class="code-line"><span class="text-syntax-comment">* --- DEMOGRAPHICS AGGREGATION ---.</span></div>
+<div class="code-line">
+<span class="text-syntax-keyword font-bold">COMPUTE</span>
+<span class="text-syntax-var">Age_Band_Merged</span> = <span class="text-syntax-func">TRUNC</span>(<span class="text-syntax-var">Q3_Demographics_Age</span> / <span class="text-syntax-value">10</span>) * <span class="text-syntax-value">10</span>.
+                            </div>
+<div class="code-line">
+<span class="text-syntax-keyword font-bold">FREQUENCIES VARIABLES</span>=
+                                <span class="text-syntax-var">Q1_Topbox</span>
+<span class="text-syntax-var">Intent_Group</span>
+<span class="text-syntax-var">Age_Band_Merged</span>
+</div>
+<div class="code-line"> <span class="text-syntax-keyword">/ORDER</span>=<span class="text-syntax-func">ANALYSIS</span>.</div>
+</div>
+<div class="code-line blinking-cursor"></div>
+</div>
+</div>
+<div class="absolute bottom-8 right-8 flex flex-col items-end gap-2 z-30">
+<div class="backdrop-blur-xl bg-[#121016]/90 border border-panel-border p-3 rounded-lg shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-4 duration-500 ring-1 ring-white/5">
+<div class="flex flex-col mr-2 border-r border-white/10 pr-4">
+<span class="text-[10px] text-gray-500 font-mono uppercase tracking-wider">Output Ready</span>
+<span class="text-xs font-bold text-white font-mono">3,402 Lines</span>
+</div>
+<button class="flex flex-col items-center justify-center p-2 rounded hover:bg-white/10 transition-colors group relative" title="Save to Library">
+<span class="material-symbols-outlined text-accent-blue text-[20px] mb-0.5">library_add</span>
+<span class="text-[9px] text-gray-400 font-medium uppercase">Library</span>
+</button>
+<div class="h-8 w-px bg-white/10"></div>
+<button class="group bg-[#2e2a36] hover:bg-[#3d3848] transition-all rounded px-4 py-2 font-bold text-xs text-white shadow-lg border border-white/5 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-gray-300">download</span>
+                            .SPS
+                        </button>
+<button class="group bg-primary hover:bg-[#6b2bf4] transition-all rounded px-4 py-2 font-bold text-xs text-white shadow-[0_0_15px_rgba(89,13,242,0.4)] border border-white/10 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">save</span>
+                            Export .SAV
+                        </button>
+</div>
+</div>
+</section>
+</main>
+</div>
+
+</body></html>

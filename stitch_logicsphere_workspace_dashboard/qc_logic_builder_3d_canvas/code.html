@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Visual QC Logic Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#590df2",
+                        "accent": "#00f0ff",
+                        "background-light": "#f6f5f8",
+                        "background-dark": "#161022",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                    animation: {
+                        'pulse-glow': 'pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'flow': 'flow 20s linear infinite',
+                        'spin-slow': 'spin 12s linear infinite',
+                    },
+                    keyframes: {
+                        'pulse-glow': {
+                            '0%, 100%': { opacity: 1 },
+                            '50%': { opacity: .5 },
+                        },
+                        'flow': {
+                            '0%': { strokeDashoffset: 100 },
+                            '100%': { strokeDashoffset: 0 },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .perspective-grid {
+            background-size: 50px 50px;
+            background-image:
+                linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+            transform: perspective(1000px) rotateX(20deg) scale(1.5);
+            transform-origin: center 20%;
+        }
+        .glass-panel {
+            background: rgba(22, 16, 34, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-node {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        .glass-node:hover {
+            transform: translateY(-5px) scale(1.02);
+            border-color: rgba(89, 13, 242, 0.5);
+            box-shadow: 0 15px 40px -10px rgba(89, 13, 242, 0.4);
+        }
+        .node-selected {
+             border-color: #590df2;
+             box-shadow: 0 0 0 2px rgba(89, 13, 242, 0.3), 0 15px 40px -10px rgba(89, 13, 242, 0.4);
+        }
+        .node-error {
+            border-color: rgba(239, 68, 68, 0.8);
+            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2), 0 0 20px rgba(239, 68, 68, 0.4);
+            animation: error-pulse 2s infinite;
+        }
+        @keyframes error-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .syntax-block {
+            background-image: radial-gradient(#1f1635 1px, transparent 1px);
+            background-size: 10px 10px;
+        }
+    </style>
+</head>
+<body class="bg-background-dark text-white font-display overflow-hidden h-screen flex flex-col selection:bg-primary selection:text-white">
+<header class="z-50 glass-panel flex items-center justify-between whitespace-nowrap border-b border-white/10 px-6 py-3 shrink-0">
+<div class="flex items-center gap-4 text-white">
+<div class="size-9 flex items-center justify-center bg-gradient-to-br from-primary to-purple-700 rounded-lg shadow-[0_0_20px_rgba(89,13,242,0.4)]">
+<span class="material-symbols-outlined text-[22px]">hub</span>
+</div>
+<div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-tight">Visual QC Logic Hub</h2>
+<p class="text-[10px] text-gray-400 font-medium tracking-wide uppercase">Interactive Logic Modeling</p>
+</div>
+</div>
+<div class="flex flex-1 justify-end gap-6 items-center">
+<div class="flex items-center gap-4 mr-4">
+<div class="flex items-center gap-2">
+<div class="size-1.5 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"></div>
+<span class="text-xs text-gray-400">PDF Parsed</span>
+</div>
+<div class="h-4 w-px bg-white/10"></div>
+<div class="flex items-center gap-2">
+<div class="size-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]"></div>
+<span class="text-xs text-gray-400">Flow Verified</span>
+</div>
+</div>
+<div class="h-8 w-px bg-white/10"></div>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-9 ring-2 ring-white/10" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAeu2405bImeTRD3G5lKIxCCmpW5gPTCt4CYtT3peT8Y8wA38zdDtWOg4_q9loS1zO2hctcujK3eeQA65Zxl6VUQD8g7-kr6SD5Theh3hKBcJtuprmtDw6PbrkZoJ9NAEwChq9G6dcGH1YgQDPqx7x3lpzclY-Tl5ylU-_13QIZQoUlPZqClrn6g0RKYK00soNECk2YIIl3DUOoCDPBhDumilxN5jbQmyuePctqZpTrCW-JwYLLMcFfYSOhNpYTCunm0uPZyw-qrqzh");'></div>
+</div>
+</header>
+<main class="relative flex-1 w-full overflow-hidden bg-[#050507]">
+<div class="absolute inset-0 pointer-events-none">
+<div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1a122e] via-[#09080c] to-[#050507] opacity-80"></div>
+<div class="absolute inset-0 perspective-grid opacity-25"></div>
+<div class="absolute top-1/3 left-1/3 size-64 bg-primary/10 rounded-full blur-[100px] pointer-events-none animate-pulse-glow"></div>
+</div>
+<svg class="absolute inset-0 w-full h-full pointer-events-none z-0" style="overflow: visible;">
+<defs>
+<linearGradient id="fiberGradient" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" style="stop-color:#590df2;stop-opacity:0.2"></stop>
+<stop offset="50%" style="stop-color:#a855f7;stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:#590df2;stop-opacity:0.2"></stop>
+</linearGradient>
+<filter id="glow">
+<feGaussianBlur result="coloredBlur" stdDeviation="3"></feGaussianBlur>
+<feMerge>
+<feMergeNode in="coloredBlur"></feMergeNode>
+<feMergeNode in="SourceGraphic"></feMergeNode>
+</feMerge>
+</filter>
+</defs>
+<path class="opacity-90" d="M300 250 C 450 250, 450 350, 580 350" fill="none" filter="url(#glow)" stroke="url(#fiberGradient)" stroke-width="3"></path>
+<circle class="opacity-90" cx="0" cy="0" fill="#fff" r="3">
+<animateMotion calcMode="linear" dur="3s" keyPoints="0;1" keyTimes="0;1" path="M300 250 C 450 250, 450 350, 580 350" repeatCount="indefinite"></animateMotion>
+</circle>
+<path class="opacity-60" d="M660 350 C 800 350, 800 250, 950 250" fill="none" stroke="#4f46e5" stroke-dasharray="6,4" stroke-width="2"></path>
+<path class="opacity-40" d="M660 350 C 750 350, 750 500, 880 500" fill="none" stroke="#ef4444" stroke-width="2"></path>
+</svg>
+<div class="absolute left-6 top-1/2 -translate-y-1/2 z-20">
+<div class="glass-panel p-2 rounded-xl flex flex-col gap-4 shadow-2xl border-l-2 border-l-primary/50">
+<button class="size-10 flex items-center justify-center rounded-lg bg-primary text-white shadow-[0_0_15px_rgba(89,13,242,0.5)] transition hover:scale-110" title="Select / Inspect">
+<span class="material-symbols-outlined text-[20px]">ads_click</span>
+</button>
+<button class="size-10 flex items-center justify-center rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition" title="Add Logic Gate">
+<span class="material-symbols-outlined text-[20px]">account_tree</span>
+</button>
+<button class="size-10 flex items-center justify-center rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition" title="Add Trap Check">
+<span class="material-symbols-outlined text-[20px]">bug_report</span>
+</button>
+<div class="h-px w-full bg-white/10 my-1"></div>
+<button class="size-10 flex items-center justify-center rounded-lg text-gray-400 hover:bg-white/10 hover:text-white transition" title="Zoom Fit">
+<span class="material-symbols-outlined text-[20px]">center_focus_strong</span>
+</button>
+</div>
+</div>
+<div class="absolute top-6 right-6 bottom-6 w-96 z-20 flex flex-col gap-4">
+<div class="glass-panel flex-1 rounded-xl flex flex-col overflow-hidden shadow-2xl backdrop-blur-xl">
+<div class="p-5 border-b border-white/10 bg-gradient-to-r from-white/5 to-transparent">
+<div class="flex items-center justify-between mb-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary/20 text-primary border border-primary/30 uppercase tracking-wider">Edge Selected</span>
+<span class="text-[10px] text-gray-500 font-mono">ID: #L-204</span>
+</div>
+<h3 class="text-lg font-bold text-white mt-2">Skip Logic Definition</h3>
+<p class="text-xs text-gray-400 mt-1">Controls flow from Q1 to Q5</p>
+</div>
+<div class="flex-1 overflow-y-auto p-5 space-y-6">
+<div class="space-y-2">
+<label class="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]">function</span>
+                        Condition
+                    </label>
+<div class="bg-[#0e0c14] border border-white/10 rounded-lg overflow-hidden">
+<div class="flex items-center p-3 border-b border-white/5 bg-white/5">
+<span class="text-xs font-bold text-purple-400 mr-2">IF</span>
+<div class="flex items-center gap-2">
+<span class="px-1.5 py-0.5 rounded bg-white/10 text-[10px] text-white font-mono border border-white/10">Q1_Rating</span>
+<span class="text-gray-500 text-[10px]">=</span>
+<span class="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 text-[10px] font-mono border border-blue-500/30">1 (Very Low)</span>
+</div>
+</div>
+<div class="flex items-center p-3">
+<span class="text-xs font-bold text-green-400 mr-2">THEN</span>
+<span class="text-xs text-gray-300">Skip to <strong class="text-white">Q5_Reasons</strong></span>
+</div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between items-end">
+<label class="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]">code</span>
+                            QC Syntax Preview
+                        </label>
+<span class="text-[10px] text-gray-500 bg-white/5 px-2 py-0.5 rounded">SPSS Format</span>
+</div>
+<div class="relative group">
+<div class="absolute -inset-0.5 bg-gradient-to-r from-primary to-purple-600 rounded-lg opacity-20 group-hover:opacity-30 transition blur-sm"></div>
+<div class="relative syntax-block bg-[#08060b] border border-white/10 rounded-lg p-4 font-mono text-[11px] leading-relaxed text-gray-300 shadow-inner">
+<div class="flex gap-4">
+<div class="flex flex-col text-gray-700 select-none text-right border-r border-white/5 pr-3">
+<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+</div>
+<div class="overflow-x-auto whitespace-nowrap scrollbar-hide">
+<span class="text-pink-400">DO IF</span> (Q1=1).<br/>
+                                      <span class="text-blue-400">SKIP TO</span> Q5.<br/>
+<span class="text-pink-400">ELSE</span>.<br/>
+                                      <span class="text-gray-500">! Check flow continuity</span><br/>
+<span class="text-pink-400">END IF</span>.
+                                </div>
+</div>
+</div>
+</div>
+</div>
+<div class="p-3 rounded-lg bg-green-500/10 border border-green-500/20 flex items-start gap-3">
+<span class="material-symbols-outlined text-green-400 text-[18px] mt-0.5">check_circle</span>
+<div>
+<p class="text-xs font-bold text-green-100">Logic Validated</p>
+<p class="text-[10px] text-green-400/70 leading-snug">No syntax errors or logic loops detected in this block.</p>
+</div>
+</div>
+</div>
+<div class="p-5 bg-[#0e0c14] border-t border-white/10 z-10">
+<button class="relative w-full overflow-hidden rounded-xl bg-primary hover:bg-primary/90 transition group shadow-[0_0_20px_rgba(89,13,242,0.3)]">
+<div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+<div class="px-4 py-3.5 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-white">file_download</span>
+<div class="flex flex-col items-start">
+<span class="text-sm font-bold text-white leading-none">Generate Full QC Syntax</span>
+<span class="text-[10px] text-purple-200 mt-0.5 font-medium opacity-80">Export to .SPS File</span>
+</div>
+</div>
+</button>
+</div>
+</div>
+</div>
+<div class="absolute top-[210px] left-[220px] w-48 glass-node rounded-xl p-0 flex flex-col z-10 cursor-pointer group hover:z-30">
+<div class="p-3 flex items-start gap-3 border-b border-white/5">
+<div class="size-8 rounded bg-primary/20 flex items-center justify-center border border-primary/30 shadow-[0_0_10px_rgba(89,13,242,0.3)]">
+<span class="font-bold text-white text-xs">Q1</span>
+</div>
+<div>
+<span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Single Choice</span>
+<p class="text-xs font-bold text-white leading-tight">Overall Rating</p>
+</div>
+</div>
+<div class="bg-black/20 p-2 rounded-b-xl flex justify-between items-center">
+<span class="text-[10px] text-gray-500 font-mono">n=1250</span>
+<span class="material-symbols-outlined text-gray-600 text-[14px]">drag_handle</span>
+</div>
+</div>
+<div class="absolute top-[350px] left-[620px] -translate-x-1/2 -translate-y-1/2 z-10">
+<div class="relative group cursor-pointer">
+<div class="size-14 bg-[#0d0b14] border-2 border-primary rotate-45 flex items-center justify-center shadow-[0_0_40px_rgba(89,13,242,0.6)] transition-all duration-300 group-hover:scale-110 z-10 relative node-selected">
+<span class="material-symbols-outlined text-white -rotate-45 text-xl">alt_route</span>
+</div>
+<div class="absolute inset-0 border-2 border-primary rounded-lg rotate-45 animate-ping opacity-50"></div>
+<div class="absolute top-16 left-1/2 -translate-x-1/2 w-max text-center mt-2">
+<span class="text-[10px] font-bold text-white bg-primary px-2 py-0.5 rounded shadow-lg">ASK IF: Q1=1</span>
+</div>
+</div>
+</div>
+<div class="absolute top-[210px] left-[950px] w-48 glass-node rounded-xl p-0 flex flex-col z-10 opacity-70 hover:opacity-100 transition-opacity">
+<div class="p-3 flex items-start gap-3 border-b border-white/5">
+<div class="size-8 rounded bg-white/10 flex items-center justify-center border border-white/10">
+<span class="font-bold text-white text-xs">Q5</span>
+</div>
+<div>
+<span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Open Text</span>
+<p class="text-xs font-bold text-white leading-tight">Negative Reasons</p>
+</div>
+</div>
+<div class="bg-black/20 p-2 rounded-b-xl flex justify-between items-center">
+<span class="text-[10px] text-gray-500 font-mono">Target</span>
+</div>
+</div>
+<div class="absolute top-[500px] left-[880px] w-40 glass-node node-error rounded-xl p-4 flex flex-col gap-2 z-10">
+<div class="absolute -top-3 -right-3 size-6 bg-red-500 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+<span class="material-symbols-outlined text-white text-[14px] font-bold">priority_high</span>
+</div>
+<div class="flex justify-between items-start">
+<div class="size-8 rounded bg-red-500/20 flex items-center justify-center border border-red-500/50">
+<span class="font-bold text-red-200 text-xs">END</span>
+</div>
+</div>
+<div>
+<p class="text-[10px] uppercase text-red-400 font-bold tracking-wider">Warning</p>
+<p class="text-xs font-medium text-white leading-tight mt-1">Orphaned Logic Path</p>
+</div>
+</div>
+<div class="absolute bottom-6 left-6 z-10 pointer-events-none">
+<div class="bg-black/40 backdrop-blur-md border border-white/10 rounded-lg p-3 text-xs text-gray-400 max-w-xs">
+<p class="font-bold text-white mb-1">AI Analysis Complete</p>
+            PDF imported successfully. 4 logic traps identified. Review edges to finalize syntax.
+        </div>
+</div>
+</main>
+
+</body></html>

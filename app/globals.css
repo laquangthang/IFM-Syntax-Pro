@@ -1,0 +1,213 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --background-dark: #131022;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background: var(--background-dark);
+}
+
+.dark {
+  --foreground: #ffffff;
+  --muted-foreground: #a19cba;
+}
+
+.light {
+  --foreground: #000000;
+  --muted-foreground: #6b7280;
+}
+
+.dark body {
+  background: #050505;
+  color: var(--foreground);
+}
+
+.light body {
+  background: #FDFDFD;
+  color: var(--foreground);
+}
+
+.text-foreground {
+  color: var(--foreground);
+}
+
+.text-muted-foreground {
+  color: var(--muted-foreground);
+}
+
+/* Glassmorphism utilities - Theme aware */
+.glass-panel {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dark .glass-panel {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.light .glass-panel {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.glass-card {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.dark .glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.light .glass-card {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* 3D Perspective Container */
+.perspective-container {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+/* Custom Scrollbar */
+.glass-scroll::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.glass-scroll::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.glass-scroll::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.glass-scroll::-webkit-scrollbar-thumb:hover,
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-scroll::-webkit-scrollbar-track,
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.dark .glass-scroll::-webkit-scrollbar-thumb,
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.light .glass-scroll::-webkit-scrollbar-track,
+.light .custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.light .glass-scroll::-webkit-scrollbar-thumb,
+.light .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Grid Background */
+.bg-grid-pattern {
+  background-size: 50px 50px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+/* 3D Tilt Effect */
+.tilt-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.1s ease-out;
+}
+
+/* Cyber Grid Background */
+.cyber-grid-bg {
+  background-size: 50px 50px;
+  background-image: linear-gradient(to right, rgba(139, 92, 246, 0.05) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+  transform: perspective(1000px) rotateX(20deg) scale(1.5);
+  transform-origin: center top;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Text Glow */
+.text-glow {
+  text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+}
+
+/* Button Primary Glow */
+.btn-primary-glow {
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+  transition: all 0.3s ease;
+}
+
+.btn-primary-glow:hover {
+  box-shadow: 0 0 25px rgba(139, 92, 246, 0.7);
+  transform: translateY(-2px);
+}
+
+/* Monokai IFM Syntax Theme */
+.monokai-ifm {
+  /* Keywords (RENAME, VALUE LABELS, etc.) */
+  --syntax-keyword: #EF5B21; /* IFM Orange */
+  /* Strings */
+  --syntax-string: #98c379; /* Green */
+  /* Variables */
+  --syntax-variable: #e06c75; /* Red */
+  /* Numbers */
+  --syntax-number: #d19a66; /* Orange/Brown */
+  /* Comments */
+  --syntax-comment: #5c6370; /* Gray */
+  /* Background */
+  --syntax-bg: #0d0b16; /* Dark */
+}
+
+.syntax-keyword {
+  color: var(--syntax-keyword, #EF5B21);
+}
+
+.syntax-string {
+  color: var(--syntax-string, #98c379);
+}
+
+.syntax-variable {
+  color: var(--syntax-variable, #e06c75);
+}
+
+.syntax-number {
+  color: var(--syntax-number, #d19a66);
+}
+
+.syntax-comment {
+  color: var(--syntax-comment, #5c6370);
+  font-style: italic;
+}

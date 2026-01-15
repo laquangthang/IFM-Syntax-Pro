@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LogicSphere Landing Page</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#8B5CF6", // Neon Purple
+                        "primary-glow": "#a78bfa",
+                        "background-dark": "#050816", // Deep Dark Navy
+                        "glass-border": "rgba(255, 255, 255, 0.1)",
+                        "glass-bg": "rgba(255, 255, 255, 0.03)",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"]
+                    },
+                    backgroundImage: {
+                        'cyber-grid': "linear-gradient(to right, rgba(139, 92, 246, 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(139, 92, 246, 0.1) 1px, transparent 1px)",
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'spin-slow': 'spin 12s linear infinite',
+                        'pulse-glow': 'pulse-glow 3s infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        },
+                        'pulse-glow': {
+                            '0%, 100%': { boxShadow: '0 0 15px rgba(139, 92, 246, 0.2)' },
+                            '50%': { boxShadow: '0 0 30px rgba(139, 92, 246, 0.5)' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050816;
+            color: white;
+        }
+        
+        /* Cyber Grid Background Effect */
+        .cyber-grid-bg {
+            background-size: 50px 50px;
+            background-image: linear-gradient(to right, rgba(139, 92, 246, 0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
+            mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+            transform: perspective(1000px) rotateX(20deg) scale(1.5);
+            transform-origin: center top;
+            opacity: 0.6;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(139, 92, 246, 0.6);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+        }
+
+        .text-glow {
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+        }
+        
+        .btn-primary-glow {
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary-glow:hover {
+            box-shadow: 0 0 25px rgba(139, 92, 246, 0.7);
+            transform: translateY(-2px);
+        }
+
+        /* Hide scrollbar for cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050816;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d2839;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8B5CF6;
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden antialiased">
+<!-- Background Elements -->
+<div class="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+<!-- Main deep navy background -->
+<div class="absolute inset-0 bg-background-dark"></div>
+<!-- Gradient Mesh spots -->
+<div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full"></div>
+<div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-900/20 blur-[120px] rounded-full"></div>
+<!-- Perspective Grid -->
+<div class="absolute inset-0 top-[20%] cyber-grid-bg h-[150%]"></div>
+</div>
+<!-- Main Content Wrapper -->
+<div class="relative z-10 flex min-h-screen w-full flex-col">
+<!-- Navbar -->
+<header class="fixed top-0 left-0 right-0 z-50 flex justify-center py-4 px-4">
+<nav class="glass-panel rounded-full px-6 py-3 flex items-center justify-between w-full max-w-6xl transition-all duration-300">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-8 rounded-full bg-primary/20 border border-primary/40 text-primary">
+<span class="material-symbols-outlined text-xl">deployed_code</span>
+</div>
+<span class="text-white font-display font-bold text-lg tracking-wide uppercase">LogicSphere</span>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-gray-300 hover:text-primary transition-colors text-sm font-medium uppercase tracking-wider" href="#">Forge</a>
+<a class="text-gray-300 hover:text-primary transition-colors text-sm font-medium uppercase tracking-wider" href="#">Documentation</a>
+<a class="text-gray-300 hover:text-primary transition-colors text-sm font-medium uppercase tracking-wider" href="#">Pricing</a>
+</div>
+<div class="flex items-center gap-4">
+<a class="hidden sm:block text-gray-300 hover:text-white text-sm font-medium" href="#">Log In</a>
+<button class="flex items-center justify-center rounded-full bg-primary/10 border border-primary/30 hover:bg-primary/20 text-white px-5 py-2 text-sm font-bold transition-all uppercase tracking-wide">
+<span class="truncate">Access Console</span>
+</button>
+</div>
+</nav>
+</header>
+<main class="flex-grow flex flex-col">
+<!-- Hero Section -->
+<section class="relative flex flex-col items-center justify-center min-h-screen pt-20 px-4">
+<div class="layout-content-container flex flex-col max-w-[1200px] w-full gap-12 lg:gap-20 relative">
+<!-- Text Content -->
+<div class="flex flex-col items-center text-center gap-6 z-10 pt-10">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary-glow text-xs font-bold uppercase tracking-widest mb-2">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</span>
+                            System Operational
+                        </div>
+<h1 class="text-white text-5xl md:text-7xl font-display font-black leading-tight tracking-tight max-w-4xl text-glow">
+                            Transform Static PDFs into <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-400">Dynamic Logic</span>
+</h1>
+<p class="text-gray-400 text-lg md:text-xl font-light max-w-2xl leading-relaxed">
+                            Stop writing manual SPSS syntax. Upload your questionnaire and watch the AI forge the logic system in 3D space.
+                        </p>
+<div class="flex flex-col sm:flex-row gap-4 mt-4 w-full justify-center">
+<button class="btn-primary-glow flex items-center justify-center rounded-lg h-14 px-8 bg-primary text-white text-base font-bold tracking-wide uppercase hover:bg-violet-600">
+<span class="material-symbols-outlined mr-2">rocket_launch</span>
+                                Initialize Sequence
+                            </button>
+<button class="flex items-center justify-center rounded-lg h-14 px-8 bg-transparent border border-gray-600 text-gray-300 hover:text-white hover:border-gray-400 hover:bg-white/5 text-base font-medium tracking-wide uppercase transition-all">
+<span class="material-symbols-outlined mr-2">play_circle</span>
+                                Watch Demo
+                            </button>
+</div>
+</div>
+<!-- 3D Visualization Placeholder -->
+<div class="relative w-full flex justify-center items-center mt-8 perspective-1000">
+<!-- Abstract glowing ring behind -->
+<div class="absolute w-[500px] h-[500px] rounded-full border border-primary/20 animate-spin-slow"></div>
+<div class="absolute w-[350px] h-[350px] rounded-full border border-blue-500/20 animate-spin-slow" style="animation-direction: reverse;"></div>
+<!-- The main "3D" visual -->
+<div class="relative z-10 w-full max-w-3xl aspect-[16/9] glass-panel rounded-2xl overflow-hidden animate-float">
+<!-- Image representing the 3D forge interface -->
+<div class="absolute inset-0 bg-cover bg-center opacity-80 mix-blend-screen" data-alt="Abstract 3D holographic wireframe of a complex node network representing questionnaire logic" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBEWVKhsUiDLAWyn2PTVYZ_LxLm5yaAOGN8_YtNvJHdczFJmibpCZKth1OaRZuO4i0ViK4eCsBNlUKajBag9BqGdpQ5G2SfuZAIYX5Fx7ezuzreto3FESgun_kpbfNV62-7CJkCJc1JFtu_vxQvrqwYButwzicamyklqemLGxcpYaoCritdT0LWKrU3uQbtzH1dPa3u9Ud3Duk9bliCBQL2ZPuwg2v2t1KDU2zeBM6heKv7jdN5r6oZUbOcfrHcx9aJCKtrMdLA_M6w');">
+</div>
+<!-- Overlay UI elements to make it look like a dashboard -->
+<div class="absolute top-4 left-4 flex gap-2">
+<div class="w-3 h-3 rounded-full bg-red-500/50"></div>
+<div class="w-3 h-3 rounded-full bg-yellow-500/50"></div>
+<div class="w-3 h-3 rounded-full bg-green-500/50"></div>
+</div>
+<!-- Center HUD element -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+<div class="w-32 h-32 border border-primary/50 rounded-full flex items-center justify-center bg-primary/5 backdrop-blur-sm">
+<span class="material-symbols-outlined text-4xl text-primary animate-pulse">hub</span>
+</div>
+</div>
+<!-- Bottom Status Bar -->
+<div class="absolute bottom-0 left-0 right-0 h-10 bg-black/50 border-t border-white/10 flex items-center px-4 justify-between text-[10px] text-primary uppercase font-mono tracking-widest">
+<span>Status: Processing</span>
+<span>Nodes: 1,402</span>
+<span>Syntax: Ready</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Scroll Indicator -->
+<div class="absolute bottom-10 animate-bounce text-gray-500 flex flex-col items-center gap-2">
+<span class="text-[10px] uppercase tracking-[0.2em]">Scroll to Explore</span>
+<span class="material-symbols-outlined">keyboard_arrow_down</span>
+</div>
+</section>
+<!-- Feature Section: The Logic Forge -->
+<section class="relative py-24 px-4 overflow-hidden">
+<div class="layout-content-container max-w-6xl mx-auto flex flex-col gap-16">
+<div class="flex flex-col gap-4 text-center items-center">
+<h2 class="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 text-3xl md:text-5xl font-display font-bold tracking-tight">
+                            The Logic Forge
+                        </h2>
+<p class="text-gray-400 text-lg max-w-2xl leading-relaxed">
+                            Experience the future of market research data processing with our automated 3-step pipeline.
+                        </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+<!-- Card 1 -->
+<div class="glass-panel rounded-2xl p-8 flex flex-col gap-6 group hover:-translate-y-2 transition-transform duration-300">
+<div class="size-14 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center group-hover:bg-primary group-hover:text-white text-primary transition-colors duration-300">
+<span class="material-symbols-outlined text-3xl">picture_as_pdf</span>
+</div>
+<div class="flex flex-col gap-2">
+<h3 class="text-white text-xl font-bold tracking-wide">PDF Ingestion</h3>
+<p class="text-gray-400 text-sm leading-relaxed">
+                                    Upload raw questionnaire PDFs directly into the system. Our parser identifies questions, variables, and routing instructions instantly.
+                                </p>
+</div>
+<div class="mt-auto pt-4 w-full h-32 rounded-lg overflow-hidden relative border border-white/5">
+<div class="absolute inset-0 bg-cover bg-center opacity-60 group-hover:scale-110 transition-transform duration-700" data-alt="Abstract representation of document scanning and digitization" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDlUDwhqUqOAopcGqaBMIyf03iNRv8E7XS7tzyBx6U-ok-XqvuRKU8tIhzWx_nesWrRG42pUt7KFC6UqqRu24DG5nCmxi2QooDN1B2ZRuwOg1WiU2PdtKer-mQm7msLQyMlaCicgnmEiWfddZzLAIqGhLHLXbFfCvDPZkBtrzYem8LHpC6eJnhlRAFdGXbLMF7R7tRjIbQ8FzQcz6n5IPyRB23rrWDz6aYOCv6t9xXGII85xnwYB_-eF38Z0reqgcdCV3KzsVimpVGP');"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark to-transparent"></div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="glass-panel rounded-2xl p-8 flex flex-col gap-6 group hover:-translate-y-2 transition-transform duration-300 relative overflow-hidden">
+<!-- Active glow for the middle card -->
+<div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 blur-[60px] rounded-full"></div>
+<div class="size-14 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center group-hover:bg-primary group-hover:text-white text-primary transition-colors duration-300 relative z-10">
+<span class="material-symbols-outlined text-3xl">view_in_ar</span>
+</div>
+<div class="flex flex-col gap-2 relative z-10">
+<h3 class="text-white text-xl font-bold tracking-wide">3D Logic Visualization</h3>
+<p class="text-gray-400 text-sm leading-relaxed">
+                                    Visualize skip logic and routing in an immersive 3D node space. Manipulate paths and verify logic visually before coding.
+                                </p>
+</div>
+<div class="mt-auto pt-4 w-full h-32 rounded-lg overflow-hidden relative border border-white/5 z-10">
+<div class="absolute inset-0 bg-cover bg-center opacity-60 group-hover:scale-110 transition-transform duration-700" data-alt="Neon blue and purple data network nodes connected in 3D space" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA4dn9NS-j26MD2IgupdMZ70IYrCuzWi_Yu2o1-FJUfs-W2-xUsUZgjvxZbUmMXNEErA6rhQS0RcVrS8DlIZQ0bxWbfcZWhGTDbjSZ_Le0QjIvyn9UMfvI8mulua1Xu3jF_AiKGckmkCjRQoBxLEeA8eL67_9gexEj4GgK6yUbb9DVF35A77NFPFCs2YGYNdkLhydj5tFQ9fJN6rnMcFUuhitpuwKEiGZB7aGDU6SDzUZGhdn0v1J35CSCYUdmHSyrtp_t_lnyh1-pD');"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark to-transparent"></div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="glass-panel rounded-2xl p-8 flex flex-col gap-6 group hover:-translate-y-2 transition-transform duration-300">
+<div class="size-14 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center group-hover:bg-primary group-hover:text-white text-primary transition-colors duration-300">
+<span class="material-symbols-outlined text-3xl">terminal</span>
+</div>
+<div class="flex flex-col gap-2">
+<h3 class="text-white text-xl font-bold tracking-wide">SPSS Auto-Generation</h3>
+<p class="text-gray-400 text-sm leading-relaxed">
+                                    Instantly generate error-free SPSS syntax files ready for processing. Export definition files with perfect formatting.
+                                </p>
+</div>
+<div class="mt-auto pt-4 w-full h-32 rounded-lg overflow-hidden relative border border-white/5">
+<div class="absolute inset-0 bg-cover bg-center opacity-60 group-hover:scale-110 transition-transform duration-700" data-alt="Computer screen displaying scrolling code and programming syntax in dark mode" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCBo0qGYiTeUYtkk7350nH3kRsRgc6X1SWb98Z0Qwi4LqLpF0WLieTzebGwHsaxOBqLi6dk86PHILKyocveG9q79c0K9i46F7drUOUl7-kCI5mbYHhGSNmoJsxE6OiXrzJOLA2VxftGn1s8S1BsquxXH_0xdjX_4iP6dy_l2nJBxTV4tDY7SwDqndytt-fhpMoy-PdBBQ-ACFJpPuO7q0RDsPMvGgAZVRUlA89QdCOoKF4WHfvIaQc5wiKxXVW36pYu8bRadywu_0Zo');"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark to-transparent"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="relative py-20 px-4">
+<div class="absolute inset-0 overflow-hidden pointer-events-none">
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-primary/10 blur-[100px] rounded-full"></div>
+</div>
+<div class="layout-content-container max-w-4xl mx-auto">
+<div class="glass-panel rounded-3xl p-10 md:p-16 flex flex-col items-center text-center gap-8 relative overflow-hidden border border-primary/30">
+<!-- Decorative grid inside card -->
+<div class="absolute inset-0 cyber-grid-bg opacity-30"></div>
+<div class="relative z-10 flex flex-col gap-4 items-center">
+<h2 class="text-4xl md:text-5xl font-display font-black text-white tracking-tight">
+                                 Ready to Enter the Forge?
+                             </h2>
+<p class="text-gray-300 text-lg max-w-xl">
+                                 Join the waiting list to get early access to the LogicSphere engine. Transform your workflow today.
+                             </p>
+</div>
+<div class="relative z-10 w-full max-w-md flex flex-col sm:flex-row gap-3">
+<input class="flex-grow h-12 bg-black/40 border border-primary/30 rounded-lg px-4 text-white placeholder-gray-500 focus:outline-none focus:border-primary text-sm tracking-wider font-mono" placeholder="ENTER YOUR EMAIL" type="email"/>
+<button class="h-12 px-6 bg-primary hover:bg-violet-600 text-white font-bold rounded-lg uppercase tracking-wide btn-primary-glow whitespace-nowrap">
+                                 Request Access
+                             </button>
+</div>
+<p class="relative z-10 text-xs text-gray-500 uppercase tracking-widest mt-4">
+                             Limited Spots Available for Beta
+                         </p>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="relative z-10 border-t border-white/5 bg-black/40 backdrop-blur-sm pt-16 pb-8">
+<div class="layout-content-container max-w-6xl mx-auto px-4 flex flex-col gap-10">
+<div class="flex flex-col md:flex-row justify-between items-start gap-10">
+<div class="flex flex-col gap-4 max-w-xs">
+<div class="flex items-center gap-2 text-white font-display font-bold text-lg tracking-wide uppercase">
+<span class="material-symbols-outlined text-primary">deployed_code</span>
+                            LogicSphere
+                        </div>
+<p class="text-gray-500 text-sm">
+                            Advanced AI syntax generation for modern market research professionals.
+                        </p>
+</div>
+<div class="flex flex-wrap gap-12 md:gap-20">
+<div class="flex flex-col gap-4">
+<h4 class="text-white text-xs font-bold uppercase tracking-widest">Product</h4>
+<a class="text-gray-500 hover:text-primary text-sm" href="#">Features</a>
+<a class="text-gray-500 hover:text-primary text-sm" href="#">Integration</a>
+<a class="text-gray-500 hover:text-primary text-sm" href="#">Pricing</a>
+</div>
+<div class="flex flex-col gap-4">
+<h4 class="text-white text-xs font-bold uppercase tracking-widest">Resources</h4>
+<a class="text-gray-500 hover:text-primary text-sm" href="#">Documentation</a>
+<a class="text-gray-500 hover:text-primary text-sm" href="#">API Reference</a>
+<a class="text-gray-500 hover:text-primary text-sm" href="#">Status</a>
+</div>
+<div class="flex flex-col gap-4">
+<h4 class="text-white text-xs font-bold uppercase tracking-widest">Company</h4>
+<a class="text-gray-500 hover:text-primary text-sm" href="#">About</a>
+<a class="text-gray-500 hover:text-primary text-sm" href="#">Legal</a>
+<a class="text-gray-500 hover:text-primary text-sm" href="#">Contact</a>
+</div>
+</div>
+</div>
+<div class="border-t border-white/5 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+<p class="text-gray-600 text-xs">© 2024 LogicSphere AI. All systems nominal.</p>
+<div class="flex gap-4">
+<a class="text-gray-600 hover:text-white transition-colors" href="#">
+<span class="sr-only">Twitter</span>
+<svg class="h-4 w-4" fill="currentColor" viewbox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"></path></svg>
+</a>
+<a class="text-gray-600 hover:text-white transition-colors" href="#">
+<span class="sr-only">GitHub</span>
+<svg class="h-4 w-4" fill="currentColor" viewbox="0 0 24 24"><path clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" fill-rule="evenodd"></path></svg>
+</a>
+</div>
+</div>
+</div>
+</footer>
+</div>
+</body></html>

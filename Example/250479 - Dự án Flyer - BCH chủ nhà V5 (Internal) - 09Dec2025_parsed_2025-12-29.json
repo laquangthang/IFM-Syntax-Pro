@@ -1,0 +1,1952 @@
+{
+  "questions": [
+    {
+      "id": "Q1",
+      "type": "SA",
+      "instruction": "SCRIPT: HỎI TẤT CẢ\nNote: SA",
+      "label": "PVV ghi nhận khu vực phỏng vấn.",
+      "options": [
+        {
+          "code": 1,
+          "label": "Hà Nội",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Hải Phòng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Thái Nguyên",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Yên Bái",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Nghệ An",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Thanh Hóa",
+          "codeType": "Normal"
+        },
+        {
+          "code": 7,
+          "label": "Khánh Hòa",
+          "codeType": "Normal"
+        },
+        {
+          "code": 8,
+          "label": "Đăk Lăk",
+          "codeType": "Normal"
+        },
+        {
+          "code": 9,
+          "label": "Hồ Chí Minh",
+          "codeType": "Normal"
+        },
+        {
+          "code": 10,
+          "label": "Tây Ninh",
+          "codeType": "Normal"
+        },
+        {
+          "code": 11,
+          "label": "Đồng Nai",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q2",
+      "type": "SA",
+      "instruction": "SCRIPT: HỎI TẤT CẢ\nNote: SA",
+      "label": "PVV ghi nhận giới tính của đáp viên.",
+      "options": [
+        {
+          "code": 1,
+          "label": "Nam",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Nữ",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q3A",
+      "type": "MA",
+      "instruction": "SCRIPT: HỎI TẤT CẢ - FOR PANEL ONLY\nNote: MA - Rotate\nNếu chỉ chọn code 10 không chọn code 9 => control quota code 10 ≤30%.\nTRAP for codes 11, 12, 13.",
+      "label": "Trong 12 THÁNG qua, anh/chị đã làm những hoạt động nào dưới đây?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Đi trung tâm thương mại",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Tham gia lớp yoga/thiền",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Tham gia giải chạy bộ / chạy phong trào (Marathon)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Đi xem phim tại rạp",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Đi du lịch nước ngoài",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Tham gia hoạt động thiện nguyện / cộng đồng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 7,
+          "label": "Đi spa / massage / chăm sóc sức khỏe",
+          "codeType": "Normal"
+        },
+        {
+          "code": 8,
+          "label": "Xem biểu diễn nghệ thuật (kịch, múa, nhạc kịch, ca nhạc,...",
+          "codeType": "Normal"
+        },
+        {
+          "code": 9,
+          "label": "Xây mới nhà",
+          "codeType": "Normal"
+        },
+        {
+          "code": 10,
+          "label": "Sửa chữa / cải tạo nhà",
+          "codeType": "Normal"
+        },
+        {
+          "code": 11,
+          "label": "Du hành cùng ngàn tinh tú",
+          "codeType": "Normal"
+        },
+        {
+          "code": 12,
+          "label": "Nghe tiếng sóng vỗ",
+          "codeType": "Normal"
+        },
+        {
+          "code": 13,
+          "label": "Bơi giữa ấn độ dương",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Khác (vui lòng ghi rõ)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": "IF NOT(Q3A.code == 9 OR Q3A.code == 10)"
+      }
+    },
+    {
+      "id": "Q3",
+      "type": "SA",
+      "instruction": "SCRIPT: HỎI TẤT CẢ - FOR OFFLINE ONLY\nNote: SA\nQuota <=30% for option 2",
+      "label": "Trong 12 THÁNG qua, anh/chị có thực hiện việc xây mới hoặc sửa chữa nhà ở không?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Xây mới nhà",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Sửa chữa / cải tạo nhà",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Không thực hiện việc xây mới hoặc sửa chữa",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": "IF Q3.code == 3"
+      }
+    },
+    {
+      "id": "Q4",
+      "type": "SA",
+      "instruction": "SCRIPT: HỎI TẤT CẢ\nNote: SA.",
+      "label": "Ai là người quyết định chính trong việc xây mới hoặc sửa chữa ngôi nhà của anh/chị?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Tôi là người quyết định chính",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Tôi cùng người khác quyết định",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Người khác quyết định chính",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": "IF Q4.code == 3"
+      }
+    },
+    {
+      "id": "Q5",
+      "type": "SA",
+      "instruction": "SCRIPT: HỎI TẤT CẢ\nNote: SA.",
+      "label": "Tổng DIỆN TÍCH SÀN của ngôi nhà anh/chị xây mới hoặc sửa chữa trong 12 tháng qua là bao nhiêu? (Vui lòng ước lượng tổng diện tích các tầng, tính bằng mét vuông)",
+      "options": [
+        {
+          "code": 1,
+          "label": "Dưới 80 m²",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "80 – 100 m²",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "101 – 150 m²",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "151 – 200 m²",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "201 – 300 m²",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ)....",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": "IF Q5.code == 1"
+      }
+    },
+    {
+      "id": "Q6",
+      "type": "SA",
+      "instruction": "SCRIPT: HỎI CHO ĐỐI TƯỢNG XÂY NHÀ MỚI\nNote: SA.",
+      "label": "Anh/chị xây mới nhà trong 12 tháng qua với mục đích gì?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Xây nhà để ở (cho bản thân / gia đình)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Xây nhà để cho thuê / kinh doanh",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": null,
+        "terminate_if": "IF Q6.code == 2"
+      }
+    },
+    {
+      "id": "Q7",
+      "type": "MA",
+      "instruction": "SCRIPT: HỎI CHO ĐỐI TƯỢNG SỬA NHÀ\nNGƯNG NẾU ĐÁP VIÊN KHÔNG CHỌN CODE 1\nNote: MA – ROTATE",
+      "label": "Khi sửa nhà trong 12 THÁNG QUA, anh/chị đã làm những hạng mục nào sau đây?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Trần nhà",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Tường/vách ngăn",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Sàn nhà",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Cửa sổ / cửa ra vào",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Hệ thống điện / chiếu sáng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Trang trí nội thất (đèn, rèm, đồ trang trí, v.v.)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ)....",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q8",
+      "type": "MA_Grid",
+      "instruction": "SCRIPT: HỎI TẤT CẢ.\nDO NOT SHOW CODE 99 TO RESPONDENTS WHO SELECTED CODE 1 IN Q3.\nTERMINATE IF CODE 1 IS NOT SELECTED FOR ANY ROOM.\nSHOW PHOTOS\nNote: MA PER ROOM.",
+      "label": "Anh/chị đã làm loại trần nào cho từng khu vực trong nhà? (Vui lòng chọn tất cả các loại trần đã làm cho từng khu vực tương ứng)",
+      "options": [],
+      "rows": [
+        {
+          "code": 1,
+          "label": "Phòng khách"
+        },
+        {
+          "code": 2,
+          "label": "Phòng ngủ"
+        },
+        {
+          "code": 3,
+          "label": "Phòng ăn / bếp"
+        },
+        {
+          "code": 4,
+          "label": "Phòng làm việc"
+        },
+        {
+          "code": 5,
+          "label": "Hành lang / khu vực chung"
+        },
+        {
+          "code": 6,
+          "label": "Nhà tắm / nhà vệ sinh"
+        },
+        {
+          "code": 7,
+          "label": "Ban công"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ)"
+        }
+      ],
+      "columns": [
+        {
+          "code": 1,
+          "label": "Trần chìm (khung giấu)"
+        },
+        {
+          "code": 2,
+          "label": "Trần nổi/thả (khung lộ, tấm)"
+        },
+        {
+          "code": 3,
+          "label": "Không sửa trần"
+        }
+      ],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q9",
+      "type": "MA_Grid",
+      "instruction": "SCRIPT: HỎI TẤT CẢ. SHOW CODES IN Q8\nNote: MA PER ATTRIBUTE.\nROTATE ATTRIBUTES",
+      "label": "Khi xây mới/sửa nhà trong 12 tháng qua, anh/chị đã sử dụng loại VẬT LIỆU nào cho phần TRẦN CHÌM trong nhà? (Vui lòng chọn tất cả các loại có dùng)",
+      "options": [],
+      "rows": [
+        {
+          "code": 1,
+          "label": "Tấm thạch cao"
+        },
+        {
+          "code": 2,
+          "label": "Tấm than tre"
+        },
+        {
+          "code": 3,
+          "label": "Tấm xi măng"
+        },
+        {
+          "code": 4,
+          "label": "Nhôm/inox (kim loại)"
+        },
+        {
+          "code": 5,
+          "label": "Nhựa (ví dụ: tấm Nano, tấm PVC, nhựa PS)"
+        },
+        {
+          "code": 9,
+          "label": "Nhựa lam sóng (nano lam sóng)"
+        },
+        {
+          "code": 10,
+          "label": "Nhựa nano: tấm dài"
+        },
+        {
+          "code": 11,
+          "label": "Nhựa PVC: tấm vuông"
+        },
+        {
+          "code": 6,
+          "label": "Gỗ tự nhiên"
+        },
+        {
+          "code": 7,
+          "label": "Gỗ công nghiệp"
+        },
+        {
+          "code": 8,
+          "label": "Gương"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ)"
+        }
+      ],
+      "columns": [
+        {
+          "code": 1,
+          "label": "PHÒNG KHÁCH"
+        },
+        {
+          "code": 2,
+          "label": "PHÒNG NGỦ"
+        },
+        {
+          "code": 3,
+          "label": "PHÒNG ĂN/BẾP"
+        }
+      ],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": "Q8",
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q9.1",
+      "type": "OE",
+      "instruction": "SCRIPT: HỎI CHO TỪNG KHU VỰC Q8 KHÔNG CHỌN LÀM ‘TẤM THẠCH CAO’(CODE 1 Q9)\nNote: OE",
+      "label": "Vì sao anh/chị không chọn làm trần chìm bằng tấm thạch cao cho khu vực [insert code Q8 that doesn't select code 1 Q9 ‘tấm thạch cao']?",
+      "options": [],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q10",
+      "type": "SA",
+      "instruction": "SCRIPT: HỎI TẤT CẢ.\nNote: SA",
+      "label": "Tổng chi phí anh/chị đã chi cho PHẦN TRẦN CHÌM trong lần xây mới/sửa nhà như thế nào? (Chi phí bao gồm vật liệu + giá thi công)",
+      "options": [
+        {
+          "code": 1,
+          "label": "Dưới 10 triệu đồng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "10 – dưới 20 triệu đồng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "20 – dưới 30 triệu đồng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "30 – dưới 40 triệu đồng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "40 – 50 triệu đồng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Nhiều hơn 50 triệu đồng (ghi rõ)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q11",
+      "type": "OE_Grid",
+      "instruction": "Note: SA (This question expects percentage input for each material, summing to 100%. The 'Note: SA' is likely a mislabel.)",
+      "label": "Với tổng chi phí anh/chị đã chi cho hạng mục TRẦN CHÌM, tỷ lệ (%) phân bổ cho từng loại vật liệu dưới đây là bao nhiêu?",
+      "options": [],
+      "rows": [
+        {
+          "code": 1,
+          "label": "Tấm thạch cao"
+        },
+        {
+          "code": 2,
+          "label": "Tấm than tre"
+        },
+        {
+          "code": 3,
+          "label": "Tấm xi măng"
+        },
+        {
+          "code": 4,
+          "label": "Nhôm/inox (kim loại)"
+        },
+        {
+          "code": 5,
+          "label": "Nhựa (ví dụ: tấm Nano, tấm PVC, nhựa PS)"
+        },
+        {
+          "code": 6,
+          "label": "Gỗ tự nhiên"
+        },
+        {
+          "code": 7,
+          "label": "Gỗ công nghiệp"
+        },
+        {
+          "code": 8,
+          "label": "Gương"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ)"
+        }
+      ],
+      "columns": [
+        {
+          "code": 1,
+          "label": "%"
+        }
+      ],
+      "logic": {
+        "type": "Normal",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q12",
+      "type": "SA",
+      "instruction": "SCRIPT: HỎI TẤT CẢ.\nNote: SA",
+      "label": "Diện tích TRẦN CHÌM khoảng bao nhiêu mét vuông trong lần xây mới/ sửa nhà gần đây?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Dưới 20 m²",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "20 – dưới 50 m²",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "50 – dưới 70 m²",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "70 – dưới 100 m²",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "100 – dưới 120 m²",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "120 – 150 m²",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": ">150 m2 (ghi rõ)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q13",
+      "type": "OE_Grid",
+      "instruction": "SCRIPT: HỎI TẤT CẢ. PIPPING CODES IN Q9\nNote: SA (This question expects percentage input for each material, summing to 100%. The 'Note: SA' is likely a mislabel.)",
+      "label": "Với tổng diện tích TRẦN CHÌM anh/chị đã làm, tỷ lệ (%) của từng loại vật liệu dưới đây là bao nhiêu?",
+      "options": [],
+      "rows": [
+        {
+          "code": 1,
+          "label": "Tấm thạch cao"
+        },
+        {
+          "code": 2,
+          "label": "Tấm than tre"
+        },
+        {
+          "code": 3,
+          "label": "Tấm xi măng"
+        },
+        {
+          "code": 4,
+          "label": "Nhôm/inox (kim loại)"
+        },
+        {
+          "code": 5,
+          "label": "Nhựa (ví dụ: tấm Nano, tấm PVC, nhựa PS)"
+        },
+        {
+          "code": 9,
+          "label": "Nhựa lam sóng (nano lam sóng)"
+        },
+        {
+          "code": 10,
+          "label": "Nhựa nano: tấm dài"
+        },
+        {
+          "code": 11,
+          "label": "Nhựa PVC: tấm vuông"
+        },
+        {
+          "code": 6,
+          "label": "Gỗ tự nhiên"
+        },
+        {
+          "code": 7,
+          "label": "Gỗ công nghiệp"
+        },
+        {
+          "code": 8,
+          "label": "Gương"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ)"
+        }
+      ],
+      "columns": [
+        {
+          "code": 1,
+          "label": "%"
+        }
+      ],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": "Q9",
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q14",
+      "type": "Rank_Upto",
+      "instruction": "SCRIPT: HỎI TẤT CẢ.\nNote: RANKING. UP TO 5",
+      "label": "Vui lòng xếp hạng 5 YẾU TỐ quan trọng nhất đối với anh/chị khi quyết định chọn VẬT LIỆU TRẦN nhà? (1 = Quan trọng nhất, 5 = Ít quan trọng nhất)",
+      "options": [
+        {
+          "code": 1,
+          "label": "Chi phí vật liệu & thi công thấp",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Khả năng cách âm/tiêu âm tốt",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Khả năng chống cháy tốt",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Ít bị nứt vỡ, cong vênh, biến dạng theo thời gian",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Ít bị ẩm mốc",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Đa dạng màu sắc & bền màu",
+          "codeType": "Normal"
+        },
+        {
+          "code": 7,
+          "label": "Khả năng chịu lực tốt",
+          "codeType": "Normal"
+        },
+        {
+          "code": 8,
+          "label": "Làm từ vật liệu tự nhiên",
+          "codeType": "Normal"
+        },
+        {
+          "code": 9,
+          "label": "Dễ vệ sinh, không bám bụi nhiều",
+          "codeType": "Normal"
+        },
+        {
+          "code": 10,
+          "label": "Dễ lắp đặt đèn, điều hoà, quạt trần",
+          "codeType": "Normal"
+        },
+        {
+          "code": 11,
+          "label": "Tính thẩm mỹ/thiết kế đẹp",
+          "codeType": "Normal"
+        },
+        {
+          "code": 12,
+          "label": "Tối ưu được không gian",
+          "codeType": "Normal"
+        },
+        {
+          "code": 13,
+          "label": "Dễ thi công, bảo trì và sửa chữa",
+          "codeType": "Normal"
+        },
+        {
+          "code": 14,
+          "label": "Thân thiện với môi trường",
+          "codeType": "Normal"
+        },
+        {
+          "code": 15,
+          "label": "Không gây hại cho sức khoẻ người dùng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 16,
+          "label": "Thương hiệu vật liệu uy tín",
+          "codeType": "Normal"
+        },
+        {
+          "code": 17,
+          "label": "Được thầu, thợ, kiến trúc sư hoặc đại lý khuyên dùng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 18,
+          "label": "Được gia đình/ bạn bè/ người quen giới thiệu",
+          "codeType": "Normal"
+        },
+        {
+          "code": 20,
+          "label": "Vật liệu được sử dụng phổ biến nhất",
+          "codeType": "Normal"
+        },
+        {
+          "code": 21,
+          "label": "Có khuyến mãi từ hãng (trợ giá, quà tri ân,...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 22,
+          "label": "An toàn cho sức khỏe khi thi công, bảo trì, sửa chữa",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "limit": 5,
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q15",
+      "type": "MA_Grid",
+      "instruction": "SCRIPT: HỎI TẤT CẢ – ASK FOR CODE SELECTED IN Q9\nNote: MA PERMATERIAL. NONE = SA EXCLUSIVE\nROTATE ATTRIBUTES AND MATERIALS",
+      "label": "Khi nhắc đến từng loại VẬT LIỆU TRẦN sau, anh/chị sẽ liên tưởng đến những nhận định hoặc đánh giá nào phù hợp?",
+      "options": [],
+      "rows": [
+        {
+          "code": 1,
+          "label": "Chi phí vật liệu & thi công thấp"
+        },
+        {
+          "code": 2,
+          "label": "Khả năng cách âm/tiêu âm tốt"
+        },
+        {
+          "code": 3,
+          "label": "Khả năng chống cháy tốt"
+        },
+        {
+          "code": 4,
+          "label": "Ít bị nứt vỡ, cong vênh, biến dạng theo thời gian"
+        },
+        {
+          "code": 5,
+          "label": "Ít bị ẩm mốc"
+        },
+        {
+          "code": 6,
+          "label": "Đa dạng màu sắc & bền màu"
+        },
+        {
+          "code": 7,
+          "label": "Khả năng chịu lực tốt"
+        },
+        {
+          "code": 8,
+          "label": "Làm từ vật liệu tự nhiên"
+        },
+        {
+          "code": 9,
+          "label": "Dễ vệ sinh, không bám bụi nhiều"
+        },
+        {
+          "code": 10,
+          "label": "Dễ lắp đặt đèn, điều hoà, quạt trần"
+        },
+        {
+          "code": 11,
+          "label": "Tính thẩm mỹ/thiết kế đẹp"
+        },
+        {
+          "code": 12,
+          "label": "Tối ưu được không gian"
+        },
+        {
+          "code": 13,
+          "label": "Dễ thi công, bảo trì và sửa chữa"
+        },
+        {
+          "code": 14,
+          "label": "Thân thiện với môi trường"
+        },
+        {
+          "code": 15,
+          "label": "Không gây hại cho sức khoẻ người dùng"
+        },
+        {
+          "code": 16,
+          "label": "Thương hiệu vật liệu uy tín"
+        },
+        {
+          "code": 17,
+          "label": "Được thầu, thợ, kiến trúc sư hoặc đại lý khuyên dùng"
+        },
+        {
+          "code": 18,
+          "label": "Được gia đình/ bạn bè/ người quen giới thiệu"
+        },
+        {
+          "code": 20,
+          "label": "Vật liệu được sử dụng phổ biến nhất"
+        },
+        {
+          "code": 21,
+          "label": "Có khuyến mãi từ hãng (trợ giá, quà tri ân,...)"
+        },
+        {
+          "code": 22,
+          "label": "An toàn cho sức khỏe khi thi công, bảo trì, sửa chữa"
+        },
+        {
+          "code": 99,
+          "label": "Không có",
+          "codeType": "Exclusive"
+        }
+      ],
+      "columns": [
+        {
+          "code": 1,
+          "label": "Tấm thạch cao"
+        },
+        {
+          "code": 2,
+          "label": "Tấm than tre"
+        },
+        {
+          "code": 3,
+          "label": "Tấm xi măng"
+        },
+        {
+          "code": 4,
+          "label": "Nhôm/inox (kim loại)"
+        },
+        {
+          "code": 5,
+          "label": "Nhựa (ví dụ: tấm Nano, tấm PVC, nhựa PS)"
+        },
+        {
+          "code": 9,
+          "label": "Nhựa lam sóng (nano lam sóng)"
+        },
+        {
+          "code": 10,
+          "label": "Nhựa nano: tấm dài"
+        },
+        {
+          "code": 11,
+          "label": "Nhựa PVC: tấm vuông"
+        },
+        {
+          "code": 6,
+          "label": "Gỗ tự nhiên"
+        },
+        {
+          "code": 7,
+          "label": "Gỗ công nghiệp"
+        },
+        {
+          "code": 8,
+          "label": "Gương"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ)"
+        }
+      ],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": "Q9",
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q16",
+      "type": "MA_Grid",
+      "instruction": "SCRIPT: HỎI TẤT CẢ. PIPPING CODES IN Q9\nNote: MA PERMATERIAL. NONE = SA EXCLUSIVE\nROTATE ATTRIBUTES AND MATERIALS",
+      "label": "Những điểm nào của VẬT LIỆU TRẦN sau khiến anh/chị cảm thấy CHƯA HÀI LÒNG khi sử dụng?",
+      "options": [],
+      "rows": [
+        {
+          "code": 1,
+          "label": "Khả năng cách âm/tiêu âm kém"
+        },
+        {
+          "code": 2,
+          "label": "Khả năng chống cháy kém"
+        },
+        {
+          "code": 3,
+          "label": "Dễ bị nứt vỡ"
+        },
+        {
+          "code": 4,
+          "label": "Dễ bị ẩm mốc"
+        },
+        {
+          "code": 5,
+          "label": "Dễ bị ố, xỉn màu"
+        },
+        {
+          "code": 6,
+          "label": "Khả năng chịu lực kém"
+        },
+        {
+          "code": 7,
+          "label": "Khó vệ sinh, dễ bám bụi"
+        },
+        {
+          "code": 8,
+          "label": "Khó lắp đặt đèn, điều hoà, quạt trần"
+        },
+        {
+          "code": 9,
+          "label": "Khó bảo trì & sửa chữa khi có hư hỏng (phải cắt/tráo tấm)"
+        },
+        {
+          "code": 10,
+          "label": "Thiết kế kém thẩm mỹ / đơn điệu"
+        },
+        {
+          "code": 11,
+          "label": "Chưa tối ưu được không gian"
+        },
+        {
+          "code": 12,
+          "label": "Gây bụi và bẩn khi thi công"
+        },
+        {
+          "code": 13,
+          "label": "Dễ bị cong vênh, biến dạng theo thời gian"
+        },
+        {
+          "code": 14,
+          "label": "Gây hại cho sức khoẻ người dùng"
+        },
+        {
+          "code": 15,
+          "label": "Có mùi khó chịu"
+        },
+        {
+          "code": 16,
+          "label": "Sợ bị rơi vỡ"
+        },
+        {
+          "code": 17,
+          "label": "Dễ bị mối mọt"
+        },
+        {
+          "code": 99,
+          "label": "Không có",
+          "codeType": "Exclusive"
+        }
+      ],
+      "columns": [
+        {
+          "code": 1,
+          "label": "Tấm thạch cao"
+        },
+        {
+          "code": 2,
+          "label": "Tấm than tre"
+        },
+        {
+          "code": 3,
+          "label": "Tấm xi măng"
+        },
+        {
+          "code": 4,
+          "label": "Nhôm/inox (kim loại)"
+        },
+        {
+          "code": 5,
+          "label": "Nhựa (ví dụ: tấm Nano, tấm PVC, nhựa PS)"
+        },
+        {
+          "code": 9,
+          "label": "Nhựa lam sóng (nano lam sóng)"
+        },
+        {
+          "code": 10,
+          "label": "Nhựa nano: tấm dài"
+        },
+        {
+          "code": 11,
+          "label": "Nhựa PVC: tấm vuông"
+        },
+        {
+          "code": 6,
+          "label": "Gỗ tự nhiên"
+        },
+        {
+          "code": 7,
+          "label": "Gỗ công nghiệp"
+        },
+        {
+          "code": 8,
+          "label": "Gương"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ)"
+        }
+      ],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": "Q9",
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q17",
+      "type": "MA",
+      "instruction": "SCRIPT: ASK RESPONDENTS WHO DO NOT CHOOSE CODE 1 IN Q9\nNote: MA – ROTATE",
+      "label": "Những lý do chính khiến anh/chị không chọn THẠCH CAO để làm trần là gì?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Chi phí cao hơn so với các loại trần khác",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Thi công phức tạp, tốn nhiều thời gian",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Dễ bị ẩm mốc, nứt",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Khó sửa chữa hoặc thay thế khi có hư hỏng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Không phù hợp với không gian nhỏ hoặc trần thấp",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Không phù hợp môi trường ẩm ướt",
+          "codeType": "Normal"
+        },
+        {
+          "code": 7,
+          "label": "Nghe người quen / thầu / thợ khuyên không nên làm",
+          "codeType": "Normal"
+        },
+        {
+          "code": 8,
+          "label": "Quá trình cắt, mài, lắp đặt tạo nhiều bụi và bẩn, cần vệ sinh kỹ",
+          "codeType": "Normal"
+        },
+        {
+          "code": 9,
+          "label": "Gây hại cho sức khoẻ người dùng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 10,
+          "label": "Dễ bị ố, xỉn màu",
+          "codeType": "Normal"
+        },
+        {
+          "code": 11,
+          "label": "Sợ bị rơi vỡ",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q18",
+      "type": "OE",
+      "instruction": "SCRIPT: HỎI TẤT CẢ.\nNote: OE",
+      "label": "Theo anh/chị, trần thạch cao cần cải thiện những điểm nào để anh/chị sẵn sàng sử dụng?",
+      "options": [],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q19",
+      "type": "MA",
+      "instruction": "SCRIPT: ASK RESPONDENTS WHO CHOOSE CODE 1 IN Q9\nNote: MA",
+      "label": "Anh/chị biết thương hiệu TRẦN THẠCH CAO nào sau đây?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Gyproc (Vĩnh Tường)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Knauf",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Boral",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Yoshino",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Sheetrock",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q20",
+      "type": "MA",
+      "instruction": "SCRIPT: ASK RESPONDENTS WHO CHOOSE CODE 1 IN Q9\nPIPING CODES IN Q19\nNote: MA",
+      "label": "Anh/chị đang sử dụng thương hiệu TRẦN THẠCH CAO nào cho nhà của mình?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Gyproc (Vĩnh Tường)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Knauf",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Boral",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Yoshino",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Sheetrock",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": "Q19",
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q21",
+      "type": "OE",
+      "instruction": "SCRIPT: ASK RESPONDENTS WHO CHOOSE CODE 1 IN Q9\nNote: OE",
+      "label": "Anh/chị cảm thấy hài lòng và chưa hài lòng về những điểm nào đối với trần thạch cao mà nhà mình vừa lắp đặt?\nA. Điểm hài lòng\nB. Điểm chưa hài lòng",
+      "options": [],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q22",
+      "type": "SA",
+      "instruction": "SCRIPT: HỎI TẤT CẢ\nNote: SA",
+      "label": "Trên thang điểm từ 0 đến 10, trong đó 0- Cực kì không muốn giới thiệu và 10– Chắc chắn muốn giới thiệu, anh/chị vui lòng cho biết khả năng anh/chị sẽ GIỚI THIỆU người khác sử dụng TRẦN THẠCH CAO?",
+      "options": [
+        {
+          "code": 0,
+          "label": "Cực kì không muốn giới thiệu",
+          "codeType": "Normal"
+        },
+        {
+          "code": 1,
+          "label": "1",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "2",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "3",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "4",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "5",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "6",
+          "codeType": "Normal"
+        },
+        {
+          "code": 7,
+          "label": "7",
+          "codeType": "Normal"
+        },
+        {
+          "code": 8,
+          "label": "8",
+          "codeType": "Normal"
+        },
+        {
+          "code": 9,
+          "label": "9",
+          "codeType": "Normal"
+        },
+        {
+          "code": 10,
+          "label": "Chắc chắn muốn giới thiệu",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q23",
+      "type": "MA",
+      "instruction": "SCRIPT: HỎI TẤT CẢ.\nNote: MA – ROTATE",
+      "label": "Khi lựa chọn giải pháp/vật liệu trần, anh/chị thường thực hiện những bước nào sau đây?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Xác định kiểu trần/thiết kế mong muốn",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Tra cứu/tham khảo thông tin về các loại trần và vật liệu trên thị trường",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Tham khảo ý kiến người quen / gia đình",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Trao đổi với kiến trúc sư / thiết kế nội thất",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Hỏi ý kiến thầu / thợ thi công",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Tham khảo/xem mẫu tại cửa hàng / đại lý vật liệu xây dựng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q24",
+      "type": "Rank_Upto",
+      "instruction": "SCRIPT: HỎI TẤT CẢ. PIPPING CODES CHOSEN IN Q23\nNote: RANKING",
+      "label": "Vui lòng sắp xếp thứ tự các bước anh/chị thường thực hiện theo trình tự thời gian (1 là bước đầu tiên, 2 là bước tiếp theo, v.v.)",
+      "options": [
+        {
+          "code": 1,
+          "label": "Xác định kiểu trần/thiết kế mong muốn",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Tra cứu/tham khảo thông tin về các loại trần và vật liệu trên thị trường",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Tham khảo ý kiến người quen / gia đình",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Trao đổi với kiến trúc sư / thiết kế nội thất",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Hỏi ý kiến thầu / thợ thi công",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Tham khảo/xem mẫu tại cửa hàng / đại lý vật liệu xây dựng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "limit": null,
+      "logic": {
+        "type": "Ask All",
+        "piping_source": "Q23",
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q25",
+      "type": "MA",
+      "instruction": "SCRIPT: ASK RESPONDENTS WHO CHOOSE CODE 4/5 IN Q23\nNote: MA - ROTATE",
+      "label": "Vì sao anh/chị tham khảo ý kiến từ kiến trúc sư/thầu công trình khi lựa chọn giải pháp/vật liệu trần?",
+      "options": [
+        {
+          "code": 2,
+          "label": "Hiểu xu hướng thiết kế và thẩm mỹ hiện đại",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Biết rõ ưu – nhược điểm của từng loại vật liệu / giải pháp",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Có mối quan hệ với nhà cung cấp hoặc thương hiệu uy tín",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Giúp tiết kiệm thời gian và chi phí",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Giúp lựa chọn giải pháp phù hợp với nhu cầu và ngân sách",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q26",
+      "type": "SA",
+      "instruction": "SCRIPT: ASK RESPONDENTS WHO CHOOSE CODE 4/5 IN Q23\nNote: SA",
+      "label": "Anh/chị có làm theo tư vấn của kiến trúc sư/thầu công trình khi lựa chọn giải pháp/vật liệu trần không?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Hoàn toàn làm theo tư vấn",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Làm theo phần lớn lời khuyên, chỉ điều chỉnh một vài chi tiết",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Có tham khảo ý kiến nhưng chủ yếu quyết định theo ý kiến cá nhân",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Không làm theo, tự quyết định hoàn toàn",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q27",
+      "type": "MA",
+      "instruction": "SCRIPT: HỎI TẤT CẢ.\nNote: MA - ROTATE",
+      "label": "Anh/chị thường tìm kiếm hoặc tham khảo thông tin về giải pháp/vật liệu trần từ những nguồn nào?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Gia đình/ bạn bè/ người quen",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Kiến trúc sư / thiết kế nội thất",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Thầu / thợ thi công",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Cửa hàng / đại lý vật liệu xây dựng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Ti-vi",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Radio",
+          "codeType": "Normal"
+        },
+        {
+          "code": 7,
+          "label": "Mạng xã hội (ví dụ: Facebook, Threads, Instagram)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 8,
+          "label": "Nền tảng video (ví dụ: Youtube, Tiktok)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 9,
+          "label": "Website chính thức của các thương hiệu / nhà sản xuất vật liệu trần (VD: Knauf, Vĩnh Tường, USG Boral, v.v.)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 10,
+          "label": "Nền tảng thương mại điện tử (Shopee, Lazada, v.v.)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 11,
+          "label": "Báo điện tử",
+          "codeType": "Normal"
+        },
+        {
+          "code": 12,
+          "label": "Báo/tạp chí giấy",
+          "codeType": "Normal"
+        },
+        {
+          "code": 13,
+          "label": "Hội nhóm / diễn đàn chia sẻ kinh nghiệm",
+          "codeType": "Normal"
+        },
+        {
+          "code": 14,
+          "label": "Triển lãm / hội chợ vật liệu xây dựng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ:)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q28",
+      "type": "MA",
+      "instruction": "SCRIPT: HỎI TẤT CẢ. PIPPING CODES CHOSEN IN Q25 (Corrected to Q27 based on options)\nNote: MA - ROTATE\nAuto record in Q27 if selected in Q23",
+      "label": "Những nguồn thông tin nào ảnh hưởng NHIỀU NHẤT đến quyết định lựa chọn giải pháp/vật liệu trần của anh/chị?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Gia đình/ bạn bè/ người quen",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Kiến trúc sư / thiết kế nội thất",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Thầu / thợ thi công",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Cửa hàng / đại lý vật liệu xây dựng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Ti-vi",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Radio",
+          "codeType": "Normal"
+        },
+        {
+          "code": 7,
+          "label": "Mạng xã hội (ví dụ: Facebook, Threads, Instagram)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 8,
+          "label": "Nền tảng video (ví dụ: Youtube, Tiktok)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 9,
+          "label": "Website chính thức của các thương hiệu / nhà sản xuất vật liệu trần (VD: Knauf, Vĩnh Tường, USG Boral, v.v.)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 10,
+          "label": "Nền tảng thương mại điện tử (Shopee, Lazada, v.v.)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 11,
+          "label": "Báo điện tử",
+          "codeType": "Normal"
+        },
+        {
+          "code": 12,
+          "label": "Báo/tạp chí giấy",
+          "codeType": "Normal"
+        },
+        {
+          "code": 13,
+          "label": "Hội nhóm / diễn đàn chia sẻ kinh nghiệm",
+          "codeType": "Normal"
+        },
+        {
+          "code": 14,
+          "label": "Triển lãm / hội chợ vật liệu xây dựng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Khác (ghi rõ:)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": "Q27",
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q29.1",
+      "type": "OE",
+      "instruction": "SCRIPT: HỎI TẤT CẢ [SHOW FOR PANEL ONLY]\nNote: File Upload",
+      "label": "Vui lòng chụp 2 tấm hình ngôi nhà mà anh/chị mới xây/sửa trong 12 tháng qua.\nGợi ý:\n1 tấm chụp toàn cảnh mặt trước toàn bộ căn nhà\n1 tấm chụp toàn cảnh căn phòng mà anh/chị đã làm trần chìm.",
+      "options": [],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q29",
+      "type": "SA",
+      "instruction": "SCRIPT: HỎI TẤT CẢ.\nNote: SA.\nAUTO-CODED AS BELOW GROUPS",
+      "label": "Anh/chị sinh năm bao nhiêu? Trả lời:",
+      "options": [
+        {
+          "code": 1,
+          "label": "Dưới 24 tuổi",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "25 – 35 tuổi",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "36 – 45 tuổi",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "46 – 50 tuổi",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Hơn 51 tuổi",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": "IF Q29.code == 1"
+      }
+    },
+    {
+      "id": "Q30",
+      "type": "SA",
+      "instruction": "SCRIPT: HỎI TẤT CẢ\nNote: SA.",
+      "label": "Thu nhập trung bình hàng tháng của cả HỘ GIA ĐÌNH chị khoảng bao nhiêu? (Thu nhập hộ gia đình là tổng thu nhập của tất cả các thành viên trong một hộ từ mọi nguồn, như lương, kinh doanh, đầu tư, trợ cấp,...).",
+      "options": [
+        {
+          "code": 1,
+          "label": "Trên 40,000,000 VND",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "30,000,001 - 40,000,000 VND",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "25,000,001 - 30,000,000 VND",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "20,000,001 - 25,000,000 VND",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "15,000,001 - 20,000,000 VND",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "10,000,001 - 15,000,000 VND",
+          "codeType": "Normal"
+        },
+        {
+          "code": 7,
+          "label": "5,000,001 - 10,000,000 VND",
+          "codeType": "Normal"
+        },
+        {
+          "code": 8,
+          "label": "3,000,001 - 5,000,000 VND",
+          "codeType": "Normal"
+        },
+        {
+          "code": 9,
+          "label": "Dưới 3,000,000 VND",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    },
+    {
+      "id": "Q31",
+      "type": "SA",
+      "instruction": "SCRIPT: HỎI TẤT CẢ\nNote: SA - ROTATE",
+      "label": "Nghề nghiệp chính hiện tại của anh / chị là?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Nhân viên văn phòng (vd: kinh doanh, bán hàng, kiểm toán, kế toán / tài chính, công nghệ thông tin, thư ký,...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Công nhân lành nghề / công nhân (vd: tài xế, giúp việc, dọn dẹp, thợ cắt tóc, dệt may, đầu bếp, nhân viên bán hàng,...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Tự kinh doanh/Làm việc tự do (vd: Chủ doanh nghiệp, Nhà bán lẻ, nghệ sĩ, ...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Chuyên gia / người có chuyên môn (vd: giáo viên, luật sư, bác sĩ, y tá,...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Công viên chức nhà nước",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Nội trợ",
+          "codeType": "Normal"
+        },
+        {
+          "code": 7,
+          "label": "Học sinh / sinh viên",
+          "codeType": "Normal"
+        },
+        {
+          "code": 8,
+          "label": "Thất nghiệp / Chưa có việc làm",
+          "codeType": "Normal"
+        },
+        {
+          "code": 9,
+          "label": "Đã nghỉ hưu",
+          "codeType": "Normal"
+        },
+        {
+          "code": 10,
+          "label": "Khác (ghi rõ:)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null
+      }
+    }
+  ]
+}

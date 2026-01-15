@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Syntax Library (The Vault) - LogicSphere</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#8B5CF6", // Neon Purple
+                        "primary-glow": "#a78bfa",
+                        "background-dark": "#050816", // Deep Dark Navy
+                        "glass-border": "rgba(255, 255, 255, 0.1)",
+                        "glass-bg": "rgba(255, 255, 255, 0.03)",
+                        "code-bg": "#0d1117",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"],
+                    },
+                    backgroundImage: {
+                        'cyber-grid': "linear-gradient(to right, rgba(139, 92, 246, 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(139, 92, 246, 0.1) 1px, transparent 1px)",
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'spin-slow': 'spin 12s linear infinite',
+                        'pulse-glow': 'pulse-glow 3s infinite',
+                        'particle-float': 'particle-float 20s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        'pulse-glow': {
+                            '0%, 100%': { boxShadow: '0 0 15px rgba(139, 92, 246, 0.2)' },
+                            '50%': { boxShadow: '0 0 30px rgba(139, 92, 246, 0.5)' },
+                        },
+                        'particle-float': {
+                            '0%': { transform: 'translateY(0) translateX(0)' },
+                            '25%': { transform: 'translateY(-20px) translateX(10px)' },
+                            '50%': { transform: 'translateY(0) translateX(20px)' },
+                            '75%': { transform: 'translateY(20px) translateX(10px)' },
+                            '100%': { transform: 'translateY(0) translateX(0)' },
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050816;
+            color: white;
+        }.cyber-grid-bg {
+            background-size: 50px 50px;
+            background-image: linear-gradient(to right, rgba(139, 92, 246, 0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
+            mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+            transform: perspective(1000px) rotateX(20deg) scale(1.5);
+            transform-origin: center top;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+        .glass-panel:hover {
+            border-color: rgba(139, 92, 246, 0.6);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+        }
+        .glass-input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            backdrop-filter: blur(10px);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .glass-input:focus {
+            background: rgba(0, 0, 0, 0.5);
+            border-color: #8B5CF6;
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+            outline: none;
+        }
+        .text-glow {
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+        }
+        .btn-primary-glow {
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+            transition: all 0.3s ease;
+        }
+        .btn-primary-glow:hover {
+            box-shadow: 0 0 25px rgba(139, 92, 246, 0.7);
+            transform: translateY(-2px);
+        }.syntax-keyword { color: #c678dd; }.syntax-string { color: #98c379; }.syntax-variable { color: #e06c75; }.syntax-number { color: #d19a66; }.syntax-comment { color: #5c6370; font-style: italic; }.tilt-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transform-style: preserve-3d;
+        }
+        .tilt-card:hover {
+            transform: perspective(1000px) rotateX(2deg) rotateY(2deg) scale(1.02);
+            z-index: 10;
+        }::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #050816;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d2839;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8B5CF6;
+        }.particle {
+            position: absolute;
+            background: rgba(139, 92, 246, 0.4);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden antialiased bg-background-dark text-white">
+<div class="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+<div class="absolute inset-0 bg-background-dark"></div>
+<div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full animate-float"></div>
+<div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-900/10 blur-[120px] rounded-full animate-float" style="animation-delay: 2s;"></div>
+<div class="absolute inset-0 top-[20%] cyber-grid-bg h-[150%]"></div>
+<div class="particle w-1 h-1 top-1/4 left-1/4 animate-particle-float"></div>
+<div class="particle w-2 h-2 top-1/2 left-2/3 animate-particle-float" style="animation-delay: 1s;"></div>
+<div class="particle w-1 h-1 top-3/4 left-1/3 animate-particle-float" style="animation-delay: 3s;"></div>
+<div class="particle w-1.5 h-1.5 top-1/3 right-1/4 animate-particle-float" style="animation-delay: 4s;"></div>
+</div>
+<div class="relative z-10 flex min-h-screen w-full flex-col">
+<header class="fixed top-0 left-0 right-0 z-50 flex justify-center py-4 px-4">
+<nav class="glass-panel rounded-full px-6 py-3 flex items-center justify-between w-full max-w-7xl transition-all duration-300">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-8 rounded-full bg-primary/20 border border-primary/40 text-primary">
+<span class="material-symbols-outlined text-xl">deployed_code</span>
+</div>
+<a class="text-white font-display font-bold text-lg tracking-wide uppercase hover:text-primary-glow transition-colors" href="#">LogicSphere</a>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-gray-300 hover:text-primary transition-colors text-sm font-medium uppercase tracking-wider" href="#">Forge</a>
+<a class="text-white text-glow transition-colors text-sm font-bold uppercase tracking-wider flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-sm">lock</span> The Vault
+                </a>
+<a class="text-gray-300 hover:text-primary transition-colors text-sm font-medium uppercase tracking-wider" href="#">Documentation</a>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden sm:flex items-center gap-3 border-r border-white/10 pr-4 mr-1">
+<span class="text-xs text-gray-400 font-mono">WS_ID: 8492-XJ</span>
+</div>
+<div class="size-8 rounded-full bg-gradient-to-tr from-primary to-blue-500 border border-white/20"></div>
+</div>
+</nav>
+</header>
+<main class="flex-grow pt-28 px-4 pb-12 flex flex-col items-center">
+<div class="w-full max-w-7xl flex flex-col gap-8">
+<div class="flex flex-col md:flex-row justify-between items-end gap-6 animate-float" style="animation-duration: 8s;">
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-2 text-primary-glow text-xs font-bold uppercase tracking-[0.2em] mb-1">
+<span class="material-symbols-outlined text-sm">database</span>
+                        System Resource
+                    </div>
+<h1 class="text-4xl md:text-5xl font-display font-black text-white text-glow leading-tight">
+                        Syntax Library <span class="text-gray-500 font-light mx-2">/</span> <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-400">The Vault</span>
+</h1>
+<p class="text-gray-400 max-w-2xl font-light text-lg">
+                        Store, categorize, and deploy verified SPSS logic templates. Access your team's collective intelligence.
+                    </p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center justify-center gap-2 px-6 py-3 rounded-lg border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-all uppercase text-xs font-bold tracking-wider">
+<span class="material-symbols-outlined text-sm">upload</span> Import Syntax
+                    </button>
+<button class="btn-primary-glow flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary text-white hover:bg-violet-600 transition-all uppercase text-xs font-bold tracking-wider">
+<span class="material-symbols-outlined text-sm">add</span> New Template
+                    </button>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-4">
+<div class="lg:col-span-3 flex flex-col gap-6">
+<div class="glass-panel rounded-2xl p-5 flex flex-col gap-4">
+<div class="relative w-full group">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors">
+<span class="material-symbols-outlined">search</span>
+</span>
+<input class="glass-input w-full h-10 rounded-lg pl-10 pr-4 text-sm placeholder-gray-500 font-medium" placeholder="Search templates..." type="text"/>
+</div>
+<div class="h-px w-full bg-white/10"></div>
+<div class="flex flex-col gap-1">
+<h3 class="text-xs text-gray-400 uppercase tracking-widest font-bold mb-2 ml-1">Categories</h3>
+<button class="flex items-center justify-between w-full px-3 py-2 rounded-lg bg-primary/20 text-white border border-primary/30 text-sm font-medium transition-all">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-lg">folder_open</span>
+<span>All Templates</span>
+</div>
+<span class="bg-primary text-white text-[10px] px-1.5 rounded-md font-mono">24</span>
+</button>
+<button class="flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white text-sm font-medium transition-all group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined group-hover:text-primary text-lg transition-colors">cleaning_services</span>
+<span>Data Cleaning</span>
+</div>
+<span class="bg-white/5 group-hover:bg-primary/50 text-gray-500 group-hover:text-white text-[10px] px-1.5 rounded-md font-mono transition-colors">8</span>
+</button>
+<button class="flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white text-sm font-medium transition-all group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined group-hover:text-primary text-lg transition-colors">transform</span>
+<span>Recoding Logic</span>
+</div>
+<span class="bg-white/5 group-hover:bg-primary/50 text-gray-500 group-hover:text-white text-[10px] px-1.5 rounded-md font-mono transition-colors">12</span>
+</button>
+<button class="flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white text-sm font-medium transition-all group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined group-hover:text-primary text-lg transition-colors">functions</span>
+<span>Custom Variables</span>
+</div>
+<span class="bg-white/5 group-hover:bg-primary/50 text-gray-500 group-hover:text-white text-[10px] px-1.5 rounded-md font-mono transition-colors">4</span>
+</button>
+</div>
+</div>
+<div class="glass-panel rounded-2xl p-5 flex flex-col gap-3 relative overflow-hidden">
+<div class="absolute -right-4 -bottom-4 text-primary/10">
+<span class="material-symbols-outlined text-9xl">hub</span>
+</div>
+<h3 class="text-xs text-gray-400 uppercase tracking-widest font-bold">Processing Hub</h3>
+<div class="flex items-center gap-3 mt-1">
+<div class="relative w-10 h-10 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-gray-800" cx="20" cy="20" fill="transparent" r="16" stroke="currentColor" stroke-width="3"></circle>
+<circle class="text-primary" cx="20" cy="20" fill="transparent" r="16" stroke="currentColor" stroke-dasharray="100" stroke-dashoffset="25" stroke-width="3"></circle>
+</svg>
+<span class="absolute text-[10px] font-mono font-bold">75%</span>
+</div>
+<div class="flex flex-col">
+<span class="text-sm font-bold text-white">Project_Alpha_v2</span>
+<span class="text-[10px] text-primary animate-pulse uppercase">Generating Logic...</span>
+</div>
+</div>
+<button class="mt-2 w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-[10px] uppercase font-bold tracking-wider transition-colors">
+                            View Console
+                        </button>
+</div>
+</div>
+<div class="lg:col-span-9">
+<div class="flex items-center justify-between mb-4 px-2">
+<span class="text-xs font-mono text-gray-500">SHOWING 24 TEMPLATES</span>
+<div class="flex gap-2">
+<button class="p-1.5 rounded hover:bg-white/5 text-primary"><span class="material-symbols-outlined text-lg">grid_view</span></button>
+<button class="p-1.5 rounded hover:bg-white/5 text-gray-500 hover:text-white"><span class="material-symbols-outlined text-lg">list</span></button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+<div class="glass-panel rounded-xl p-5 flex flex-col gap-4 tilt-card group h-full relative overflow-hidden">
+<div class="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+<button class="text-gray-400 hover:text-white"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+<div class="flex flex-col gap-1 z-10">
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-400 border border-green-500/30 uppercase">Cleaning</span>
+<span class="text-[10px] text-gray-500 font-mono">v2.1</span>
+</div>
+<h3 class="text-lg font-bold text-white group-hover:text-primary transition-colors">Age Bands Recode</h3>
+<p class="text-xs text-gray-400 line-clamp-2">Standard recoding logic for age demographics into 5-year and 10-year bands.</p>
+</div>
+<div class="bg-[#0d1117] border border-white/10 rounded-lg p-3 font-mono text-[10px] overflow-hidden relative group-hover:border-primary/30 transition-colors z-10 h-32">
+<div class="absolute inset-0 bg-gradient-to-b from-transparent to-[#0d1117] opacity-50 pointer-events-none"></div>
+<pre class="text-gray-300"><span class="syntax-keyword">RECODE</span> Age 
+  (18 <span class="syntax-keyword">THRU</span> 24=1) 
+  (25 <span class="syntax-keyword">THRU</span> 34=2) 
+  (35 <span class="syntax-keyword">THRU</span> 44=3) 
+  (45 <span class="syntax-keyword">THRU</span> 54=4) 
+  (55 <span class="syntax-keyword">THRU</span> 64=5) 
+  (65 <span class="syntax-keyword">THRU</span> <span class="syntax-keyword">HI</span>=6) 
+  <span class="syntax-keyword">INTO</span> Age_Band_6.
+<span class="syntax-keyword">VARIABLE LABELS</span> Age_Band_6 <span class="syntax-string">'Age Groups (6)'</span>.
+<span class="syntax-keyword">EXECUTE</span>.</pre>
+</div>
+<div class="mt-auto pt-2 flex gap-2 z-10">
+<button class="flex-1 py-2 rounded-md bg-white/5 hover:bg-primary hover:text-white border border-white/10 text-gray-300 text-xs font-bold uppercase tracking-wider transition-all">
+                                    Apply
+                                </button>
+<button class="px-3 py-2 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 transition-all" title="Preview">
+<span class="material-symbols-outlined text-sm">visibility</span>
+</button>
+</div>
+</div>
+<div class="glass-panel rounded-xl p-5 flex flex-col gap-4 tilt-card group h-full relative overflow-hidden">
+<div class="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+<button class="text-gray-400 hover:text-white"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+<div class="flex flex-col gap-1 z-10">
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30 uppercase">Labels</span>
+<span class="text-[10px] text-gray-500 font-mono">v1.0</span>
+</div>
+<h3 class="text-lg font-bold text-white group-hover:text-primary transition-colors">Likert Scale 5pt</h3>
+<p class="text-xs text-gray-400 line-clamp-2">Universal value labels for standard 5-point agreement scales.</p>
+</div>
+<div class="bg-[#0d1117] border border-white/10 rounded-lg p-3 font-mono text-[10px] overflow-hidden relative group-hover:border-primary/30 transition-colors z-10 h-32">
+<div class="absolute inset-0 bg-gradient-to-b from-transparent to-[#0d1117] opacity-50 pointer-events-none"></div>
+<pre class="text-gray-300"><span class="syntax-keyword">VALUE LABELS</span>
+  Q1 <span class="syntax-keyword">TO</span> Q10
+  1 <span class="syntax-string">'Strongly Disagree'</span>
+  2 <span class="syntax-string">'Disagree'</span>
+  3 <span class="syntax-string">'Neutral'</span>
+  4 <span class="syntax-string">'Agree'</span>
+  5 <span class="syntax-string">'Strongly Agree'</span>.
+<span class="syntax-keyword">EXECUTE</span>.</pre>
+</div>
+<div class="mt-auto pt-2 flex gap-2 z-10">
+<button class="flex-1 py-2 rounded-md bg-white/5 hover:bg-primary hover:text-white border border-white/10 text-gray-300 text-xs font-bold uppercase tracking-wider transition-all">
+                                    Apply
+                                </button>
+<button class="px-3 py-2 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 transition-all" title="Preview">
+<span class="material-symbols-outlined text-sm">visibility</span>
+</button>
+</div>
+</div>
+<div class="glass-panel rounded-xl p-5 flex flex-col gap-4 tilt-card group h-full relative overflow-hidden">
+<div class="absolute -top-10 -right-10 w-24 h-24 bg-primary/20 blur-[40px] rounded-full group-hover:bg-primary/30 transition-colors"></div>
+<div class="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+<button class="text-gray-400 hover:text-white"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+<div class="flex flex-col gap-1 z-10">
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30 uppercase">Complex</span>
+<span class="text-[10px] text-gray-500 font-mono">v4.2</span>
+</div>
+<h3 class="text-lg font-bold text-white group-hover:text-primary transition-colors">T2B / B2B Calculation</h3>
+<p class="text-xs text-gray-400 line-clamp-2">Automated syntax to generate Top 2 Box and Bottom 2 Box summary variables.</p>
+</div>
+<div class="bg-[#0d1117] border border-white/10 rounded-lg p-3 font-mono text-[10px] overflow-hidden relative group-hover:border-primary/30 transition-colors z-10 h-32">
+<div class="absolute inset-0 bg-gradient-to-b from-transparent to-[#0d1117] opacity-50 pointer-events-none"></div>
+<pre class="text-gray-300"><span class="syntax-comment">* Calculate Top 2 Box.</span>
+<span class="syntax-keyword">COMPUTE</span> T2B_Q1 = <span class="syntax-number">0</span>.
+<span class="syntax-keyword">IF</span> (Q1 &gt;= <span class="syntax-number">4</span>) T2B_Q1 = <span class="syntax-number">100</span>.
+<span class="syntax-keyword">VARIABLE LABELS</span> T2B_Q1 <span class="syntax-string">'Top 2 Box (Agree)'</span>.
+<span class="syntax-keyword">FORMATS</span> T2B_Q1 (F3.0).
+<span class="syntax-keyword">EXECUTE</span>.</pre>
+</div>
+<div class="mt-auto pt-2 flex gap-2 z-10">
+<button class="flex-1 py-2 rounded-md bg-white/5 hover:bg-primary hover:text-white border border-white/10 text-gray-300 text-xs font-bold uppercase tracking-wider transition-all">
+                                    Apply
+                                </button>
+<button class="px-3 py-2 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 transition-all" title="Preview">
+<span class="material-symbols-outlined text-sm">visibility</span>
+</button>
+</div>
+</div>
+<div class="glass-panel rounded-xl p-5 flex flex-col gap-4 tilt-card group h-full relative overflow-hidden">
+<div class="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+<button class="text-gray-400 hover:text-white"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+<div class="flex flex-col gap-1 z-10">
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 uppercase">QA</span>
+<span class="text-[10px] text-gray-500 font-mono">v1.1</span>
+</div>
+<h3 class="text-lg font-bold text-white group-hover:text-primary transition-colors">Straightliner Check</h3>
+<p class="text-xs text-gray-400 line-clamp-2">Identifies respondents who straightlined through grid questions.</p>
+</div>
+<div class="bg-[#0d1117] border border-white/10 rounded-lg p-3 font-mono text-[10px] overflow-hidden relative group-hover:border-primary/30 transition-colors z-10 h-32">
+<div class="absolute inset-0 bg-gradient-to-b from-transparent to-[#0d1117] opacity-50 pointer-events-none"></div>
+<pre class="text-gray-300"><span class="syntax-keyword">COMPUTE</span> SD_Grid = <span class="syntax-keyword">SD</span>(Q5_1 <span class="syntax-keyword">TO</span> Q5_10).
+<span class="syntax-keyword">IF</span> (SD_Grid = <span class="syntax-number">0</span>) Flag_Straightline = <span class="syntax-number">1</span>.
+<span class="syntax-keyword">FREQUENCIES</span> Flag_Straightline.
+<span class="syntax-keyword">EXECUTE</span>.</pre>
+</div>
+<div class="mt-auto pt-2 flex gap-2 z-10">
+<button class="flex-1 py-2 rounded-md bg-white/5 hover:bg-primary hover:text-white border border-white/10 text-gray-300 text-xs font-bold uppercase tracking-wider transition-all">
+                                    Apply
+                                </button>
+<button class="px-3 py-2 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 transition-all" title="Preview">
+<span class="material-symbols-outlined text-sm">visibility</span>
+</button>
+</div>
+</div>
+<div class="border border-dashed border-white/20 rounded-xl p-5 flex flex-col items-center justify-center gap-4 group hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer min-h-[250px]">
+<div class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-3xl text-gray-500 group-hover:text-primary">add_circle</span>
+</div>
+<div class="text-center">
+<h3 class="text-base font-bold text-gray-300 group-hover:text-white">Save from Hub</h3>
+<p class="text-xs text-gray-500 mt-1 max-w-[200px]">Import a code block from your current Processing Hub session</p>
+</div>
+</div>
+</div>
+<div class="flex justify-center mt-12">
+<div class="glass-panel rounded-lg flex items-center p-1">
+<button class="p-2 hover:bg-white/10 rounded text-gray-400"><span class="material-symbols-outlined text-sm">chevron_left</span></button>
+<button class="px-3 py-1 bg-primary/20 text-primary text-xs font-bold rounded">1</button>
+<button class="px-3 py-1 hover:bg-white/10 text-gray-400 text-xs font-bold rounded">2</button>
+<button class="px-3 py-1 hover:bg-white/10 text-gray-400 text-xs font-bold rounded">3</button>
+<span class="px-2 text-gray-600">...</span>
+<button class="p-2 hover:bg-white/10 rounded text-gray-400"><span class="material-symbols-outlined text-sm">chevron_right</span></button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<footer class="relative z-10 border-t border-white/5 bg-black/40 backdrop-blur-sm pt-8 pb-8">
+<div class="layout-content-container max-w-7xl mx-auto px-4 flex flex-col gap-6">
+<div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+<p class="text-gray-600 text-xs font-mono">© 2024 LogicSphere AI. <span class="text-green-500/70">● System Nominal</span></p>
+<div class="flex gap-4">
+<a class="text-gray-600 hover:text-white transition-colors text-xs uppercase font-bold tracking-widest" href="#">Help Center</a>
+<a class="text-gray-600 hover:text-white transition-colors text-xs uppercase font-bold tracking-widest" href="#">API Status</a>
+<a class="text-gray-600 hover:text-white transition-colors text-xs uppercase font-bold tracking-widest" href="#">Privacy</a>
+</div>
+</div>
+</div>
+</footer>
+</div>
+
+</body></html>

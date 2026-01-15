@@ -1,0 +1,985 @@
+{
+  "questions": [
+    {
+      "id": "Q1",
+      "type": "SA",
+      "instruction": "SCRIPT: ASK ALL\nNote: SA\nThis information is already included in the IFM panel.",
+      "label": "Vui lòng cho biết giới tính của anh/ chị.",
+      "options": [
+        {
+          "code": 1,
+          "label": "Nam",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Nữ",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null,
+        "ask_if_condition": null
+      }
+    },
+    {
+      "id": "Q2",
+      "type": "SA",
+      "instruction": "SCRIPT: ASK ALL\nNote: SA\nThis information is already included in the IFM panel.",
+      "label": "Anh/chị hiện đang sống ở tỉnh/thành phố nào?",
+      "options": [
+        {
+          "code": "Drop-down list",
+          "label": "Danh sách có sẵn",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": "IF NOT(Q2.code == 'Hanoi' OR Q2.code == 'HCMC')",
+        "ask_if_condition": null
+      }
+    },
+    {
+      "id": "Q3",
+      "type": "SA",
+      "instruction": "SCRIPT: ASK ALL.\nNote: SA.\nAlready included in panel",
+      "label": "Anh/chị sinh năm bao nhiêu?\nTrả lời:",
+      "options": [
+        {
+          "code": 1,
+          "label": "Dưới 18 tuổi",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "18 – Dưới 25 tuổi",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "25 – 29 tuổi",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "30 – 39 tuổi",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "40 – 49 tuổi",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "50 – 55 tuổi",
+          "codeType": "Normal"
+        },
+        {
+          "code": 7,
+          "label": "Trên 55 tuổi",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": "IF (Q3.code == 1 OR Q3.code == 2 OR Q3.code == 7)",
+        "ask_if_condition": null
+      }
+    },
+    {
+      "id": "Q4",
+      "type": "SA",
+      "instruction": "SCRIPT: ASK ALL.\nNote: SA.",
+      "label": "Thu nhập trung bình hàng tháng của cả HỘ GIA ĐÌNH anh/chị khoảng bao nhiêu (bao gồm lương, đầu tư kinh doanh, cho thuê bất động sản,...)?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Trên 40,000,000 VND",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "30,000,001 - 40,000,000 VND",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "25,000,001 - 30,000,000 VND",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "20,000,001 - 25,000,000 VND",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "15,000,001 - 20,000,000 VND",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "10,000,001-15,000,000 VND",
+          "codeType": "Normal"
+        },
+        {
+          "code": 7,
+          "label": "8,000,001 - 10,000,000 VND",
+          "codeType": "Normal"
+        },
+        {
+          "code": 8,
+          "label": "3,000,001 - 8,000,000 VND",
+          "codeType": "Normal"
+        },
+        {
+          "code": 9,
+          "label": "Dưới 3,000,000 VND",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": "IF (Q4.code == 5 OR Q4.code == 6 OR Q4.code == 7 OR Q4.code == 8 OR Q4.code == 9)",
+        "ask_if_condition": null
+      }
+    },
+    {
+      "id": "Q5",
+      "type": "MA",
+      "instruction": "SCRIPT: ASK ALL.\nNote: MA ROTATE",
+      "label": "Những loại sản phẩm/dịch vụ nào dưới đây anh/chị đã mua sắm trong vòng 12 tháng qua?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Thời trang và Phụ kiện",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Sức khỏe và Làm đẹp (mỹ phẩm, kem dưỡng, thực phẩm chức năng,...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Thực phẩm & đồ uống tiêu dùng đóng gói sẵn (ví dụ: snack, bánh quy, mì ăn liền, sữa, nước ngọt, hạt nêm, gia vị đóng gói, kem que,...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Thiết bị công nghệ (điện thoại thông minh, laptop, máy tính bảng,...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Đồ chơi, đồ dùng mẹ và bé",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Nội- Ngoại thất (bàn/ ghế làm việc, bàn ghế và ô dù cho ban công & sân vườn, giá kệ/ bàn cà phê, kệ TV, kệ sách, ghế/ bàn ăn, sofa/ ghế bành, giường, tủ quần áo, tủ đầu giường, tủ/kệ giày...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 7,
+          "label": "Chăn ga gối & nệm & Phụ kiện Phòng ngủ ( bộ vỏ chăn/ gối/ ga, nệm, ruột chăn/ gối,...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 8,
+          "label": "Vật dụng trang trí nhà (gối trang trí/ chăn sofa, thảm phòng khách, đèn, lọ/bình hoa, khung tranh và ảnh, hoa và cây trang trí, đồng hồ, trang trí Giáng sinh/ Noel...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 9,
+          "label": "Đồ dùng nhà bếp & ăn uống (chén bát đĩa, dao thìa dĩa, khăn phủ bàn/phủ trang trí, ly/cốc tách, tấm lót đĩa,...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 10,
+          "label": "Vật dụng trong nhà tắm và giặt là/giặt ủi (áo choàng tắm, khăn tắm, thảm phòng tắm, chổi cọ toilet, tinh dầu thơm, thùng đựng rác, giỏ đựng đồ giặt, móc quần áo,...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 12,
+          "label": "Chăm sóc thú cưng",
+          "codeType": "Normal"
+        },
+        {
+          "code": 13,
+          "label": "Phụ kiện, sản phẩm chăm sóc ô tô/ xe máy",
+          "codeType": "Normal"
+        },
+        {
+          "code": 14,
+          "label": "Thiết bị điện gia dụng (Tivi, tủ lạnh, máy giặt, lò vi sóng, máy sấy, bếp ga, ...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 15,
+          "label": "Phi hành vào không gian",
+          "codeType": "Normal"
+        },
+        {
+          "code": 16,
+          "label": "Phiêu lưu cùng muôn vàn tinh tú",
+          "codeType": "Normal"
+        },
+        {
+          "code": 17,
+          "label": "Rung chuyển rừng vàng biển bạc",
+          "codeType": "Normal"
+        },
+        {
+          "code": 18,
+          "label": "Đánh bại hạn hán",
+          "codeType": "Normal"
+        },
+        {
+          "code": 19,
+          "label": "Dập tắt bão tố",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Không loại sản phẩm nào kể trên",
+          "codeType": "Exclusive"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": "IF (Q5R15 = 15 OR Q5R16 = 16 OR Q5R17 = 17 OR Q5R18 = 18 OR Q5R19 = 19 OR Q5R99 = 99 OR NOT(Q5R6 = 6 OR Q5R7 = 7 OR Q5R8 = 8 OR Q5R9 = 9 OR Q5R10 = 10))",
+        "ask_if_condition": null
+      }
+    },
+    {
+      "id": "Q5B",
+      "type": "SA",
+      "instruction": "SCRIPT: ASK FOR RESPONDENTS CHOSE CODE 6-10 IN Q5\nNote: SA",
+      "label": "Trong 12 tháng qua, anh/chị chủ yếu mua sản phẩm nội – ngoại thất và trang trí nhà cửa của những thương hiệu/cửa hàng nào?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Từ các hãng hoặc cửa hàng có thương hiệu/tên tuổi",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Từ cửa hàng, xưởng thủ công, không có thương hiệu rõ ràng",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": "Q5",
+        "terminate_if": "IF (Q5B.code == 2)",
+        "ask_if_condition": "IF (Q5R6 = 6 OR Q5R7 = 7 OR Q5R8 = 8 OR Q5R9 = 9 OR Q5R10 = 10)"
+      }
+    },
+    {
+      "id": "Q6",
+      "type": "MA",
+      "instruction": "SCRIPT: ASK FOR THOSE NOT SELECT NONE OF THESE CODES (FROM 6 TO 10)\nNote: MA",
+      "label": "Những mô tả nào dưới đây đúng nhất với anh/chị khi nói về lý do trong 12 tháng qua mình không mua mới các sản phẩm nội – ngoại thất và trang trí nhà cửa (bao gồm: nội – ngoại thất, chăn ga gối, đệm, trang trí, đồ dùng nhà bếp/phòng ăn, vật dụng trong nhà tắm và giặt là/giặt ủi...)?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Tôi không đủ tiền để mua.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Tôi không tìm được mẫu mã/kiểu dáng hợp với sở thích và nhà của mình.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Nhà tôi không còn chỗ để thêm đồ mới.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Sản phẩm tôi muốn mua thì hết hàng/không có sẵn.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Tôi chờ có khuyến mãi hoặc giảm giá rồi mới mua.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Hiện tại, đồ nội - ngoại thất và trang trí nhà của tôi vẫn còn tốt.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 7,
+          "label": "Tôi không yên tâm về chất lượng hay độ bền của các sản phẩm hiện có trên thị trường.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 8,
+          "label": "Có quá nhiều lựa chọn nên tôi phân vân, không biết chọn cái nào.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 9,
+          "label": "Tôi muốn trực tiếp xem và thử sản phẩm trước khi mua, nhưng không có thời gian ra cửa hàng.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 10,
+          "label": "Tôi định để sau khi chuyển sang nhà/căn hộ mới rồi mới mua.",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": "Q5",
+        "terminate_if": null,
+        "ask_if_condition": "IF (Q5R6 = 6 OR Q5R7 = 7 OR Q5R8 = 8 OR Q5R9 = 9 OR Q5R10 = 10)"
+      }
+    },
+    {
+      "id": "Q7",
+      "type": "SA",
+      "instruction": "SCRIPT: ASK ALL.\nNote: SA.",
+      "label": "Ai là người quyết định chính khi mua mới các sản phẩm nội -ngoại thất & trang trí nhà cửa (bao gồm: nội – ngoại thất, chăn ga gối, đệm, trang trí, đồ dùng nhà bếp/phòng ăn, vật dụng trong nhà tắm và giặt là/giặt ủi, ...)?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Tôi là người quyết định chính",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Tôi cùng người khác quyết định (bố mẹ, bạn đời, bạn bè, ...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Người khác quyết định chính",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": "IF (Q7.code == 3)",
+        "ask_if_condition": null
+      }
+    },
+    {
+      "id": "Q8",
+      "type": "OE",
+      "instruction": "SCRIPT: ASK ALL\nNote: OE",
+      "label": "Khi nhắc về nội - ngoại thất và trang trí nhà cửa, thương hiệu hay cửa hàng nào anh/chị nghĩ tới đầu tiên?",
+      "options": [],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null,
+        "ask_if_condition": null
+      }
+    },
+    {
+      "id": "Q9",
+      "type": "OE",
+      "instruction": "SCRIPT: ASK ALL - OPTIONAL\nNote: OE",
+      "label": "Còn thương hiệu hay cửa hàng nội - ngoại thất và trang trí nhà cửa nào anh/chị biết đến không?",
+      "options": [],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null,
+        "ask_if_condition": null
+      }
+    },
+    {
+      "id": "Q10",
+      "type": "MA",
+      "instruction": "SCRIPT: ASK ALL - SHOW BRAND PHOTO\nNote: MA - ROTATE",
+      "label": "Thương hiệu hay cửa hàng nội – ngoại thất thất và trang trí nhà cửa nào dưới đây anh/chị biết đến?",
+      "options": [
+        {
+          "code": 1,
+          "label": "JYSK",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Nội thất Hòa Phát",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Phố Xinh",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Nhà Xinh",
+          "codeType": "Normal"
+        },
+        {
+          "code": 9,
+          "label": "MOHO",
+          "codeType": "Normal"
+        },
+        {
+          "code": 10,
+          "label": "Index Living Mall",
+          "codeType": "Normal"
+        },
+        {
+          "code": 11,
+          "label": "Nội thất Chilai",
+          "codeType": "Normal"
+        },
+        {
+          "code": 12,
+          "label": "Cozy Living",
+          "codeType": "Normal"
+        },
+        {
+          "code": 14,
+          "label": "Nitori",
+          "codeType": "Normal"
+        },
+        {
+          "code": 15,
+          "label": "Muji",
+          "codeType": "Normal"
+        },
+        {
+          "code": 16,
+          "label": "Vua Nệm",
+          "codeType": "Normal"
+        },
+        {
+          "code": 17,
+          "label": "Ru9",
+          "codeType": "Normal"
+        },
+        {
+          "code": 18,
+          "label": "Elmich",
+          "codeType": "Normal"
+        },
+        {
+          "code": 19,
+          "label": "Everon",
+          "codeType": "Normal"
+        },
+        {
+          "code": 20,
+          "label": "Lock&Lock",
+          "codeType": "Normal"
+        },
+        {
+          "code": 21,
+          "label": "Jang-in",
+          "codeType": "Normal"
+        },
+        {
+          "code": 22,
+          "label": "Homé Cóordy (Aeon)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Khác (vui lòng ghi rõ)",
+          "codeType": "Normal"
+        },
+        {
+          "code": "99_O",
+          "label": "Khác (vui lòng ghi rõ)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null,
+        "ask_if_condition": null
+      }
+    },
+    {
+      "id": "Q11",
+      "type": "MA",
+      "instruction": "SCRIPT: PIPING Q10 - SHOW BRAND PHOTO\nNote: MA - ROTATE",
+      "label": "Trong 12 tháng qua, anh/chị đã từng mua sản phẩm mới từ những thương hiệu hay cửa hàng nội - ngoại thất và trang trí nhà cửa nào dưới đây?",
+      "options": [],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": "Q10",
+        "terminate_if": null,
+        "ask_if_condition": null
+      }
+    },
+    {
+      "id": "Q12",
+      "type": "SA",
+      "instruction": "SCRIPT: PIPING Q11 - SHOW BRAND PHOTO\nNote: SA",
+      "label": "Trong 12 tháng qua, anh/chị chủ yếu mua sản phẩm mới từ thương hiệu hay cửa hàng nội - ngoại thất và trang trí nhà cửa nào?",
+      "options": [],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": "Q11",
+        "terminate_if": null,
+        "ask_if_condition": null
+      }
+    },
+    {
+      "id": "Q13",
+      "type": "MA",
+      "instruction": "SCRIPT: PIPING Q10 - SHOW BRAND PHOTO\nNote: MA",
+      "label": "Trong 6 tháng tới, anh/chị dự định mua sản phẩm mới từ những thương hiệu hay cửa hàng nội - ngoại thất và trang trí nhà cửa nào?",
+      "options": [
+        {
+          "code": 1,
+          "label": "JYSK",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Nội thất Hòa Phát",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Phố Xinh",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Nhà Xinh",
+          "codeType": "Normal"
+        },
+        {
+          "code": 9,
+          "label": "MOHO",
+          "codeType": "Normal"
+        },
+        {
+          "code": 10,
+          "label": "Index Living Mall",
+          "codeType": "Normal"
+        },
+        {
+          "code": 11,
+          "label": "Nội thất Chilai",
+          "codeType": "Normal"
+        },
+        {
+          "code": 12,
+          "label": "Cozy Living",
+          "codeType": "Normal"
+        },
+        {
+          "code": 14,
+          "label": "Nitori",
+          "codeType": "Normal"
+        },
+        {
+          "code": 15,
+          "label": "Muji",
+          "codeType": "Normal"
+        },
+        {
+          "code": 16,
+          "label": "Vua Nệm",
+          "codeType": "Normal"
+        },
+        {
+          "code": 17,
+          "label": "Ru9",
+          "codeType": "Normal"
+        },
+        {
+          "code": 18,
+          "label": "Elmich",
+          "codeType": "Normal"
+        },
+        {
+          "code": 19,
+          "label": "Everon",
+          "codeType": "Normal"
+        },
+        {
+          "code": 20,
+          "label": "Lock&Lock",
+          "codeType": "Normal"
+        },
+        {
+          "code": 21,
+          "label": "Jang-in",
+          "codeType": "Normal"
+        },
+        {
+          "code": 22,
+          "label": "Homé Cóordy (Aeon)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Khác (vui lòng ghi rõ)",
+          "codeType": "Normal"
+        },
+        {
+          "code": "99_O",
+          "label": "Khác (vui lòng ghi rõ)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": "Q10",
+        "terminate_if": null,
+        "ask_if_condition": null
+      }
+    },
+    {
+      "id": "Q13B",
+      "type": "MA",
+      "instruction": "SCRIPT: ASK IF CODE 1 IS SELECTED IN Q13\nNote: MA - ROTATE",
+      "label": "Anh/chị có nói rằng trong 6 tháng tới anh/chị sẽ dự định mua sản phẩm mới từ JYSK. Vậy anh/chị dự định sẽ mua những loại sản phẩm nào từ JYSK?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Nội - Ngoại thất (bàn/ ghế làm việc, bàn ghế và ô dù cho ban công & sân vườn, giá kệ/ bàn cà phê, kệ TV, kệ sách, ghế/ bàn ăn, sofa/ ghế bành, giường, tủ quần áo, tủ đầu giường, tủ/kệ giày...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Chăn ga gối & nệm & Phụ kiện Phòng ngủ ( bộ vỏ chăn/ gối/ ga, nệm, ruột chăn/ gối,...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Vật dụng trang trí nhà (gối trang trí/ chăn sofa, thảm phòng khách, đèn, lọ/bình hoa, khung tranh và ảnh, hoa và cây trang trí, đồng hồ, trang trí Giáng sinh/ Noel...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Đồ dùng nhà bếp & ăn uống (chén bát đĩa, dao thìa dĩa, khăn phủ bàn/phủ trang trí, ly/cốc tách, tấm lót đĩa,...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Vật dụng trong nhà tắm và giặt là/giặt ủi (áo choàng tắm, khăn tắm, thảm phòng tắm, chổi cọ toilet, tinh dầu thơm, thùng đựng rác, giỏ đựng đồ giặt, móc quần áo,...)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": "Q13",
+        "terminate_if": null,
+        "ask_if_condition": "IF (Q13R1 = 1)"
+      }
+    },
+    {
+      "id": "Q14",
+      "type": "SA",
+      "instruction": "SCRIPT: ASK ALL - PIPING BRAND PHOTO Q12\nNote: SA",
+      "label": "Anh/chị có nói [code in Q12] là thương hiệu chính mà mình mua mới các sản phẩm nội - ngoại thất và trang trí nhà cửa.\nTrên thang từ 0 đến 10, anh/chị có sẵn lòng giới thiệu thương hiệu [code in Q12] cho gia đình, bạn bè hoặc đồng nghiệp của mình không?\n0 – Chắc chắn không giới thiệu, 5 – Bình thường, 10 – Chắc chắn giới thiệu.",
+      "options": [
+        {
+          "code": 0,
+          "label": "0",
+          "codeType": "Normal"
+        },
+        {
+          "code": 1,
+          "label": "1",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "2",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "3",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "4",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "5",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "6",
+          "codeType": "Normal"
+        },
+        {
+          "code": 7,
+          "label": "7",
+          "codeType": "Normal"
+        },
+        {
+          "code": 8,
+          "label": "8",
+          "codeType": "Normal"
+        },
+        {
+          "code": 9,
+          "label": "9",
+          "codeType": "Normal"
+        },
+        {
+          "code": 10,
+          "label": "10",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": "Q12",
+        "terminate_if": null,
+        "ask_if_condition": null
+      }
+    },
+    {
+      "id": "Q15",
+      "type": "MA",
+      "instruction": "SCRIPT: ASK ALL\nNote: MA",
+      "label": "Anh/chị biết tới thương hiệu [code in Q12] qua đâu?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Qua bạn bè, người thân, người quen giới thiệu.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Thấy tại trung tâm thương mại.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Quảng cáo trên mạng xã hội.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Quảng cáo khi tìm kiếm sản phẩm qua thanh công cụ (Google, Cốc Cốc, ...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Qua báo chí, truyền hình, radio",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Qua người nổi tiếng, người có tầm ảnh hưởng (KOL/KOC) giới thiệu",
+          "codeType": "Normal"
+        },
+        {
+          "code": 7,
+          "label": "Tôi chú ý đến cửa hàng nhờ biển hiệu/trang trí mặt tiền khi đi ngang.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Khác (vui lòng ghi rõ)",
+          "codeType": "Normal"
+        },
+        {
+          "code": "99_O",
+          "label": "Khác (vui lòng ghi rõ)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": "Q12",
+        "terminate_if": null,
+        "ask_if_condition": null
+      }
+    },
+    {
+      "id": "Q16",
+      "type": "MA",
+      "instruction": "SCRIPT: ASK ALL\nNote: MA",
+      "label": "Anh/chị đã mua các sản phẩm nội - ngoại thất và trang trí nhà cửa của thương hiệu [code in Q12] qua kênh nào?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Mua tại cửa hàng/showroom chính thức của thương hiệu",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Cửa hàng độc lập (bao gồm cả đại lý tiêu chuẩn và showroom/cửa hàng nhượng quyền)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Các trang thương mại điện tử (Shopee, Lazada, Tiki,...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Các trang mạng xã hội (Facebook, Zalo,...)",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Trang web chính thức của thương hiệu",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Nhóm cộng đồng trực tuyến bán đồ cũ trên mạng xã hội",
+          "codeType": "Normal"
+        },
+        {
+          "code": 99,
+          "label": "Khác (vui lòng ghi rõ)",
+          "codeType": "Normal"
+        },
+        {
+          "code": "99_O",
+          "label": "Khác (vui lòng ghi rõ)",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Normal",
+        "piping_source": "Q12",
+        "terminate_if": null,
+        "ask_if_condition": null
+      }
+    },
+    {
+      "id": "Q17",
+      "type": "Rank_Fixed",
+      "instruction": "SCRIPT: ASK ALL\nNote: Rank 3 (fixed) - ROTATE",
+      "label": "Anh/chị vui lòng xếp hạng 3 tiêu chí hàng đầu khi chọn thương hiệu hay cửa hàng nội - ngoại thất và trang trí nhà cửa (bao gồm: nội - ngoại thất, chăn ga gối, đệm, trang trí, đồ dùng nhà bếp/phòng ăn, vật dụng trong nhà tắm và giặt là/giặt ủi,...)?",
+      "options": [
+        {
+          "code": 1,
+          "label": "Giá cả phù hợp với khả năng chi trả của tôi.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 2,
+          "label": "Sản phẩm bền và sử dụng được lâu dài.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 3,
+          "label": "Kiểu dáng và thiết kế hài hòa, hợp với ngôi nhà và sở thích/gu của tôi.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 4,
+          "label": "Sản phẩm có thiết kế đa năng, tiện dụng trong nhiều mục đích.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 5,
+          "label": "Thương hiệu nhiều lựa chọn đa dạng (kích thước và thiết kế) để tôi cân nhắc.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 6,
+          "label": "Sản phẩm tôi cần có sẵn, không phải chờ đợi lâu.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 7,
+          "label": "Thương hiệu có tiếng và đáng tin cậy.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 8,
+          "label": "Sản phẩm thân thiện với môi trường hoặc được sản xuất từ nguyên vật liệu bền vững.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 9,
+          "label": "Dịch vụ giao hàng và lắp ráp thuận tiện, đáng tin cậy.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 10,
+          "label": "Có dịch vụ hậu mãi hoặc bảo hành tốt khi xảy ra sự cố.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 11,
+          "label": "Có nhiều ưu đãi giảm giá, chiết khấu giá.",
+          "codeType": "Normal"
+        },
+        {
+          "code": 12,
+          "label": "Sản phẩm dễ dàng tự tay lắp ráp.",
+          "codeType": "Normal"
+        }
+      ],
+      "rows": [],
+      "columns": [],
+      "logic": {
+        "type": "Ask All",
+        "piping_source": null,
+        "terminate_if": null,
+        "ask_if_condition": null
+      },
+      "limit": 3
+    }
+  ]
+}

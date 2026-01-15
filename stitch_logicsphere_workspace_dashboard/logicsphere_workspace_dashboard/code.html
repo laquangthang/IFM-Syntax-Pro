@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LogicSphere Workspace</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#590df2",
+                        "primary-hover": "#450ab5",
+                        "cyan-glow": "#00f0ff",
+                        "background-light": "#f6f5f8",
+                        "background-dark": "#0a0a0a", // Deep charcoal for cyber feel
+                        "surface-dark": "#161022",
+                        "surface-dark-lighter": "#1f1b27",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                    backgroundImage: {
+                        'cyber-grid': "linear-gradient(to right, rgba(89, 13, 242, 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(89, 13, 242, 0.1) 1px, transparent 1px)"
+                    },
+                    keyframes: {
+                        scan: {
+                            '0%, 100%': { transform: 'translateX(-150%)', opacity: '0' },
+                            '10%': { opacity: '1' },
+                            '50%': { transform: 'translateX(150%)', opacity: '1' },
+                            '90%': { opacity: '0' }
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 10px #590df2, 0 0 20px #590df2' },
+                            '50%': { boxShadow: '0 0 20px #00f0ff, 0 0 40px #00f0ff' }
+                        },
+                        floatText: {
+                            '0%': { transform: 'translateY(10px)', opacity: '0' },
+                            '20%': { transform: 'translateY(0)', opacity: '1' },
+                            '80%': { transform: 'translateY(0)', opacity: '1' },
+                            '100%': { transform: 'translateY(-10px)', opacity: '0' }
+                        }
+                    },
+                    animation: {
+                        'laser-scan': 'scan 2.5s ease-in-out infinite',
+                        'circle-pulse': 'pulseGlow 2s infinite',
+                        'float-text-1': 'floatText 4s ease-in-out infinite',
+                        'float-text-2': 'floatText 4s ease-in-out 1.3s infinite',
+                        'float-text-3': 'floatText 4s ease-in-out 2.6s infinite'
+                    }
+                },
+            },
+        }
+    </script>
+<style>::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2e2839; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #590df2; 
+        }.perspective-grid {
+            transform: perspective(1000px) rotateX(20deg) scale(1.5);
+            transform-origin: 50% 0;
+            opacity: 0.4;
+            mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+        }
+    </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-white overflow-hidden selection:bg-primary selection:text-white">
+<div class="relative flex h-screen w-full overflow-hidden">
+<div class="absolute inset-0 z-0 pointer-events-none overflow-hidden flex justify-center items-start">
+<div class="w-[200%] h-[200%] bg-cyber-grid bg-[length:60px_60px] perspective-grid absolute -top-[20%]"></div>
+<div class="absolute inset-0 bg-gradient-to-b from-background-dark via-transparent to-background-dark opacity-90"></div>
+</div>
+<nav class="relative z-20 flex flex-col items-center w-20 h-full py-6 bg-surface-dark/80 backdrop-blur-xl border-r border-white/5 shadow-2xl">
+<div class="mb-10 group cursor-pointer">
+<div class="size-10 rounded-xl bg-gradient-to-br from-primary to-purple-900 flex items-center justify-center shadow-[0_0_15px_rgba(89,13,242,0.5)] transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-white text-2xl">deployed_code</span>
+</div>
+</div>
+<div class="flex flex-col gap-6 w-full items-center flex-1">
+<button class="relative group w-full flex justify-center py-1">
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full shadow-[0_0_10px_#590df2]"></div>
+<div class="p-3 rounded-xl bg-white/10 text-white shadow-inner">
+<span class="material-symbols-outlined filled">grid_view</span>
+</div>
+<span class="absolute left-full ml-4 px-2 py-1 bg-surface-dark border border-white/10 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">Dashboard</span>
+</button>
+<button class="relative group w-full flex justify-center py-1">
+<div class="p-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+<span class="material-symbols-outlined">folder_open</span>
+</div>
+<span class="absolute left-full ml-4 px-2 py-1 bg-surface-dark border border-white/10 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">Library</span>
+</button>
+<button class="relative group w-full flex justify-center py-1">
+<div class="p-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<span class="absolute left-full ml-4 px-2 py-1 bg-surface-dark border border-white/10 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">Analytics</span>
+</button>
+<button class="relative group w-full flex justify-center py-1">
+<div class="p-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+<span class="material-symbols-outlined">settings</span>
+</div>
+<span class="absolute left-full ml-4 px-2 py-1 bg-surface-dark border border-white/10 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">Settings</span>
+</button>
+</div>
+<div class="mt-auto">
+<div class="relative cursor-pointer">
+<div class="size-10 rounded-full bg-center bg-cover border-2 border-white/10 hover:border-primary transition-colors" data-alt="User profile avatar placeholder" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC6MtjjYv_4nm8Qc4bZXCrfcEmkVbnpJd_DAezCBLkq0aSeNT_hXq3-psThiGj7bXWq_9RF-dQNDbrOMjLWJ4ckeUMb7HDuOTsAxqpyLPYjiVudRuQTGDnc47imWu27CJT0w59cGGyRdHBEHz_zXPS3R662HzzNvFKNAFIx0NJxcncL0YhMHIMhzB9MuMq2kSC7LaVC5dhGny-eyL5WIvZl1BBMtDSCpN9nCPB-OMxlMC8Rd1Dl6OUakOI5b2lVGwKqUoF5YM9DSA1p');"></div>
+<div class="absolute top-0 right-0 size-3 bg-green-500 border-2 border-surface-dark rounded-full"></div>
+</div>
+</div>
+</nav>
+<main class="relative z-10 flex-1 flex flex-col h-full overflow-hidden">
+<header class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-8 py-8 shrink-0">
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-2 text-sm text-gray-400 font-medium">
+<span>Workspace</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-white">All Projects</span>
+</div>
+<h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white drop-shadow-lg">
+                        My Logic Sequences
+                    </h1>
+<p class="text-gray-400 max-w-lg mt-1">Manage your AI-generated 3D logic models and explore complex data structures.</p>
+</div>
+<button class="group flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-[#702df5] hover:from-[#450ab5] hover:to-[#5d1bd6] text-white px-6 py-3 rounded-lg font-semibold shadow-[0_0_20px_rgba(89,13,242,0.4)] hover:shadow-[0_0_30px_rgba(89,13,242,0.6)] transition-all duration-300 transform hover:-translate-y-0.5">
+<span class="material-symbols-outlined">add</span>
+<span>Create New Sequence</span>
+</button>
+</header>
+<div class="flex-1 overflow-y-auto px-8 pb-12">
+<div class="flex gap-4 mb-8">
+<div class="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white hover:bg-white/10 cursor-pointer transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">filter_list</span> Filter
+                     </div>
+<div class="px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-white hover:bg-white/10 cursor-pointer transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">sort</span> Recent
+                     </div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 @container">
+<div class="group flex flex-col bg-surface-dark-lighter/60 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden hover:border-primary/50 hover:shadow-[0_0_30px_rgba(89,13,242,0.15)] transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+<div class="relative h-48 w-full bg-black/40 overflow-hidden">
+<div class="absolute inset-0 bg-cover bg-center opacity-80 group-hover:scale-105 transition-transform duration-700" data-alt="Abstract purple node network visualization representing quantum computing logic map" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBNIEtAl0YgNZ3rBaS3k5qncOatzsidx5PqyzWgnv9pf_d1Q4_EvqqwzzP1AbrvJqHYfUr2BNE8yyODHT4HbP5Ms060lOV_v5DTEJLO5N5ZCbpdqZmmVGfjkAKFHkQR2100iw2IY8i3UUc4iAYZOgdI7oIt-B9POw-2pC-2DyTk8s7YYo3eaVpx1y7bbUIIyxADJziuWvIqVw4lCXeYt0Sy0PshEpuqTArva_GeWiB7Nq0ngB3q2VxSxLKjtICMQZc1ORafKBFxT2mi');"></div>
+<div class="absolute top-3 right-3 px-2 py-1 bg-black/60 backdrop-blur rounded text-xs font-medium text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+<span class="size-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Ready
+                            </div>
+</div>
+<div class="p-5 flex flex-col gap-4 flex-1">
+<div class="flex justify-between items-start gap-2">
+<h3 class="text-lg font-bold text-white leading-tight group-hover:text-primary transition-colors">Quantum Computing Research PDF</h3>
+<button class="text-gray-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-3 mt-auto">
+<div class="bg-white/5 rounded-lg p-2 flex flex-col items-center justify-center border border-white/5 group-hover:border-primary/20 transition-colors">
+<span class="text-xs text-gray-400 uppercase tracking-wider">Accuracy</span>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-primary text-[16px]">check_circle</span>
+<span class="font-bold text-white">98%</span>
+</div>
+</div>
+<div class="bg-white/5 rounded-lg p-2 flex flex-col items-center justify-center border border-white/5 group-hover:border-primary/20 transition-colors">
+<span class="text-xs text-gray-400 uppercase tracking-wider">Questions</span>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-gray-300 text-[16px]">quiz</span>
+<span class="font-bold text-white">42</span>
+</div>
+</div>
+</div>
+<div class="pt-2 border-t border-white/5 flex justify-between items-center text-xs text-gray-500">
+<span>Edited 2h ago</span>
+<div class="flex -space-x-2">
+<div class="size-5 rounded-full border border-surface-dark bg-gray-600"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="group flex flex-col bg-surface-dark-lighter/60 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden hover:border-primary/50 hover:shadow-[0_0_30px_rgba(89,13,242,0.15)] transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+<div class="relative h-48 w-full bg-black/40 overflow-hidden">
+<div class="absolute inset-0 bg-cover bg-center opacity-80 group-hover:scale-105 transition-transform duration-700" data-alt="Blue linear graph structure representing financial projections" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAoKt05sNVTiyz5sUMK0R6tGML3xHbddRw3NXz0NzcO6vqSSoNf06Nc8p7jJx5IYDN5YrAgzYna84eQDnIOZ-J6BeeOTbKqAyZavN3orTD9VvR2JBr6WalKSxJ2w7Sa5O3a4ippeikVXFSMPJxxdSvxMuOhcXRNSU6TGq3So8psoqBV3ggJTRTP_2J68k3ITWMtgwBYpNVuwcI_P8LtfnFkVF_hDGl3StLiaOxTsuG33CPRYWS0h619xRm8XK5CGZ7f_gvo25AMHyi7');"></div>
+<div class="absolute top-3 right-3 px-2 py-1 bg-black/60 backdrop-blur rounded text-xs font-medium text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+<span class="size-1.5 rounded-full bg-emerald-500"></span> Ready
+                            </div>
+</div>
+<div class="p-5 flex flex-col gap-4 flex-1">
+<div class="flex justify-between items-start gap-2">
+<h3 class="text-lg font-bold text-white leading-tight group-hover:text-primary transition-colors">Q3 Financial Projections</h3>
+<button class="text-gray-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-3 mt-auto">
+<div class="bg-white/5 rounded-lg p-2 flex flex-col items-center justify-center border border-white/5 group-hover:border-primary/20 transition-colors">
+<span class="text-xs text-gray-400 uppercase tracking-wider">Accuracy</span>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-yellow-500 text-[16px]">warning</span>
+<span class="font-bold text-white">85%</span>
+</div>
+</div>
+<div class="bg-white/5 rounded-lg p-2 flex flex-col items-center justify-center border border-white/5 group-hover:border-primary/20 transition-colors">
+<span class="text-xs text-gray-400 uppercase tracking-wider">Questions</span>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-gray-300 text-[16px]">quiz</span>
+<span class="font-bold text-white">12</span>
+</div>
+</div>
+</div>
+<div class="pt-2 border-t border-white/5 flex justify-between items-center text-xs text-gray-500">
+<span>Edited 1d ago</span>
+</div>
+</div>
+</div>
+<div class="group flex flex-col bg-surface-dark-lighter/60 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden hover:border-primary/50 hover:shadow-[0_0_30px_rgba(89,13,242,0.15)] transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+<div class="relative h-48 w-full bg-black/40 overflow-hidden">
+<div class="absolute inset-0 bg-cover bg-center opacity-80 group-hover:scale-105 transition-transform duration-700" data-alt="Dense red and pink neural network diagram complex web" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA-GR5Z_M2cqlg6y3BwPzlP5_5YjD3BT3IAmC1HjIbe4NsM3dDkdd3pDz2Kw4Cd4CdJ__MpEhUKAdYPN6lcphx9cz7-ubq4EMN7K9DQtP52NFz6LbKgbNocp8YVjteY28bFjVID6qBKsjT2jPXE-KBzctKQWRlO1Xy2rVqG-BrPYzZ46xIoCk9gsgZEzTGi6VmmXKuKUDa6VTHutMZMOz9IMD2oA3pochebMg-GSesGz8IdQzc0ImZ5WWbi9-nE-F7h92W6sd1Ci5tn');"></div>
+<div class="absolute top-3 right-3 px-2 py-1 bg-black/60 backdrop-blur rounded text-xs font-medium text-orange-400 border border-orange-500/30 flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] animate-spin">sync</span> Processing
+                            </div>
+</div>
+<div class="p-5 flex flex-col gap-4 flex-1">
+<div class="flex justify-between items-start gap-2">
+<h3 class="text-lg font-bold text-white leading-tight group-hover:text-primary transition-colors">Neural Network Architecture</h3>
+<button class="text-gray-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-3 mt-auto">
+<div class="bg-white/5 rounded-lg p-2 flex flex-col items-center justify-center border border-white/5 group-hover:border-primary/20 transition-colors">
+<span class="text-xs text-gray-400 uppercase tracking-wider">Accuracy</span>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-primary text-[16px]">check_circle</span>
+<span class="font-bold text-white">92%</span>
+</div>
+</div>
+<div class="bg-white/5 rounded-lg p-2 flex flex-col items-center justify-center border border-white/5 group-hover:border-primary/20 transition-colors">
+<span class="text-xs text-gray-400 uppercase tracking-wider">Questions</span>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-gray-300 text-[16px]">quiz</span>
+<span class="font-bold text-white">156</span>
+</div>
+</div>
+</div>
+<div class="pt-2 border-t border-white/5 flex justify-between items-center text-xs text-gray-500">
+<span>Edited 3d ago</span>
+</div>
+</div>
+</div>
+<div class="group flex flex-col bg-surface-dark-lighter/60 backdrop-blur-md border border-white/5 rounded-2xl overflow-hidden hover:border-primary/50 hover:shadow-[0_0_30px_rgba(89,13,242,0.15)] transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+<div class="relative h-48 w-full bg-black/40 overflow-hidden">
+<div class="absolute inset-0 bg-cover bg-center opacity-80 group-hover:scale-105 transition-transform duration-700" data-alt="Green isometric supply chain logic blocks connected" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDOOguai6tMN3vyldP1x0LxoK9oZR8okLul_vM1WLkbvfx2nX1vyODzXYBFNDMMkoZwBSaoNac_ZuDwkpp0P1Y2I6R9wvdVB9Z6O3wPIUfHqwLL2Gq83jEMagNiGNFv2SgtW-xmehvc15jQootT1U16uVkxxRTuxKCpOLDbdzQdatuIsVYLdnvaEDFW0SALWdbIucA_KKWJw5lsxLAeZwJ-TkuwDa62pTeVi6Ug6C3NeiJ0R3ynCVY1Pj7HXZQTx9PvMq0IzH-J27nR');"></div>
+<div class="absolute top-3 right-3 px-2 py-1 bg-black/60 backdrop-blur rounded text-xs font-medium text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+<span class="size-1.5 rounded-full bg-emerald-500"></span> Ready
+                            </div>
+</div>
+<div class="p-5 flex flex-col gap-4 flex-1">
+<div class="flex justify-between items-start gap-2">
+<h3 class="text-lg font-bold text-white leading-tight group-hover:text-primary transition-colors">Global Supply Chain Logistics</h3>
+<button class="text-gray-500 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-3 mt-auto">
+<div class="bg-white/5 rounded-lg p-2 flex flex-col items-center justify-center border border-white/5 group-hover:border-primary/20 transition-colors">
+<span class="text-xs text-gray-400 uppercase tracking-wider">Accuracy</span>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-primary text-[16px]">check_circle</span>
+<span class="font-bold text-white">99%</span>
+</div>
+</div>
+<div class="bg-white/5 rounded-lg p-2 flex flex-col items-center justify-center border border-white/5 group-hover:border-primary/20 transition-colors">
+<span class="text-xs text-gray-400 uppercase tracking-wider">Questions</span>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-gray-300 text-[16px]">quiz</span>
+<span class="font-bold text-white">84</span>
+</div>
+</div>
+</div>
+<div class="pt-2 border-t border-white/5 flex justify-between items-center text-xs text-gray-500">
+<span>Edited 1w ago</span>
+</div>
+</div>
+</div>
+<div class="group relative flex flex-col justify-center items-center bg-surface-dark-lighter/40 border-2 border-dashed border-white/20 hover:border-cyan-glow/50 rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer min-h-[350px]">
+<div class="absolute inset-0 pointer-events-none overflow-hidden">
+<div class="absolute top-[20%] left-[10%] text-[10px] text-cyan-glow font-mono opacity-0 animate-float-text-1">
+<span class="inline-block bg-black/50 px-2 py-1 rounded border border-cyan-glow/30 shadow-[0_0_10px_rgba(0,240,255,0.3)]">Detecting Q1-Q10...</span>
+</div>
+<div class="absolute top-[65%] right-[5%] text-[10px] text-purple-400 font-mono opacity-0 animate-float-text-2">
+<span class="inline-block bg-black/50 px-2 py-1 rounded border border-purple-500/30 shadow-[0_0_10px_rgba(89,13,242,0.3)]">Identifying SA/MA Logic...</span>
+</div>
+<div class="absolute top-[15%] right-[15%] text-[10px] text-emerald-400 font-mono opacity-0 animate-float-text-3">
+<span class="inline-block bg-black/50 px-2 py-1 rounded border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.3)]">Mapping Terminate Points...</span>
+</div>
+</div>
+<div class="relative z-10 size-24 rounded-full bg-surface-dark border border-white/10 flex items-center justify-center mb-6 animate-circle-pulse">
+<span class="material-symbols-outlined text-white/80 text-4xl z-10">upload_file</span>
+<div class="absolute top-0 bottom-0 left-1/2 w-[2px] bg-cyan-glow shadow-[0_0_15px_#00f0ff,0_0_30px_#00f0ff] animate-laser-scan z-20"></div>
+<div class="absolute inset-0 rounded-full border border-primary/40 shadow-[inset_0_0_20px_rgba(89,13,242,0.3)]"></div>
+<div class="absolute inset-0 rounded-full overflow-hidden opacity-30">
+<div class="w-full h-full bg-[linear-gradient(transparent_50%,rgba(0,240,255,0.2)_50%)] bg-[length:100%_4px]"></div>
+</div>
+</div>
+<h3 class="text-xl font-bold text-white text-center drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">Holographic Scan</h3>
+<p class="text-sm text-cyan-glow/80 text-center px-6 mt-2 font-mono">Drag PDF to initialize sequence</p>
+<div class="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-primary to-cyan-glow w-2/3 shadow-[0_0_10px_rgba(0,240,255,0.8)]"></div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

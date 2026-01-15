@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LogicSphere - Logic Nebula 3D View</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#590df2",
+                        "background-light": "#f6f5f8",
+                        "background-dark": "#0a0a0f", // Deep space black
+                        "nebula-purple": "#2e1065",
+                        "glass-border": "rgba(255, 255, 255, 0.1)",
+                        "glass-bg": "rgba(20, 20, 30, 0.6)",
+                        "collab-pink": "#ec4899",
+                        "collab-cyan": "#06b6d4",
+                        "collab-yellow": "#eab308",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    boxShadow: {
+                        'neon': '0 0 10px theme("colors.primary"), 0 0 20px theme("colors.primary")',
+                        'neon-red': '0 0 10px #ef4444, 0 0 20px #ef4444',
+                        'collab-glow-pink': '0 0 10px #ec4899, 0 0 20px #ec4899',
+                        'collab-glow-cyan': '0 0 10px #06b6d4, 0 0 20px #06b6d4',
+                    },
+                    animation: {
+                        'flow': 'flow 3s linear infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                },
+            },
+        }
+    </script>
+<style>.perspective-container {
+            perspective: 1200px;
+        }
+        .preserve-3d {
+            transform-style: preserve-3d;
+            transform: rotateX(20deg) rotateY(15deg) scale(0.9);
+            transition: transform 0.5s ease;
+        }
+        .node-glass {
+            background: rgba(30, 27, 46, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(255, 255, 255, 0.05);
+        }
+        .node-terminate {
+            background: rgba(50, 10, 10, 0.4);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+        }
+        .sticky-note {
+            background: rgba(254, 240, 138, 0.9);
+            color: #1e1b2e;
+            transform: rotateY(-10deg) rotateZ(-2deg);
+            box-shadow: 2px 4px 12px rgba(0,0,0,0.4);
+            font-family: 'Inter', sans-serif;
+        }
+        .sticky-note::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            border-width: 10px 10px 0 0;
+            border-style: solid;
+            border-color: rgba(234, 179, 8, 0.5) transparent;
+            display: block;
+            width: 0;
+            box-shadow: -1px -1px 1px rgba(0,0,0,0.1);
+        }
+        .cursor-ghost {
+            pointer-events: none;
+            transition: transform 0.1s linear;
+        }@keyframes flow {
+            to {
+                stroke-dashoffset: -100;
+            }
+        }
+        .animate-flow {
+            stroke-dasharray: 10, 10;
+            animation: flow 1s linear infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) translateZ(0px); }
+            50% { transform: translateY(-10px) translateZ(20px); }
+        }
+        .animate-float-slow {
+            animation: float 8s ease-in-out infinite;
+        }.grid-bg {
+            background-size: 50px 50px;
+            background-image:
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body class="bg-background-dark text-white font-display overflow-hidden h-screen w-screen relative selection:bg-primary selection:text-white">
+<div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+<div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[150px]"></div>
+<div class="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[150px]"></div>
+<div class="absolute inset-0 grid-bg opacity-30" style="transform: perspective(500px) rotateX(60deg) translateY(200px) scale(2);"></div>
+</div>
+<div class="relative z-10 flex flex-col h-full">
+<header class="flex items-center justify-between px-8 py-4 bg-background-dark/50 backdrop-blur-md border-b border-white/5">
+<div class="flex items-center gap-4 text-white">
+<div class="size-8 text-primary">
+<span class="material-symbols-outlined text-[32px]">deployed_code</span>
+</div>
+<div>
+<h2 class="text-white text-lg font-bold leading-tight tracking-wide">LogicSphere</h2>
+<p class="text-xs text-slate-400 font-medium tracking-widest uppercase">Nebula Visualizer</p>
+</div>
+</div>
+<div class="hidden md:flex items-center gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
+<a class="text-slate-400 text-sm hover:text-white transition-colors" href="#">Research Projects</a>
+<span class="text-slate-600 text-sm">/</span>
+<a class="text-slate-400 text-sm hover:text-white transition-colors" href="#">Alpha-7 Protocol PDF</a>
+<span class="text-slate-600 text-sm">/</span>
+<span class="text-primary text-sm font-medium">Logic Flow #291</span>
+</div>
+<div class="flex gap-3">
+<div class="flex -space-x-2 mr-4 items-center">
+<div class="size-8 rounded-full border-2 border-background-dark bg-collab-pink flex items-center justify-center text-[10px] font-bold shadow-collab-glow-pink" title="Sarah (Designing)">SJ</div>
+<div class="size-8 rounded-full border-2 border-background-dark bg-collab-cyan flex items-center justify-center text-[10px] font-bold shadow-collab-glow-cyan" title="Mike (Reviewing)">MP</div>
+<div class="size-8 rounded-full border-2 border-background-dark bg-slate-700 flex items-center justify-center text-[10px] text-slate-400">+3</div>
+</div>
+<button class="flex items-center justify-center size-10 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="flex items-center justify-center size-10 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="flex h-10 items-center gap-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white text-sm font-bold transition-colors shadow-lg shadow-primary/20">
+<span>Export 3D Model</span>
+<span class="material-symbols-outlined text-sm">download</span>
+</button>
+</div>
+</header>
+<main class="flex-1 relative perspective-container overflow-hidden flex items-center justify-center">
+<div class="preserve-3d w-[1200px] h-[800px] relative animate-float-slow">
+<div class="absolute z-50 cursor-ghost flex items-start gap-2" style="top: 25%; left: 30%; transform: translate3d(20px, -30px, 80px);">
+<div class="relative">
+<span class="material-symbols-outlined text-collab-pink drop-shadow-[0_0_8px_rgba(236,72,153,0.8)] text-2xl -rotate-12">near_me</span>
+<div class="absolute -bottom-1 -right-1 size-2 bg-collab-pink rounded-full blur-[2px] animate-pulse"></div>
+</div>
+<div class="px-2 py-1 rounded bg-collab-pink text-[10px] font-bold text-white shadow-lg whitespace-nowrap">Sarah J.</div>
+</div>
+<div class="absolute z-50 cursor-ghost flex items-start gap-2" style="top: 65%; left: 70%; transform: translate3d(-10px, 40px, -20px);">
+<div class="relative">
+<span class="material-symbols-outlined text-collab-cyan drop-shadow-[0_0_8px_rgba(6,182,212,0.8)] text-2xl -rotate-12">near_me</span>
+<div class="absolute -bottom-1 -right-1 size-2 bg-collab-cyan rounded-full blur-[2px] animate-pulse"></div>
+</div>
+<div class="px-2 py-1 rounded bg-collab-cyan text-[10px] font-bold text-white shadow-lg whitespace-nowrap">Mike P.</div>
+</div>
+<svg class="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-0" style="transform: translateZ(-10px);">
+<defs>
+<filter height="140%" id="glow" width="140%" x="-20%" y="-20%">
+<feGaussianBlur result="blur" stdDeviation="4"></feGaussianBlur>
+<feComposite in="SourceGraphic" in2="blur" operator="over"></feComposite>
+</filter>
+</defs>
+<path class="opacity-50" d="M 600 100 C 600 200, 400 200, 400 350" fill="none" filter="url(#glow)" stroke="#590df2" stroke-width="2"></path>
+<path class="animate-flow" d="M 600 100 C 600 200, 400 200, 400 350" fill="none" stroke="#a78bfa" stroke-width="1"></path>
+<path class="opacity-50" d="M 600 100 C 600 200, 800 200, 800 350" fill="none" filter="url(#glow)" stroke="#590df2" stroke-width="2"></path>
+<path class="animate-flow" d="M 600 100 C 600 200, 800 200, 800 350" fill="none" stroke="#a78bfa" stroke-width="1"></path>
+<path class="opacity-80" d="M 400 450 C 400 550, 300 550, 300 650" fill="none" filter="url(#glow)" stroke="#ef4444" stroke-width="2"></path>
+<path class="animate-flow" d="M 400 450 C 400 550, 300 550, 300 650" fill="none" stroke="#fca5a5" stroke-width="2" style="animation-duration: 0.5s;"></path>
+<path class="opacity-50" d="M 800 450 C 800 550, 900 550, 900 650" fill="none" filter="url(#glow)" stroke="#590df2" stroke-width="2"></path>
+<path class="animate-flow" d="M 800 450 C 800 550, 900 550, 900 650" fill="none" stroke="#a78bfa" stroke-width="1"></path>
+</svg>
+<div class="absolute left-[50%] top-[10%] -translate-x-1/2 w-64 p-5 rounded-xl node-glass text-center z-10 transition-transform hover:scale-105 cursor-pointer group hover:border-primary/50" style="transform: translate3d(-50%, 0, 0);">
+<div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-lg shadow-primary/40">Start</div>
+<div class="mb-2 flex justify-center text-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-4xl">psychology</span>
+</div>
+<h3 class="text-white font-semibold text-lg mb-1">Incoming Request</h3>
+<p class="text-slate-300 text-xs">Source: Form 102B</p>
+</div>
+<div class="absolute left-[33%] top-[40%] -translate-x-1/2 w-60 p-4 rounded-xl node-glass flex flex-col gap-2 z-10 transition-transform hover:scale-105 cursor-pointer group hover:border-primary/50" style="transform: translate3d(0, 0, 20px);">
+<div class="absolute -left-20 -top-8 w-32 p-3 sticky-note z-50 rounded-sm shadow-xl" style="transform: translateZ(40px) rotateY(-15deg) rotateZ(-5deg);">
+<div class="flex items-center justify-between mb-1 opacity-70">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px]">face_3</span>
+<span class="text-[8px] font-bold uppercase">Sarah</span>
+</div>
+<span class="material-symbols-outlined text-[10px] cursor-pointer hover:text-red-600">close</span>
+</div>
+<p class="text-[10px] leading-tight font-medium text-amber-900 font-sans">Threshold needs update to $60k per new policy.</p>
+</div>
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-lg bg-white/5 flex items-center justify-center text-emerald-400">
+<span class="material-symbols-outlined">attach_money</span>
+</div>
+<div>
+<p class="text-xs text-slate-400 font-mono">STEP 02.A</p>
+<h4 class="text-sm font-bold text-white">Check Income</h4>
+</div>
+</div>
+<div class="h-px w-full bg-white/10 my-1"></div>
+<p class="text-xs text-slate-300 leading-relaxed">Is annual gross income greater than $50k threshold?</p>
+</div>
+<div class="absolute left-[66%] top-[40%] -translate-x-1/2 w-60 p-4 rounded-xl node-glass flex flex-col gap-2 z-10 transition-transform hover:scale-105 cursor-pointer group hover:border-primary/50" style="transform: translate3d(0, 0, -40px);">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-lg bg-white/5 flex items-center justify-center text-blue-400">
+<span class="material-symbols-outlined">verified_user</span>
+</div>
+<div>
+<p class="text-xs text-slate-400 font-mono">STEP 02.B</p>
+<h4 class="text-sm font-bold text-white">Identity Verify</h4>
+</div>
+</div>
+<div class="h-px w-full bg-white/10 my-1"></div>
+<p class="text-xs text-slate-300 leading-relaxed">Check passport validation API response.</p>
+</div>
+<div class="absolute left-[25%] top-[75%] -translate-x-1/2 w-48 p-4 rounded-xl node-terminate flex flex-col items-center justify-center gap-2 z-10 transition-transform hover:scale-105 cursor-pointer" style="transform: translate3d(0, 0, 50px);">
+<div class="size-10 rounded-full bg-red-500/20 flex items-center justify-center text-red-500 border border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.4)]">
+<span class="material-symbols-outlined">block</span>
+</div>
+<h4 class="text-sm font-bold text-red-100 mt-1">Reject Application</h4>
+<span class="text-[10px] text-red-300 uppercase tracking-widest font-bold">Terminated</span>
+</div>
+<div class="absolute left-[75%] top-[75%] -translate-x-1/2 w-48 p-4 rounded-xl node-glass flex flex-col items-center justify-center gap-2 z-10 transition-transform hover:scale-105 cursor-pointer border-emerald-500/30" style="transform: translate3d(0, 0, -20px);">
+<div class="absolute -right-16 -top-10 w-28 p-2 sticky-note z-50 rounded-sm shadow-xl bg-collab-cyan/90 backdrop-blur-sm text-white border border-white/20" style="transform: translateZ(30px) rotateY(10deg) rotateZ(3deg);">
+<div class="flex items-center justify-between mb-1 opacity-90">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[10px]">face_6</span>
+<span class="text-[8px] font-bold uppercase">Mike</span>
+</div>
+</div>
+<p class="text-[9px] leading-tight font-medium font-sans">Logic verified. Looks good!</p>
+</div>
+<div class="size-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+<span class="material-symbols-outlined">check_circle</span>
+</div>
+<h4 class="text-sm font-bold text-white mt-1">Approve</h4>
+<span class="text-[10px] text-emerald-300 uppercase tracking-widest font-bold">Process Next</span>
+</div>
+</div>
+<div class="absolute inset-0 pointer-events-none p-6 flex flex-col justify-end items-center">
+<div class="pointer-events-auto bg-background-dark/80 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-2xl flex items-center gap-6 mb-8 transform hover:translate-y-[-5px] transition-transform duration-300">
+<div class="flex bg-white/5 rounded-lg p-1">
+<button class="flex items-center gap-2 px-3 py-2 rounded-md bg-primary text-white shadow-lg shadow-primary/20 text-xs font-medium">
+<span class="material-symbols-outlined text-sm">view_in_ar</span>
+                            Orbit
+                        </button>
+<button class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white/5 text-slate-400 hover:text-white transition-colors text-xs font-medium">
+<span class="material-symbols-outlined text-sm">grid_view</span>
+                            Top
+                        </button>
+<button class="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white/5 text-slate-400 hover:text-white transition-colors text-xs font-medium">
+<span class="material-symbols-outlined text-sm">splitscreen</span>
+                            Side
+                        </button>
+</div>
+<div class="w-px h-8 bg-white/10"></div>
+<div class="flex items-center gap-3 px-2 min-w-[200px]">
+<span class="material-symbols-outlined text-slate-400 text-sm">remove_circle_outline</span>
+<div class="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+<div class="h-full w-[65%] bg-primary rounded-full relative shadow-[0_0_10px_rgba(89,13,242,0.8)]"></div>
+</div>
+<span class="material-symbols-outlined text-slate-400 text-sm">add_circle_outline</span>
+</div>
+<div class="w-px h-8 bg-white/10"></div>
+<button class="flex items-center justify-center size-9 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors relative" title="Sticky Note">
+<span class="material-symbols-outlined text-lg">note_add</span>
+<div class="absolute top-2 right-2 size-2 bg-collab-yellow rounded-full"></div>
+</button>
+<button class="flex items-center justify-center size-9 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors" title="Recenter">
+<span class="material-symbols-outlined text-lg">center_focus_strong</span>
+</button>
+<button class="flex items-center justify-center size-9 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors" title="Layers">
+<span class="material-symbols-outlined text-lg">layers</span>
+</button>
+</div>
+</div>
+<div class="absolute right-6 top-24 bottom-24 w-80 pointer-events-auto bg-background-dark/80 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col shadow-2xl overflow-hidden transform transition-transform translate-x-0">
+<div class="p-4 border-b border-white/10 bg-white/5 flex items-center justify-between">
+<h3 class="text-sm font-bold text-white uppercase tracking-wider">Node Inspector</h3>
+<button class="text-slate-400 hover:text-white">
+<span class="material-symbols-outlined text-lg">close</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
+<div class="flex flex-col gap-3">
+<div class="text-[10px] uppercase font-bold text-primary tracking-widest">Selected Component</div>
+<h2 class="text-2xl font-bold text-white">Income Check</h2>
+<div class="inline-flex items-center gap-2 self-start px-2 py-1 rounded bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-medium">
+<span class="material-symbols-outlined text-xs">function</span>
+                             Conditional Logic
+                        </div>
+</div>
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<div class="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Active Discussions</div>
+<span class="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-bold">1 New</span>
+</div>
+<div class="bg-white/5 rounded-lg p-3 border-l-2 border-collab-pink flex flex-col gap-1 hover:bg-white/10 transition-colors cursor-pointer">
+<div class="flex justify-between items-center">
+<span class="text-xs font-bold text-collab-pink">Sarah J.</span>
+<span class="text-[10px] text-slate-500">2m ago</span>
+</div>
+<p class="text-xs text-slate-300 leading-snug">Threshold needs update to $60k per new policy.</p>
+</div>
+</div>
+<div class="bg-white/5 rounded-lg p-3 border border-white/10 flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<span class="text-xs text-slate-400">Node ID</span>
+<span class="text-xs text-white font-mono">#NODE_2A_991</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-xs text-slate-400">Latency</span>
+<span class="text-xs text-emerald-400 font-mono">12ms</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-xs text-slate-400">Confidence</span>
+<span class="text-xs text-white font-mono">98.2%</span>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<div class="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Source Text (PDF)</div>
+<div class="p-3 bg-[#131118] border border-white/5 rounded-lg text-slate-300 text-sm leading-relaxed font-serif italic relative">
+<span class="absolute top-2 right-2 text-white/10 text-2xl font-serif">"</span>
+                            ...applicants must demonstrate a gross annual income exceeding $50,000 USD to qualify for the Tier 1 status without a co-signer...
+                        </div>
+</div>
+<div class="flex flex-col gap-2">
+<div class="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Logic Path</div>
+<div class="flex flex-col gap-0 border-l border-white/10 pl-3 ml-1">
+<div class="relative py-1">
+<div class="absolute -left-[17px] top-2.5 size-2 rounded-full bg-slate-600"></div>
+<span class="text-xs text-slate-500">Start</span>
+</div>
+<div class="relative py-1">
+<div class="absolute -left-[17px] top-2.5 size-2 rounded-full bg-primary shadow-[0_0_8px_rgba(89,13,242,1)]"></div>
+<span class="text-xs text-white font-bold">Check Income</span>
+</div>
+<div class="relative py-1">
+<div class="absolute -left-[17px] top-2.5 size-2 rounded-full bg-slate-600"></div>
+<span class="text-xs text-slate-500">Decision</span>
+</div>
+</div>
+</div>
+</div>
+<div class="p-4 border-t border-white/10 bg-white/5">
+<button class="w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium transition-colors border border-white/5 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">edit_document</span>
+                        Edit Logic Node
+                    </button>
+</div>
+</div>
+</main>
+</div>
+</body></html>
