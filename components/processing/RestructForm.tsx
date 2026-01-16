@@ -138,7 +138,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
             <button
               type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-dark dark:border-glass-border-light rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
             >
               <span className="text-sm font-medium text-white dark:text-black">
                 {selectedQuestions.length > 0 
@@ -214,7 +214,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
                 onChange={(e) => setFormData({ ...formData, numBrands: e.target.value })}
                 placeholder="Tự động điền"
                 readOnly
-                className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white"
+                className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white"
               />
             </div>
             <div>
@@ -226,7 +226,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
                 value={formData.indexVarName}
                 onChange={(e) => setFormData({ ...formData, indexVarName: e.target.value })}
                 placeholder="Tự động điền"
-                className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
               />
             </div>
           </div>
@@ -242,7 +242,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
               onChange={(e) => setFormData({ ...formData, brandNames: e.target.value })}
               rows={6}
               placeholder="Tự động điền"
-              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
             />
           </div>
         )}
@@ -256,7 +256,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
             value={formData.keepVars}
             onChange={(e) => setFormData({ ...formData, keepVars: e.target.value })}
             placeholder="Vrid, Q00"
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
           />
         </div>
 
@@ -291,7 +291,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
             rows={8}
             placeholder="Q10R1&#10;Q10R2&#10;Q10R3&#10;..."
             required
-              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
           />
         </div>
         <div>
@@ -305,7 +305,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
             placeholder="16"
             required
             min="1"
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg mb-4"
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg mb-4"
           />
           
           <label className="block text-sm font-medium mb-2 text-white dark:text-black">
@@ -317,7 +317,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
             rows={6}
             placeholder="Vietinbank&#10;Military Bank&#10;LPBank&#10;..."
             required
-              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
           />
         </div>
       </div>
@@ -333,7 +333,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
             rows={4}
             placeholder="Q1&#10;Q2&#10;Q3&#10;Q4"
             required
-              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
           />
         </div>
         <div>
@@ -345,7 +345,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
             value={formData.keepVars}
             onChange={(e) => setFormData({ ...formData, keepVars: e.target.value })}
             placeholder="Total, BN1, BN2"
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
           />
         </div>
       </div>

@@ -206,7 +206,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
             <button
               type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-dark dark:border-glass-border-light rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
             >
               <span className="text-sm font-medium text-white dark:text-black">
                 {selectedFormulas.length > 0 
@@ -258,13 +258,13 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
               const vars = (formulaVars[formulaValue] || '').split('\n').filter(v => v.trim())
               
               return (
-                <div key={formulaValue} className="p-4 bg-glass-panel rounded-lg border border-glass-border-dark dark:border-glass-border-light">
+                <div key={formulaValue} className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
                   <div className="mb-3">
                     <h3 className="text-sm font-semibold text-white dark:text-black mb-1">
                       Công thức: {formula?.text}
                     </h3>
                     {vars.length > 0 && (
-                      <div className="mt-2 p-2 bg-background-dark dark:bg-background-light rounded border border-glass-border-dark dark:border-glass-border-light">
+                      <div className="mt-2 p-2 bg-background-light dark:bg-background-dark rounded border border-glass-border-light dark:border-glass-border-dark">
                         <p className="text-xs text-gray-400 dark:text-gray-600 mb-1">
                           Các biến đã chọn ({vars.length} biến):
                         </p>
@@ -286,7 +286,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
                           ...openQuestionDropdowns,
                           [formulaValue]: !openQuestionDropdowns[formulaValue]
                         })}
-                        className="w-full px-3 py-2 bg-glass-panel border-2 border-glass-border-dark dark:border-glass-border-light rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+                        className="w-full px-3 py-2 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
                       >
                         <span className="text-sm font-medium text-white dark:text-black">
                           {selectedQs.length > 0 
@@ -353,7 +353,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
                       onChange={(e) => setFormulaVars({ ...formulaVars, [formulaValue]: e.target.value })}
                       rows={4}
                       placeholder="Var1&#10;Var2&#10;..."
-                      className="w-full px-3 py-2 bg-background-dark dark:bg-background-light border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+                      className="w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
                     />
                   </div>
                 </div>
@@ -371,7 +371,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
             onChange={(e) => setByVars(e.target.value)}
             rows={6}
             placeholder="Gender&#10;Age_Group"
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
           />
         </div>
 
@@ -396,7 +396,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
           <button
             type="button"
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-dark dark:border-glass-border-light rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+            className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
           >
             <span className="text-sm font-medium text-white dark:text-black">
               {selectedFormulas.length > 0 
@@ -450,7 +450,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
             onChange={(e) => setByVars(e.target.value)}
             rows={6}
             placeholder="Gender&#10;Age_Group"
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
           />
         </div>
         <div>
@@ -466,7 +466,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
               selectedFormulas.map((formulaValue) => {
                 const formula = formulas.find(f => f.value === formulaValue)
                 return (
-                  <div key={formulaValue} className="p-3 bg-glass-panel rounded-lg border border-glass-border-dark dark:border-glass-border-light">
+                  <div key={formulaValue} className="p-3 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
                     <label className="block text-xs font-medium mb-2 text-white dark:text-black">
                       Biến áp dụng cho công thức: {formula?.text}
                     </label>
@@ -475,7 +475,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
                       onChange={(e) => setFormulaVars({ ...formulaVars, [formulaValue]: e.target.value })}
                       rows={4}
                       placeholder="Var1&#10;Var2&#10;..."
-                      className="w-full px-3 py-2 bg-background-dark dark:bg-background-light border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+                      className="w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
                     />
                   </div>
                 )

@@ -187,7 +187,7 @@ export default function QuestionManager() {
   return (
     <MainLayout>
       {/* Header */}
-      <header className="h-16 flex items-center justify-between px-8 border-b border-glass-border-dark dark:border-glass-border-light glass-panel z-40 relative bg-background-dark dark:bg-background-light">
+      <header className="h-16 flex items-center justify-between px-8 border-b border-glass-border-light dark:border-glass-border-dark glass-panel z-40 relative bg-background-light dark:bg-background-dark">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2 dark:text-gray-400 text-gray-600 text-sm font-medium">
             <FileText className="w-5 h-5 text-white" />

@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -13,11 +14,13 @@ import {
   Download, 
   Settings,
   FileText,
-  Cog
+  Cog,
+  FolderOpen
 } from 'lucide-react'
 
 const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/' },
+  { id: 'projects', label: 'Projects', icon: FolderOpen, path: '/projects' },
   { id: 'import', label: 'Data Import', icon: Upload, path: '/import' },
   { id: 'questions', label: 'Questions', icon: FileText, path: '/questions' },
   { id: 'refinery', label: 'Label Refinery', icon: Network, path: '/refinery' },
@@ -28,14 +31,23 @@ const menuItems = [
 
 export default function Sidebar() {
   const pathname = usePathname()
-  const { theme } = useTheme()
+  const { theme, resolvedTheme } = useTheme()
+  const [mounted, setMounted] = React.useState(false)
+
+  // Avoid hydration mismatch by only rendering theme-dependent content after mount
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Use resolvedTheme for more reliable theme detection
+  const isDark = mounted ? (resolvedTheme === 'dark') : false
 
   return (
     <motion.aside
       initial={{ x: -280 }}
       animate={{ x: 0 }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="w-[280px] h-full flex flex-col glass-panel border-r border-glass-border-dark dark:border-glass-border-light shrink-0 z-50 relative bg-background-dark dark:bg-background-light"
+      className="w-[280px] h-full flex flex-col glass-panel border-r border-glass-border-light dark:border-glass-border-dark shrink-0 z-50 relative bg-background-light dark:bg-background-dark"
     >
       {/* Logo */}
       <div className="p-6">
@@ -43,7 +55,10 @@ export default function Sidebar() {
           whileHover={{ scale: 1.05 }}
           className="flex gap-3 items-center mb-8"
         >
-          {theme === 'dark' ? (
+          {!mounted ? (
+            // Render a placeholder during SSR to avoid hydration mismatch
+            <div className="h-8 w-[120px] bg-transparent" />
+          ) : isDark ? (
             <Image
               src="/logo-ifm-dark.svg"
               alt="IFM Research Logo"
@@ -113,7 +128,7 @@ export default function Sidebar() {
       </div>
 
       {/* Settings at bottom */}
-      <div className="mt-auto p-6 border-t border-glass-border-dark dark:border-glass-border-light">
+      <div className="mt-auto p-6 border-t border-glass-border-light dark:border-glass-border-dark">
         <motion.div
           whileHover={{ x: 4 }}
           className="flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"

@@ -208,3 +208,318 @@ export async function parseSurveyPDF(
   // Should not reach here, but TypeScript needs a return
   throw new Error('Failed to parse PDF after maximum retries')
 }
+
+/**
+ * Parse Survey PDF using Structured Extraction + AI Refinement
+ * More reliable approach: extract structure first, then refine with AI
+ * @param file - PDF file from input
+ * @param onProgress - Optional progress callback (0-100, phase, details)
+ * @returns Array of parsed questions
+ */
+export async function parseSurveyPDFStructured(
+  file: File,
+  onProgress?: (progress: number, phase?: string, details?: string) => void
+): Promise<ParsedQuestion[]> {
+  const maxRetries = 3
+  const rateLimitDelays = [10000, 20000, 40000]
+  const networkErrorDelays = [2000, 4000, 8000]
+  
+  console.log(`\n📦 Starting Structured Extraction for: ${file.name}`)
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        console.log(`🔄 Retrying structured extraction (Attempt ${attempt + 1}/${maxRetries + 1})...`)
+      }
+      
+      if (onProgress) onProgress(5, 'Initializing', 'Preparing structured extraction...')
+      
+      const formData = new FormData()
+      formData.append('file', file)
+      
+      if (onProgress) onProgress(10, 'Uploading', 'Sending PDF to server...')
+      
+      const response = await fetch('/api/parse-survey-structured', {
+        method: 'POST',
+        body: formData,
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        
+        // Handle rate limit
+        if (response.status === 429) {
+          if (attempt < maxRetries) {
+            const delayMs = rateLimitDelays[attempt]
+            console.warn(`⏳ Rate limit hit. Waiting ${delayMs / 1000}s...`)
+            if (onProgress) onProgress(30 + attempt * 15, 'Waiting', `Rate limit, retrying in ${delayMs / 1000}s...`)
+            await delay(delayMs)
+            continue
+          } else {
+            throw new Error('Rate limit exceeded after retries')
+          }
+        }
+        
+        // Handle server errors
+        if (response.status >= 500 && attempt < maxRetries) {
+          const delayMs = networkErrorDelays[attempt]
+          console.warn(`⚠️  Server error. Retrying in ${delayMs / 1000}s...`)
+          console.warn(`   Error details:`, errorData)
+          if (onProgress) onProgress(30 + attempt * 10, 'Retrying', `Server error, retrying...`)
+          await delay(delayMs)
+          continue
+        }
+        
+        // Log full error details before throwing
+        console.error('❌ Server error details:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData.error,
+          details: errorData.details,
+          stack: errorData.stack
+        })
+        
+        const errorMessage = errorData.details 
+          ? `${errorData.error || 'Failed to parse PDF'}: ${errorData.details}`
+          : errorData.error || `Failed to parse PDF: ${response.statusText}`
+        
+        throw new Error(errorMessage)
+      }
+      
+      if (onProgress) onProgress(90, 'Processing', 'Finalizing results...')
+      
+      const data = await response.json()
+      
+      if (!data.success || !Array.isArray(data.questions)) {
+        throw new Error('Invalid response format from structured API')
+      }
+      
+      if (onProgress) onProgress(100, 'Complete', `Parsed ${data.questions.length} questions`)
+      
+      if (attempt > 0) {
+        console.log(`✅ Successfully parsed after ${attempt + 1} attempts`)
+      }
+      
+      console.log(`✅ Structured extraction complete: ${data.questions.length} questions`)
+      if (data.validation?.errors?.length > 0) {
+        console.warn(`⚠️  Validation errors:`, data.validation.errors)
+      }
+      if (data.validation?.warnings?.length > 0) {
+        console.warn(`⚠️  Validation warnings:`, data.validation.warnings)
+      }
+      
+      return data.questions as ParsedQuestion[]
+      
+    } catch (error: any) {
+      const isNetworkError = error?.message?.includes('fetch') || 
+                            error?.message?.includes('network') ||
+                            error?.name === 'TypeError'
+      
+      if (isNetworkError && attempt < maxRetries && !error?.message?.includes('429') && !error?.message?.includes('500')) {
+        const delayMs = networkErrorDelays[attempt]
+        console.warn(`⚠️  Network error. Retrying in ${delayMs / 1000}s...`)
+        if (onProgress) onProgress(30 + attempt * 10, 'Retrying', 'Network error, retrying...')
+        await delay(delayMs)
+        continue
+      }
+      
+      if (attempt === maxRetries) {
+        console.error('❌ Error in structured extraction:', error)
+        if (onProgress) onProgress(0, 'Error', error.message)
+        throw error
+      }
+    }
+  }
+  
+  throw new Error('Failed to parse PDF using structured extraction after maximum retries')
+}
+
+/**
+ * Parse Survey PDF using Chunked Approach
+ * Divides PDF into chunks and parses each chunk separately, saving results incrementally
+ * @param file - PDF file from input
+ * @param onProgress - Optional progress callback (0-100, chunkIndex, totalChunks)
+ * @param onChunkComplete - Optional callback when a chunk is completed (chunkIndex, questions)
+ * @param questionsPerChunk - Number of questions to parse per chunk (default: 10)
+ * @returns Array of all parsed questions
+ */
+export async function parseSurveyPDFChunked(
+  file: File,
+  onProgress?: (progress: number, chunkIndex?: number, totalChunks?: number) => void,
+  onChunkComplete?: (chunkIndex: number, questions: ParsedQuestion[], totalParsed: number) => void,
+  questionsPerChunk: number = 10
+): Promise<ParsedQuestion[]> {
+  const maxRetries = 3
+  const rateLimitDelays = [10000, 20000, 40000]
+  const networkErrorDelays = [2000, 4000, 8000]
+  
+  // Estimate total chunks (assume max 100 questions, can be adjusted)
+  const estimatedTotalChunks = Math.ceil(100 / questionsPerChunk)
+  let allQuestions: ParsedQuestion[] = []
+  
+  console.log(`\n📦 Starting Chunked PDF Parsing`)
+  console.log(`   File: ${file.name}`)
+  console.log(`   Questions per chunk: ${questionsPerChunk}`)
+  console.log(`   Estimated chunks: ${estimatedTotalChunks}`)
+  
+  // Parse chunks sequentially
+  let chunkIndex = 0
+  let hasMoreChunks = true
+  let consecutiveEmptyChunks = 0
+  const maxEmptyChunks = 2 // Stop if 2 consecutive chunks return no questions
+  
+  while (hasMoreChunks && consecutiveEmptyChunks < maxEmptyChunks) {
+    const totalChunks = estimatedTotalChunks // Will be updated as we go
+    
+    if (onProgress) {
+      const chunkProgress = (chunkIndex / totalChunks) * 100
+      onProgress(chunkProgress, chunkIndex, totalChunks)
+    }
+    
+    console.log(`\n📦 Processing Chunk ${chunkIndex + 1}...`)
+    
+    let chunkQuestions: ParsedQuestion[] = []
+    let chunkSuccess = false
+    
+    // Retry logic for each chunk
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          console.log(`   🔄 Retrying chunk ${chunkIndex + 1} (Attempt ${attempt + 1}/${maxRetries + 1})...`)
+        }
+        
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('chunkIndex', chunkIndex.toString())
+        formData.append('totalChunks', totalChunks.toString())
+        formData.append('questionsPerChunk', questionsPerChunk.toString())
+        
+        // Include previous questions for context (last 10 for piping references)
+        if (allQuestions.length > 0) {
+          const contextQuestions = allQuestions.slice(-10)
+          formData.append('previousQuestions', JSON.stringify(contextQuestions))
+        }
+        
+        const response = await fetch('/api/parse-survey-gemini-chunked', {
+          method: 'POST',
+          body: formData,
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          
+          // Handle rate limit
+          if (isRateLimitError(response)) {
+            if (attempt < maxRetries) {
+              const delayMs = rateLimitDelays[attempt]
+              console.warn(`   ⏳ Rate limit hit. Waiting ${delayMs / 1000}s...`)
+              await delay(delayMs)
+              continue
+            } else {
+              throw new Error('Rate limit exceeded after retries')
+            }
+          }
+          
+          // Handle server errors
+          if (response.status >= 500 && attempt < maxRetries) {
+            const delayMs = networkErrorDelays[attempt]
+            console.warn(`   ⚠️  Server error. Retrying in ${delayMs / 1000}s...`)
+            await delay(delayMs)
+            continue
+          }
+          
+          throw new Error(errorData.error || `Failed to parse chunk: ${response.statusText}`)
+        }
+        
+        const data = await response.json()
+        
+        if (!data.success || !Array.isArray(data.questions)) {
+          throw new Error('Invalid response format from chunked API')
+        }
+        
+        chunkQuestions = data.questions as ParsedQuestion[]
+        chunkSuccess = true
+        
+        // Log validation errors if any
+        if (data.validationErrors && data.validationErrors.length > 0) {
+          console.warn(`   ⚠️  Validation warnings:`, data.validationErrors)
+        }
+        
+        break // Success, exit retry loop
+        
+      } catch (error: any) {
+        const isNetworkError = error?.message?.includes('fetch') || 
+                              error?.message?.includes('network') ||
+                              error?.name === 'TypeError'
+        
+        if (isNetworkError && attempt < maxRetries && !error?.message?.includes('429') && !error?.message?.includes('500')) {
+          const delayMs = networkErrorDelays[attempt]
+          console.warn(`   ⚠️  Network error. Retrying in ${delayMs / 1000}s...`)
+          await delay(delayMs)
+          continue
+        }
+        
+        if (attempt === maxRetries) {
+          console.error(`   ❌ Failed to parse chunk ${chunkIndex + 1} after ${maxRetries + 1} attempts`)
+          throw error
+        }
+      }
+    }
+    
+    if (!chunkSuccess) {
+      throw new Error(`Failed to parse chunk ${chunkIndex + 1}`)
+    }
+    
+    // Check if chunk returned questions
+    if (chunkQuestions.length === 0) {
+      consecutiveEmptyChunks++
+      console.log(`   ℹ️  Chunk ${chunkIndex + 1} returned no questions (empty chunk ${consecutiveEmptyChunks}/${maxEmptyChunks})`)
+      
+      if (consecutiveEmptyChunks >= maxEmptyChunks) {
+        console.log(`   ✅ No more questions found. Stopping chunked parsing.`)
+        hasMoreChunks = false
+        break
+      }
+    } else {
+      consecutiveEmptyChunks = 0 // Reset counter
+      
+      // Merge questions (avoid duplicates)
+      const existingIds = new Set(allQuestions.map(q => q.id))
+      const newQuestions = chunkQuestions.filter(q => !existingIds.has(q.id))
+      
+      allQuestions = [...allQuestions, ...newQuestions]
+      
+      console.log(`   ✅ Chunk ${chunkIndex + 1} completed: ${chunkQuestions.length} questions (${newQuestions.length} new, ${chunkQuestions.length - newQuestions.length} duplicates skipped)`)
+      console.log(`   📊 Total parsed so far: ${allQuestions.length} questions`)
+      
+      // Call chunk complete callback
+      if (onChunkComplete) {
+        onChunkComplete(chunkIndex, newQuestions, allQuestions.length)
+      }
+      
+      // If chunk returned fewer questions than expected, might be near the end
+      if (chunkQuestions.length < questionsPerChunk) {
+        console.log(`   ℹ️  Chunk returned fewer questions than expected. May be near end of survey.`)
+        // Continue one more chunk to be sure
+      }
+    }
+    
+    chunkIndex++
+    
+    // Safety limit: don't parse more than 200 questions total (20 chunks * 10 questions)
+    if (chunkIndex >= 20) {
+      console.log(`   ⚠️  Reached safety limit of 20 chunks. Stopping.`)
+      hasMoreChunks = false
+    }
+  }
+  
+  console.log(`\n✅ Chunked Parsing Complete!`)
+  console.log(`   Total chunks processed: ${chunkIndex}`)
+  console.log(`   Total questions parsed: ${allQuestions.length}`)
+  
+  if (onProgress) {
+    onProgress(100, chunkIndex, chunkIndex)
+  }
+  
+  return allQuestions
+}

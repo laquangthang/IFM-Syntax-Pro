@@ -356,7 +356,7 @@ export default function LabelRefinery() {
   return (
     <MainLayout>
       {/* Header */}
-      <header className="h-16 flex items-center justify-between px-8 border-b border-glass-border-dark dark:border-glass-border-light glass-panel z-40 relative bg-background-dark dark:bg-background-light">
+      <header className="h-16 flex items-center justify-between px-8 border-b border-glass-border-light dark:border-glass-border-dark glass-panel z-40 relative bg-background-light dark:bg-background-dark">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium">
             <a href="#" className="hover:text-foreground">Projects</a>

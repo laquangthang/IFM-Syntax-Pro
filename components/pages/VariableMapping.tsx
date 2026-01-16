@@ -88,7 +88,7 @@ export default function VariableMapping() {
   return (
     <MainLayout>
       {/* Header */}
-      <header className="h-16 flex items-center justify-between px-8 border-b border-glass-border-dark dark:border-glass-border-light glass-panel z-40 relative bg-background-dark dark:bg-background-light">
+      <header className="h-16 flex items-center justify-between px-8 border-b border-glass-border-light dark:border-glass-border-dark glass-panel z-40 relative bg-background-light dark:bg-background-dark">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium">
             <a href="#" className="hover:text-foreground">Projects</a>
@@ -101,7 +101,7 @@ export default function VariableMapping() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center bg-glass-bg-dark dark:bg-glass-bg-light rounded-lg h-9 px-3 border border-glass-border-dark dark:border-glass-border-light">
+          <div className="flex items-center bg-glass-bg-light dark:bg-glass-bg-dark rounded-lg h-9 px-3 border border-glass-border-light dark:border-glass-border-dark">
             <Search className="size-4 text-muted-foreground mr-2" />
             <input
               className="bg-transparent border-none text-sm text-foreground focus:ring-0 placeholder-muted-foreground w-48"
@@ -109,9 +109,9 @@ export default function VariableMapping() {
               type="text"
             />
           </div>
-          <div className="h-8 w-[1px] bg-glass-border-dark dark:bg-glass-border-light" />
-          <button className="flex items-center justify-center size-9 rounded-full bg-glass-bg-dark dark:bg-glass-bg-light text-foreground hover:bg-primary/10 transition-colors relative">
-            <div className="absolute top-0 right-0 size-2.5 bg-red-500 border-2 border-background-dark dark:border-background-light rounded-full" />
+          <div className="h-8 w-[1px] bg-glass-border-light dark:bg-glass-border-dark" />
+          <button className="flex items-center justify-center size-9 rounded-full bg-glass-bg-light dark:bg-glass-bg-dark text-foreground hover:bg-primary/10 transition-colors relative">
+            <div className="absolute top-0 right-0 size-2.5 bg-red-500 border-2 border-background-light dark:border-background-dark rounded-full" />
             <span className="text-[20px]">🔔</span>
           </button>
           <ThemeToggle />
@@ -123,7 +123,7 @@ export default function VariableMapping() {
         <div className="flex-1 flex gap-6 min-h-0 mb-6">
           {/* AI Insights Panel */}
           <GlassCard className="w-[280px] flex flex-col shrink-0" tilt={false}>
-            <div className="p-4 border-b border-glass-border-dark dark:border-glass-border-light flex justify-between items-center bg-glass-bg-dark dark:bg-glass-bg-light rounded-t-xl">
+            <div className="p-4 border-b border-glass-border-light dark:border-glass-border-dark flex justify-between items-center bg-glass-bg-light dark:bg-glass-bg-dark rounded-t-xl">
               <div className="flex items-center gap-2">
                 <Sparkles className="size-5 text-primary" />
                 <h3 className="text-foreground font-bold text-sm tracking-wide uppercase">AI Insights</h3>
@@ -138,7 +138,7 @@ export default function VariableMapping() {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ delay: index * 0.1 }}
-                    className="p-3 rounded-lg bg-glass-bg-dark dark:bg-glass-bg-light border border-primary/20 dark:border-primary/10 hover:border-primary/50 transition-colors group cursor-pointer relative overflow-hidden"
+                    className="p-3 rounded-lg bg-glass-bg-light dark:bg-glass-bg-dark border border-primary/20 dark:border-primary/10 hover:border-primary/50 transition-colors group cursor-pointer relative overflow-hidden"
                   >
                     {isAICleaning && <LaserScan isActive={true} />}
                     <div className="flex justify-between items-start mb-1 relative z-10">
@@ -161,16 +161,16 @@ export default function VariableMapping() {
           {/* Mapping Station */}
           <GlassCard className="flex-1 flex flex-col" glowColor="primary">
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-80" />
-            <div className="px-5 py-4 border-b border-glass-border-dark dark:border-glass-border-light flex justify-between items-center bg-glass-bg-dark dark:bg-glass-bg-light rounded-t-xl">
+            <div className="px-5 py-4 border-b border-glass-border-light dark:border-glass-border-dark flex justify-between items-center bg-glass-bg-light dark:bg-glass-bg-dark rounded-t-xl">
               <div>
                 <h2 className="text-base font-bold text-foreground tracking-tight">Mapping Station</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">Paste Excel columns to auto-match</p>
               </div>
               <div className="flex gap-2">
-                <button className="flex items-center gap-2 px-3 py-1.5 rounded bg-glass-bg-dark dark:bg-glass-bg-light hover:bg-primary/10 text-foreground text-xs font-medium border border-glass-border-dark dark:border-glass-border-light transition-colors">
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded bg-glass-bg-light dark:bg-glass-bg-dark hover:bg-primary/10 text-foreground text-xs font-medium border border-glass-border-light dark:border-glass-border-dark transition-colors">
                   📋 Paste
                 </button>
-                <button className="flex items-center gap-2 px-3 py-1.5 rounded bg-glass-bg-dark dark:bg-glass-bg-light hover:bg-primary/10 text-foreground text-xs font-medium border border-glass-border-dark dark:border-glass-border-light transition-colors">
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded bg-glass-bg-light dark:bg-glass-bg-dark hover:bg-primary/10 text-foreground text-xs font-medium border border-glass-border-light dark:border-glass-border-dark transition-colors">
                   📊 Import XLS
                 </button>
               </div>
@@ -246,7 +246,7 @@ export default function VariableMapping() {
 
           {/* Clean Workspace Panel */}
           <GlassCard className="w-[320px] flex flex-col shrink-0" glowColor="primary">
-            <div className="p-4 border-b border-glass-border-dark dark:border-glass-border-light flex justify-between items-center bg-glass-bg-dark dark:bg-glass-bg-light rounded-t-xl">
+            <div className="p-4 border-b border-glass-border-light dark:border-glass-border-dark flex justify-between items-center bg-glass-bg-light dark:bg-glass-bg-dark rounded-t-xl">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="size-5 text-green-400 dark:text-green-500" />
                 <h3 className="text-foreground font-bold text-sm tracking-wide uppercase">Clean Workspace</h3>
@@ -261,7 +261,7 @@ export default function VariableMapping() {
                   <span className="text-[10px] text-primary">Linked to 10425</span>
                 </div>
                 <input
-                  className="w-full bg-glass-bg-dark dark:bg-glass-bg-light border border-primary/30 dark:border-primary/20 rounded px-3 py-2 text-foreground text-sm font-mono focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-[0_0_10px_rgba(239,91,33,0.1)] dark:shadow-[0_0_10px_rgba(239,91,33,0.05)]"
+                  className="w-full bg-glass-bg-light dark:bg-glass-bg-dark border border-primary/30 dark:border-primary/20 rounded px-3 py-2 text-foreground text-sm font-mono focus:border-primary focus:ring-1 focus:ring-primary transition-all shadow-[0_0_10px_rgba(239,91,33,0.1)] dark:shadow-[0_0_10px_rgba(239,91,33,0.05)]"
                   type="text"
                   value={newVarName}
                   onChange={(e) => setNewVarName(e.target.value)}
@@ -271,7 +271,7 @@ export default function VariableMapping() {
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Clean Label</label>
                 <div className="relative">
                   <textarea
-                    className="w-full bg-glass-bg-dark dark:bg-glass-bg-light border border-glass-border-dark dark:border-glass-border-light rounded px-3 py-2 text-foreground text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all h-20 resize-none leading-relaxed"
+                    className="w-full bg-glass-bg-light dark:bg-glass-bg-dark border border-glass-border-light dark:border-glass-border-dark rounded px-3 py-2 text-foreground text-sm focus:border-primary focus:ring-1 focus:ring-primary transition-all h-20 resize-none leading-relaxed"
                     spellCheck={false}
                     value={cleanLabel}
                     onChange={(e) => setCleanLabel(e.target.value)}
@@ -279,7 +279,7 @@ export default function VariableMapping() {
                   {isAICleaning && <LaserScan isActive={true} />}
                 </div>
               </div>
-              <div className="p-3 bg-glass-bg-dark dark:bg-glass-bg-light rounded border border-glass-border-dark dark:border-glass-border-light">
+              <div className="p-3 bg-glass-bg-light dark:bg-glass-bg-dark rounded border border-glass-border-light dark:border-glass-border-dark">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase">Attribute Settings</span>
                 </div>
@@ -288,21 +288,21 @@ export default function VariableMapping() {
                     <input
                       type="checkbox"
                       defaultChecked
-                      className="rounded bg-glass-bg-dark dark:bg-glass-bg-light border-glass-border-dark dark:border-glass-border-light text-primary focus:ring-0 w-3 h-3"
+                      className="rounded bg-glass-bg-light dark:bg-glass-bg-dark border-glass-border-light dark:border-glass-border-dark text-primary focus:ring-0 w-3 h-3"
                     />
                     <span className="text-xs text-muted-foreground group-hover:text-foreground">Measurement: Nominal</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer group">
                     <input
                       type="checkbox"
-                      className="rounded bg-glass-bg-dark dark:bg-glass-bg-light border-glass-border-dark dark:border-glass-border-light text-primary focus:ring-0 w-3 h-3"
+                      className="rounded bg-glass-bg-light dark:bg-glass-bg-dark border-glass-border-light dark:border-glass-border-dark text-primary focus:ring-0 w-3 h-3"
                     />
                     <span className="text-xs text-muted-foreground group-hover:text-foreground">Role: Input</span>
                   </label>
                 </div>
               </div>
             </div>
-            <div className="p-4 border-t border-glass-border-dark dark:border-glass-border-light bg-glass-bg-dark dark:bg-glass-bg-light">
+            <div className="p-4 border-t border-glass-border-light dark:border-glass-border-dark bg-glass-bg-light dark:bg-glass-bg-dark">
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -320,7 +320,7 @@ export default function VariableMapping() {
         {/* Syntax Forge Panel - Monokai IFM Theme */}
         <GlassCard className="h-[140px] shrink-0" glowColor="primary" tilt={false}>
           <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-primary to-primary-light rounded-l-xl" />
-          <div className="px-4 py-2 border-b border-glass-border-dark dark:border-glass-border-light flex justify-between items-center bg-glass-bg-dark dark:bg-glass-bg-light rounded-t-xl rounded-tl-none ml-1">
+          <div className="px-4 py-2 border-b border-glass-border-light dark:border-glass-border-dark flex justify-between items-center bg-glass-bg-light dark:bg-glass-bg-dark rounded-t-xl rounded-tl-none ml-1">
             <div className="flex items-center gap-2">
               <span className="text-primary text-lg">⚡</span>
               <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider font-mono">
@@ -345,7 +345,7 @@ export default function VariableMapping() {
       </main>
 
       {/* Footer */}
-      <div className="h-8 bg-glass-bg-dark dark:bg-glass-bg-light border-t border-glass-border-dark dark:border-glass-border-light flex items-center justify-between px-4 text-[10px] text-muted-foreground z-50 shrink-0">
+      <div className="h-8 bg-glass-bg-light dark:bg-glass-bg-dark border-t border-glass-border-light dark:border-glass-border-dark flex items-center justify-between px-4 text-[10px] text-muted-foreground z-50 shrink-0">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-green-500 animate-pulse" />

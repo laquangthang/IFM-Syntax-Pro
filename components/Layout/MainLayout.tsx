@@ -4,17 +4,20 @@ import { ReactNode } from 'react'
 import Sidebar from './Sidebar'
 import BackgroundParticles from '../BackgroundParticles'
 import ThemeToggle from '../ThemeToggle'
+import { useAutoLoadProject } from '@/lib/hooks/useAutoLoadProject'
 
 interface MainLayoutProps {
   children: ReactNode
 }
 
 export default function MainLayout({ children }: MainLayoutProps) {
+  // Auto-load current project on mount
+  useAutoLoadProject()
   return (
-    <div className="relative flex h-screen w-full overflow-hidden bg-background-dark dark:bg-background-light transition-colors duration-300">
+    <div className="relative flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark transition-colors duration-300">
       {/* Background Elements */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 bg-background-dark dark:bg-background-light transition-colors duration-300" />
+        <div className="absolute inset-0 bg-background-light dark:bg-background-dark transition-colors duration-300" />
         {/* Gradient Mesh - Orange for dark, subtle for light */}
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 dark:bg-primary/5 blur-[120px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 dark:bg-primary/5 blur-[120px] rounded-full" />

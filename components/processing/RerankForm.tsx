@@ -100,7 +100,7 @@ export default function RerankForm({ mode, questions = [], onSyntaxGenerated, on
             <button
               type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-dark dark:border-glass-border-light rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
             >
               <span className="text-sm font-medium text-white dark:text-black">
                 {selectedQuestion 
@@ -175,7 +175,7 @@ export default function RerankForm({ mode, questions = [], onSyntaxGenerated, on
                 placeholder="3"
                 required
                 min="1"
-                className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
               />
             </div>
 
@@ -189,7 +189,7 @@ export default function RerankForm({ mode, questions = [], onSyntaxGenerated, on
                 rows={10}
                 placeholder="Label 1&#10;Label 2&#10;Label 3"
                 required
-                className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+                className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
               />
             </div>
           </>
@@ -226,7 +226,7 @@ export default function RerankForm({ mode, questions = [], onSyntaxGenerated, on
           onChange={(e) => setFormData({ ...formData, baseVar: e.target.value })}
           placeholder="Q17A"
           required
-          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
         />
       </div>
 
@@ -241,7 +241,7 @@ export default function RerankForm({ mode, questions = [], onSyntaxGenerated, on
           placeholder="3"
           required
           min="1"
-          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
         />
       </div>
 
@@ -255,7 +255,7 @@ export default function RerankForm({ mode, questions = [], onSyntaxGenerated, on
           rows={10}
           placeholder="Label 1&#10;Label 2&#10;Label 3"
           required
-          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm"
+          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm"
         />
       </div>
 

@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useSurveyStore } from '@/store/surveyStore'
-import { parseSurveyPDF, listAvailableModels } from '@/lib/geminiParser'
+import { parseSurveyPDF, parseSurveyPDFChunked, parseSurveyPDFStructured, listAvailableModels } from '@/lib/geminiParser'
 import MainLayout from '../Layout/MainLayout'
 import ThemeToggle from '../ThemeToggle'
 import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Download, Eye, EyeOff } from 'lucide-react'
@@ -15,11 +15,14 @@ export default function DataImport() {
     listAvailableModels()
   }, [])
   const router = useRouter()
-  const { setParsedQuestions, setLoading, setError, setCurrentStep, isLoading, error, parsedQuestions } = useSurveyStore()
+  const { setParsedQuestions, appendParsedQuestions, setLoading, setError, setCurrentStep, isLoading, error, parsedQuestions } = useSurveyStore()
   const [isDragging, setIsDragging] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [progress, setProgress] = useState(0)
   const [showJSON, setShowJSON] = useState(false)
+  const [parsingMode, setParsingMode] = useState<'structured' | 'chunked' | 'normal'>('structured') // Default to structured
+  const [chunkInfo, setChunkInfo] = useState<{ current: number; total: number; totalParsed: number } | null>(null)
+  const [phaseInfo, setPhaseInfo] = useState<{ phase: string; details: string } | null>(null)
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -90,12 +93,69 @@ export default function DataImport() {
     setLoading(true)
     setError(null)
     setProgress(0)
+    setChunkInfo(null)
+    setPhaseInfo(null)
 
     try {
-      const questions = await parseSurveyPDF(file, (progressValue) => {
-        setProgress(progressValue)
-      })
-      setParsedQuestions(questions)
+      let questions: any[] = []
+      
+      if (parsingMode === 'structured') {
+        // Use structured extraction (recommended)
+        console.log('📦 Using structured extraction mode')
+        setParsedQuestions([]) // Reset before parsing
+        
+        questions = await parseSurveyPDFStructured(
+          file,
+          (progressValue, phase, details) => {
+            setProgress(progressValue)
+            if (phase && details) {
+              setPhaseInfo({ phase, details })
+            }
+          }
+        )
+        setParsedQuestions(questions)
+      } else if (parsingMode === 'chunked') {
+        // Use chunked parsing for better reliability
+        console.log('📦 Using chunked parsing mode')
+        setParsedQuestions([]) // Reset before chunked parsing
+        
+        questions = await parseSurveyPDFChunked(
+          file,
+          (progressValue, chunkIndex, totalChunks) => {
+            setProgress(progressValue)
+            if (chunkIndex !== undefined && totalChunks !== undefined) {
+              // Get current count from store
+              const { parsedQuestions: currentQuestions } = useSurveyStore.getState()
+              setChunkInfo({
+                current: chunkIndex + 1,
+                total: totalChunks,
+                totalParsed: currentQuestions.length,
+              })
+            }
+          },
+          (chunkIndex, chunkQuestions, totalParsed) => {
+            // Save each chunk immediately
+            appendParsedQuestions(chunkQuestions)
+            setChunkInfo(prev => prev ? {
+              ...prev,
+              totalParsed,
+            } : null)
+            console.log(`✅ Chunk ${chunkIndex + 1} saved: ${chunkQuestions.length} questions`)
+          },
+          10 // 10 questions per chunk
+        )
+        
+        // Final merge (should already be done via appendParsedQuestions)
+        const { parsedQuestions: finalQuestions } = useSurveyStore.getState()
+        questions = finalQuestions
+      } else {
+        // Use normal parsing
+        console.log('📄 Using normal parsing mode')
+        questions = await parseSurveyPDF(file, (progressValue) => {
+          setProgress(progressValue)
+        })
+        setParsedQuestions(questions)
+      }
       
       // Export JSON to file for inspection
       const pdfName = file.name.replace(/\.pdf$/i, '')
@@ -109,15 +169,19 @@ export default function DataImport() {
       console.error('Error processing PDF:', err)
       setError(err instanceof Error ? err.message : 'Failed to parse PDF. Please try again.')
       setProgress(0)
+      setChunkInfo(null)
+      setPhaseInfo(null)
     } finally {
       setLoading(false)
+      setChunkInfo(null)
+      setPhaseInfo(null)
     }
   }
 
   return (
     <MainLayout>
       {/* Header */}
-      <header className="h-16 flex items-center justify-between px-8 border-b border-glass-border-dark dark:border-glass-border-light glass-panel z-40 relative bg-background-dark dark:bg-background-light">
+      <header className="h-16 flex items-center justify-between px-8 border-b border-glass-border-light dark:border-glass-border-dark glass-panel z-40 relative bg-background-light dark:bg-background-dark">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2 dark:text-gray-400 text-gray-600 text-sm font-medium">
             <span className="text-white">Data Import</span>
@@ -147,6 +211,51 @@ export default function DataImport() {
             <p className="text-white">
               Upload your questionnaire PDF to automatically extract questions, options, and logic
             </p>
+            {/* Parsing Mode Selection */}
+            <div className="flex flex-col gap-3 mt-4">
+              <label className="text-sm text-white font-medium">Parsing Mode:</label>
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="parsingMode"
+                    value="structured"
+                    checked={parsingMode === 'structured'}
+                    onChange={(e) => setParsingMode(e.target.value as any)}
+                    className="w-4 h-4 border-glass-border-light dark:border-glass-border-dark bg-glass-bg-light dark:bg-glass-bg-dark text-primary focus:ring-2 focus:ring-primary"
+                  />
+                  <span className="text-sm text-white">
+                    Structured Extraction (Recommended) - Most accurate, handles complex PDFs
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="parsingMode"
+                    value="chunked"
+                    checked={parsingMode === 'chunked'}
+                    onChange={(e) => setParsingMode(e.target.value as any)}
+                    className="w-4 h-4 border-glass-border-light dark:border-glass-border-dark bg-glass-bg-light dark:bg-glass-bg-dark text-primary focus:ring-2 focus:ring-primary"
+                  />
+                  <span className="text-sm text-white">
+                    Chunked Parsing - Good for large PDFs, incremental save
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="parsingMode"
+                    value="normal"
+                    checked={parsingMode === 'normal'}
+                    onChange={(e) => setParsingMode(e.target.value as any)}
+                    className="w-4 h-4 border-glass-border-light dark:border-glass-border-dark bg-glass-bg-light dark:bg-glass-bg-dark text-primary focus:ring-2 focus:ring-primary"
+                  />
+                  <span className="text-sm text-white">
+                    Normal Parsing - Fast but may fail on complex PDFs
+                  </span>
+                </label>
+              </div>
+            </div>
           </div>
 
           {/* Error Display */}
@@ -172,7 +281,7 @@ export default function DataImport() {
               ${
                 isDragging
                   ? 'border-primary bg-primary/10 scale-[1.02]'
-                  : 'border-glass-border-dark dark:border-glass-border-light'
+                  : 'border-glass-border-light dark:border-glass-border-dark'
               }
               ${isLoading ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
               glass-card
@@ -222,11 +331,30 @@ export default function DataImport() {
                   <div className="text-center mt-6 w-full">
                     <h3 className="text-lg font-bold text-white mb-2">Processing PDF...</h3>
                     <p className="text-sm dark:text-gray-400 text-gray-600 mb-4">
-                      Extracting questions and logic with AI
+                      {parsingMode === 'structured'
+                        ? 'Using structured extraction for maximum accuracy...'
+                        : parsingMode === 'chunked'
+                        ? 'Extracting questions in chunks...'
+                        : 'Extracting questions and logic with AI'}
                     </p>
+                    {/* Phase/Chunk Info */}
+                    {phaseInfo && (
+                      <div className="mb-4 text-center">
+                        <p className="text-xs dark:text-gray-300 text-gray-700 font-medium">
+                          {phaseInfo.phase}: {phaseInfo.details}
+                        </p>
+                      </div>
+                    )}
+                    {parsingMode === 'chunked' && chunkInfo && (
+                      <div className="mb-4 text-center">
+                        <p className="text-xs dark:text-gray-300 text-gray-700 font-medium">
+                          Chunk {chunkInfo.current}/{chunkInfo.total} • {chunkInfo.totalParsed} questions parsed
+                        </p>
+                      </div>
+                    )}
                     {/* Progress Bar */}
                     <div className="w-full max-w-xs mx-auto">
-                      <div className="h-2 bg-glass-bg-dark dark:bg-glass-bg-light rounded-full overflow-hidden border border-glass-border-dark dark:border-glass-border-light">
+                      <div className="h-2 bg-glass-bg-light dark:bg-glass-bg-dark rounded-full overflow-hidden border border-glass-border-light dark:border-glass-border-dark">
                         <motion.div
                           className="h-full bg-gradient-to-r from-primary to-primary-light"
                           initial={{ width: 0 }}
@@ -336,7 +464,7 @@ export default function DataImport() {
                   exit={{ opacity: 0, height: 0 }}
                   className="mt-4"
                 >
-                  <div className="relative bg-[#1e1e1e] dark:bg-[#0d1117] rounded-lg border border-glass-border-dark dark:border-glass-border-light overflow-hidden">
+                  <div className="relative bg-[#1e1e1e] dark:bg-[#0d1117] rounded-lg border border-glass-border-light dark:border-glass-border-dark overflow-hidden">
                     <pre className="p-4 overflow-auto max-h-[600px] text-xs font-mono text-gray-300 dark:text-gray-200">
                       <code>{JSON.stringify({ questions: parsedQuestions }, null, 2)}</code>
                     </pre>

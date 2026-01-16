@@ -164,7 +164,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
             <button
               type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-dark dark:border-glass-border-light rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
             >
               <span className="text-sm font-medium text-white dark:text-black">
                 {selectedQuestions.length > 0 
@@ -240,7 +240,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
                   onChange={(e) => setAllVars(e.target.value)}
                   rows={8}
                   placeholder="Gender&#10;Age_Group&#10;Q1_Brand_Awareness&#10;Q2_Brand_Usage"
-                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
                 />
               </div>
               <div>
@@ -252,7 +252,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
                   onChange={(e) => setByVars(e.target.value)}
                   rows={8}
                   placeholder="Gender&#10;Age_Group"
-                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
                 />
               </div>
             </div>
@@ -270,7 +270,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
           <>
             <div className="space-y-4">
               {columnVars.map((variable, index) => (
-                <div key={index} className="p-4 bg-glass-panel rounded-lg border border-glass-border-dark dark:border-glass-border-light">
+                <div key={index} className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
                   <h3 className="text-sm font-semibold mb-3 text-white dark:text-black">Công thức cho biến cột: "{variable}"</h3>
                   <div className="space-y-2">
                     {formulas.map((formula) => (
@@ -292,7 +292,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
             <div className="flex gap-2">
               <button
                 onClick={() => setStep(1)}
-                className="flex-1 px-4 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg hover:bg-white/5 transition-all text-white dark:text-black"
+                className="flex-1 px-4 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg hover:bg-white/5 transition-all text-white dark:text-black"
               >
                 Quay lại
               </button>
@@ -323,7 +323,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
                 onChange={(e) => setAllVars(e.target.value)}
                 rows={8}
                 placeholder="Gender&#10;Age_Group&#10;Q1_Brand_Awareness&#10;Q2_Brand_Usage"
-                className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+                className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
               />
             </div>
             <div>
@@ -335,7 +335,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
                 onChange={(e) => setByVars(e.target.value)}
                 rows={8}
                 placeholder="Gender&#10;Age_Group"
-                className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+                className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
               />
             </div>
           </div>
@@ -352,7 +352,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
         <>
           <div className="space-y-4">
             {columnVars.map((variable, index) => (
-              <div key={index} className="p-4 bg-glass-panel rounded-lg border border-glass-border-dark dark:border-glass-border-light">
+              <div key={index} className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
                 <h3 className="text-sm font-semibold mb-3 text-white dark:text-black">Công thức cho biến cột: "{variable}"</h3>
                 <div className="space-y-2">
                   {formulas.map((formula) => (
@@ -374,7 +374,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
           <div className="flex gap-2">
             <button
               onClick={() => setStep(1)}
-              className="flex-1 px-4 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg hover:bg-white/5 transition-all"
+              className="flex-1 px-4 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg hover:bg-white/5 transition-all"
             >
               Quay lại
             </button>

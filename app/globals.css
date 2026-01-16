@@ -211,3 +211,132 @@ body {
   color: var(--syntax-comment, #5c6370);
   font-style: italic;
 }
+
+/* Ensure input and textarea text color - dark mode white, light mode black */
+/* Include all states: normal, focus, active, hover */
+/* Use higher specificity to override Tailwind */
+/* Also target inputs in dark backgrounds regardless of theme class */
+input[class*="bg-background-dark"],
+textarea[class*="bg-background-dark"],
+html.dark input,
+html.dark input:focus,
+html.dark input:active,
+html.dark input:hover,
+html.dark input[type="text"],
+html.dark input[type="text"]:focus,
+html.dark input[type="text"]:active,
+html[class*="dark"] input,
+html[class*="dark"] input:focus,
+html[class*="dark"] input:active,
+html[class*="dark"] input:hover,
+html.dark textarea,
+html.dark textarea:focus,
+html.dark textarea:active,
+html.dark textarea:hover,
+html[class*="dark"] textarea,
+html[class*="dark"] textarea:focus,
+html[class*="dark"] textarea:active,
+html[class*="dark"] textarea:hover,
+input[class*="bg-background-dark"]:focus,
+input[class*="bg-background-dark"]:active,
+input[class*="bg-background-dark"]:hover,
+textarea[class*="bg-background-dark"]:focus,
+textarea[class*="bg-background-dark"]:active,
+textarea[class*="bg-background-dark"]:hover {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+html.light input,
+html.light input:focus,
+html.light input:active,
+html.light input:hover,
+html.light input[type="text"],
+html.light input[type="text"]:focus,
+html.light input[type="text"]:active,
+html[class*="light"] input,
+html[class*="light"] input:focus,
+html[class*="light"] input:active,
+html[class*="light"] input:hover,
+html.light textarea,
+html.light textarea:focus,
+html.light textarea:active,
+html.light textarea:hover,
+html[class*="light"] textarea,
+html[class*="light"] textarea:focus,
+html[class*="light"] textarea:active,
+html[class*="light"] textarea:hover {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+html.dark input::placeholder,
+html[class*="dark"] input::placeholder,
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--muted-foreground) !important;
+}
+
+html.light input::placeholder,
+html[class*="light"] input::placeholder,
+.light input::placeholder,
+.light textarea::placeholder {
+  color: var(--muted-foreground) !important;
+}
+
+/* Override browser autofill styles in dark mode - keep white text */
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:hover,
+html.dark input:-webkit-autofill:focus,
+html.dark input:-webkit-autofill:active,
+html[class*="dark"] input:-webkit-autofill,
+html[class*="dark"] input:-webkit-autofill:hover,
+html[class*="dark"] input:-webkit-autofill:focus,
+html[class*="dark"] input:-webkit-autofill:active,
+html.dark textarea:-webkit-autofill,
+html.dark textarea:-webkit-autofill:hover,
+html.dark textarea:-webkit-autofill:focus,
+html.dark textarea:-webkit-autofill:active,
+html[class*="dark"] textarea:-webkit-autofill,
+html[class*="dark"] textarea:-webkit-autofill:hover,
+html[class*="dark"] textarea:-webkit-autofill:focus,
+html[class*="dark"] textarea:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Override browser autofill styles in light mode - keep black text */
+html.light input:-webkit-autofill,
+html.light input:-webkit-autofill:hover,
+html.light input:-webkit-autofill:focus,
+html.light input:-webkit-autofill:active,
+html[class*="light"] input:-webkit-autofill,
+html[class*="light"] input:-webkit-autofill:hover,
+html[class*="light"] input:-webkit-autofill:focus,
+html[class*="light"] input:-webkit-autofill:active,
+html.light textarea:-webkit-autofill,
+html.light textarea:-webkit-autofill:hover,
+html.light textarea:-webkit-autofill:focus,
+html.light textarea:-webkit-autofill:active,
+html[class*="light"] textarea:-webkit-autofill,
+html[class*="light"] textarea:-webkit-autofill:hover,
+html[class*="light"] textarea:-webkit-autofill:focus,
+html[class*="light"] textarea:-webkit-autofill:active {
+  -webkit-text-fill-color: #000000 !important;
+  -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Ensure caret (cursor) is visible in dark mode */
+.dark input::selection,
+.dark textarea::selection {
+  background-color: rgba(139, 92, 246, 0.3) !important;
+  color: #ffffff !important;
+}
+
+.light input::selection,
+.light textarea::selection {
+  background-color: rgba(139, 92, 246, 0.3) !important;
+  color: #000000 !important;
+}

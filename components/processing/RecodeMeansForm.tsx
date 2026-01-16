@@ -220,7 +220,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
             <button
               type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-dark dark:border-glass-border-light rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
             >
               <span className="text-sm font-medium text-white dark:text-black">
                 {selectedQuestion 
@@ -290,7 +290,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
                   rows={6}
                   placeholder="5,000,001 - 15,000,000 VND&#10;15,000,001 - 25,000,000 VND&#10;25,000,001 and above VND"
                   required
-                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
                 />
               </div>
               <div>
@@ -303,7 +303,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
                   rows={6}
                   placeholder="Means sẽ hiển thị ở đây..."
                   required
-                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
                 />
               </div>
             </div>
@@ -319,7 +319,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
                   rows={4}
                   placeholder="1&#10;2&#10;3"
                   required
-                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
                 />
               </div>
               <div>
@@ -332,7 +332,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
                   rows={4}
                   placeholder="Q1&#10;Q2&#10;Q3"
                   required
-                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
                 />
               </div>
             </div>
@@ -370,7 +370,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
             rows={6}
             placeholder="5,000,001 - 15,000,000 VND&#10;15,000,001 - 25,000,000 VND&#10;25,000,001 and above VND"
             required
-              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
           />
         </div>
         <div>
@@ -383,7 +383,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
             rows={6}
             placeholder="Means sẽ hiển thị ở đây..."
             required
-              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
           />
         </div>
       </div>
@@ -399,7 +399,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
             rows={4}
             placeholder="1&#10;2&#10;3"
             required
-              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
           />
         </div>
         <div>
@@ -412,7 +412,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
             rows={4}
             placeholder="Q1&#10;Q2&#10;Q3"
             required
-              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
           />
         </div>
       </div>

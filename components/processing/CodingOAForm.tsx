@@ -64,7 +64,7 @@ export default function CodingOAForm({ mode, questions = [], onSyntaxGenerated, 
           <label className="block text-sm font-medium mb-2 text-white dark:text-black">
             1. Upload file Excel (Vrid, Response, R1, R2, ...Rn):
           </label>
-          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-glass-border-dark dark:border-glass-border-light rounded-lg cursor-pointer hover:bg-glass-panel transition-colors">
+          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-glass-border-light dark:border-glass-border-dark rounded-lg cursor-pointer hover:bg-glass-panel transition-colors">
             {formData.excelFile ? (
               <div className="flex flex-col items-center">
                 <CheckCircle2 className="size-8 text-green-500 mb-2" />
@@ -93,7 +93,7 @@ export default function CodingOAForm({ mode, questions = [], onSyntaxGenerated, 
           <label className="block text-sm font-medium mb-2 text-white dark:text-black">
             2. Upload file TXT Codelist (cho Value Labels):
           </label>
-          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-glass-border-dark dark:border-glass-border-light rounded-lg cursor-pointer hover:bg-glass-panel transition-colors">
+          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-glass-border-light dark:border-glass-border-dark rounded-lg cursor-pointer hover:bg-glass-panel transition-colors">
             {formData.codelistFile ? (
               <div className="flex flex-col items-center">
                 <CheckCircle2 className="size-8 text-green-500 mb-2" />
@@ -130,7 +130,7 @@ export default function CodingOAForm({ mode, questions = [], onSyntaxGenerated, 
           onChange={(e) => setFormData({ ...formData, variableName: e.target.value })}
           placeholder="Q18D"
           required
-          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
         />
       </div>
 

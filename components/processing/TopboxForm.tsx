@@ -191,7 +191,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
             <button
               type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-dark dark:border-glass-border-light rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
             >
               <span className="text-sm font-medium text-white dark:text-black">
                 {selectedQuestions.length > 0 
@@ -263,7 +263,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
               </label>
               <div className="grid grid-cols-2 gap-4">
                 {/* Top-Box */}
-                <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-dark dark:border-glass-border-light">
+                <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
                   <h4 className="text-sm font-semibold mb-2 text-white dark:text-black">Top-Box (T2B)</h4>
                   <div className="max-h-40 overflow-y-auto space-y-2">
                     {availableCodes.map(code => (
@@ -286,7 +286,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                 </div>
 
                 {/* Non Top-Box */}
-                <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-dark dark:border-glass-border-light">
+                <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
                   <h4 className="text-sm font-semibold mb-2 text-white dark:text-black">Non Top-Box (Non T2B)</h4>
                   <div className="max-h-40 overflow-y-auto space-y-2">
                     {availableCodes.map(code => (
@@ -309,7 +309,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                 </div>
 
                 {/* Bottom-Box */}
-                <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-dark dark:border-glass-border-light">
+                <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
                   <h4 className="text-sm font-semibold mb-2 text-white dark:text-black">Bottom-Box (B2B)</h4>
                   <div className="max-h-40 overflow-y-auto space-y-2">
                     {availableCodes.map(code => (
@@ -332,7 +332,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                 </div>
 
                 {/* Non Bottom-Box */}
-                <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-dark dark:border-glass-border-light">
+                <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
                   <h4 className="text-sm font-semibold mb-2 text-white dark:text-black">Non Bottom-Box (Non B2B)</h4>
                   <div className="max-h-40 overflow-y-auto space-y-2">
                     {availableCodes.map(code => (
@@ -362,7 +362,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                 <label className="block text-xs font-medium mb-1 text-gray-400 dark:text-gray-600">
                   Top-Box (tự động điền):
                 </label>
-                <div className="px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-white dark:text-black">
+                <div className="px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-white dark:text-black">
                   {formData.t2b || '(chưa chọn)'}
                 </div>
               </div>
@@ -370,7 +370,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                 <label className="block text-xs font-medium mb-1 text-gray-400 dark:text-gray-600">
                   Non Top-Box (tự động điền):
                 </label>
-                <div className="px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-white dark:text-black">
+                <div className="px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-white dark:text-black">
                   {formData.nonT2b || '(chưa chọn)'}
                 </div>
               </div>
@@ -378,7 +378,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                 <label className="block text-xs font-medium mb-1 text-gray-400 dark:text-gray-600">
                   Bottom-Box (tự động điền):
                 </label>
-                <div className="px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-white dark:text-black">
+                <div className="px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-white dark:text-black">
                   {formData.b2b || '(chưa chọn)'}
                 </div>
               </div>
@@ -386,7 +386,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                 <label className="block text-xs font-medium mb-1 text-gray-400 dark:text-gray-600">
                   Non Bottom-Box (tự động điền):
                 </label>
-                <div className="px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-white dark:text-black">
+                <div className="px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-white dark:text-black">
                   {formData.nonB2b || '(chưa chọn)'}
                 </div>
               </div>
@@ -395,7 +395,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
         )}
 
         {selectedQuestions.length > 0 && availableCodes.length === 0 && (
-          <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-dark dark:border-glass-border-light">
+          <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
             <p className="text-sm text-gray-400 dark:text-gray-600">
               Câu hỏi đã chọn không có codes. Vui lòng chọn câu hỏi có options.
             </p>
@@ -433,7 +433,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
           rows={3}
           placeholder="Q1_1&#10;Q1_2&#10;Q1_3"
           required
-          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
         />
       </div>
 
@@ -447,7 +447,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
           rows={3}
           placeholder="Label for Q1_1&#10;Label for Q1_2&#10;Label for Q1_3"
           required
-          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
         />
       </div>
 
@@ -461,7 +461,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
               value={formData.t2b}
               onChange={(e) => setFormData({ ...formData, t2b: e.target.value })}
               placeholder="4,5"
-              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
             />
         </div>
         <div>
@@ -473,7 +473,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
             value={formData.nonT2b}
             onChange={(e) => setFormData({ ...formData, nonT2b: e.target.value })}
             placeholder="1,2,3"
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
           />
         </div>
         <div>
@@ -485,7 +485,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
             value={formData.b2b}
             onChange={(e) => setFormData({ ...formData, b2b: e.target.value })}
             placeholder="1,2"
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
           />
         </div>
         <div>
@@ -497,7 +497,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
             value={formData.nonB2b}
             onChange={(e) => setFormData({ ...formData, nonB2b: e.target.value })}
             placeholder="3,4,5"
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
           />
         </div>
       </div>

@@ -121,7 +121,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
               <button
                 type="button"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-dark dark:border-glass-border-light rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+                className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
               >
                 <span className="text-sm font-medium text-white dark:text-black">
                   {selectedQuestion 
@@ -185,7 +185,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
               <button
                 type="button"
                 onClick={() => setRebaseDropdownOpen(!rebaseDropdownOpen)}
-                className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-dark dark:border-glass-border-light rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+                className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
               >
                 <span className="text-sm font-medium text-white dark:text-black">
                   {selectedRebaseQuestion 
@@ -248,7 +248,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
                 setFormData({ ...formData, rebaseQuestion: e.target.value })
               }}
               placeholder="Hoặc nhập tên câu hỏi"
-              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 mt-2"
+              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 mt-2"
             />
           </div>
         </div>
@@ -267,7 +267,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
                   placeholder="15"
                   required
                   min="1"
-                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
                 />
               </div>
               <div>
@@ -281,7 +281,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
                   placeholder="10"
                   required
                   min="1"
-                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
                 />
               </div>
             </div>
@@ -296,7 +296,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
                   onChange={(e) => setFormData({ ...formData, brandNames: e.target.value })}
                   rows={5}
                   required
-                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
                 />
               </div>
               <div>
@@ -308,7 +308,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
                   onChange={(e) => setFormData({ ...formData, attributeTexts: e.target.value })}
                   rows={5}
                   required
-                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm text-black dark:text-white"
+                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
                 />
               </div>
             </div>
@@ -347,7 +347,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
             onChange={(e) => setFormData({ ...formData, questionName: e.target.value })}
             placeholder="Q20"
             required
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
           />
         </div>
         <div>
@@ -360,7 +360,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
             onChange={(e) => setFormData({ ...formData, rebaseQuestion: e.target.value })}
             placeholder="Q19"
             required
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
           />
         </div>
       </div>
@@ -377,7 +377,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
             placeholder="15"
             required
             min="1"
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
           />
         </div>
         <div>
@@ -391,7 +391,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
             placeholder="10"
             required
             min="1"
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
           />
         </div>
       </div>
@@ -406,7 +406,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
             onChange={(e) => setFormData({ ...formData, brandNames: e.target.value })}
             rows={5}
             required
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm"
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm"
           />
         </div>
         <div>
@@ -418,7 +418,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
             onChange={(e) => setFormData({ ...formData, attributeTexts: e.target.value })}
             rows={5}
             required
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-dark dark:border-glass-border-light rounded-lg font-mono text-sm"
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm"
           />
         </div>
       </div>

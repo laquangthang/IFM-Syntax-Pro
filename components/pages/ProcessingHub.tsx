@@ -89,7 +89,7 @@ export default function ProcessingHub() {
 
       {/* Mode Toggle - Only show when no tool selected or allow switching while tool is selected */}
       {!selectedTool && (
-        <div className="flex gap-4 p-1 bg-glass-panel rounded-lg border border-glass-border-dark dark:border-glass-border-light">
+        <div className="flex gap-4 p-1 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
           <button
             onClick={() => {
               setActiveMode('manual')
@@ -132,7 +132,7 @@ export default function ProcessingHub() {
               onClick={() => setSelectedTool(tool.id)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="p-4 bg-glass-panel rounded-lg border border-glass-border-dark dark:border-glass-border-light text-left hover:border-primary/50 transition-all"
+              className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark text-left hover:border-primary/50 transition-all"
             >
               <h3 className="font-semibold text-white mb-1">{tool.label}</h3>
               <p className="text-sm text-gray-400 dark:text-gray-600">{tool.description}</p>
@@ -157,7 +157,7 @@ export default function ProcessingHub() {
                   setSyntax('')
                   setError(null)
                 }}
-                className="p-2 hover:bg-glass-panel rounded-lg transition-colors border border-glass-border-dark dark:border-glass-border-light flex items-center gap-2 text-white"
+                className="p-2 hover:bg-glass-panel rounded-lg transition-colors border border-glass-border-light dark:border-glass-border-dark flex items-center gap-2 text-white"
                 title="Trở về chọn tool"
               >
                 <ArrowLeft className="size-5" />
@@ -173,7 +173,7 @@ export default function ProcessingHub() {
             </div>
             
             {/* Mode Toggle - Compact version when tool is selected */}
-            <div className="flex gap-2 p-1 bg-glass-panel rounded-lg border border-glass-border-dark dark:border-glass-border-light">
+            <div className="flex gap-2 p-1 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
               <button
                 onClick={() => {
                   setActiveMode('manual')
@@ -238,7 +238,7 @@ export default function ProcessingHub() {
             <div className="flex gap-2">
               <button
                 onClick={handleCopy}
-                className="px-4 py-2 bg-glass-panel rounded-lg border border-glass-border-dark dark:border-glass-border-light hover:border-primary/50 transition-all flex items-center gap-2 text-white"
+                className="px-4 py-2 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark hover:border-primary/50 transition-all flex items-center gap-2 text-white"
               >
                 {copied ? (
                   <>
@@ -261,7 +261,7 @@ export default function ProcessingHub() {
               </button>
             </div>
           </div>
-          <pre className="p-4 bg-glass-panel rounded-lg border border-glass-border-dark dark:border-glass-border-light font-mono text-sm overflow-y-auto max-h-96 text-white custom-scrollbar" style={{ scrollBehavior: 'smooth' }}>
+          <pre className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark font-mono text-sm overflow-y-auto max-h-96 text-white custom-scrollbar" style={{ scrollBehavior: 'smooth' }}>
             {syntax}
           </pre>
         </motion.div>
@@ -313,7 +313,7 @@ function ManualInputForm({
       return <CTablesV2Form mode="manual" questions={[]} onSyntaxGenerated={onSyntaxGenerated} onError={onError} />
     default:
       return (
-        <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-dark dark:border-glass-border-light">
+        <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
           <p className="text-gray-400 dark:text-gray-600">Manual input form for {tool} - Coming soon</p>
         </div>
       )
@@ -353,7 +353,7 @@ function AutoInputForm({
       return <CTablesV2Form mode="auto" questions={questions} onSyntaxGenerated={onSyntaxGenerated} onError={onError} />
     default:
       return (
-        <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-dark dark:border-glass-border-light">
+        <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
           <p className="text-gray-400 dark:text-gray-600">
             Auto input form for {tool} - Select from {questions.length} questions - Coming soon
           </p>
