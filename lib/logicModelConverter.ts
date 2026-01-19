@@ -408,7 +408,6 @@ export function convertQuestionsToLogicModel(
         const conditions = trapCodes.map(code => `${question.id}.code == ${code}`).join(' or ')
         trapTerminateCondition = `IF (${conditions})`
       }
-      console.log(`[convertQuestionsToLogicModel] Created TRAP terminate condition for Q${question.id}:`, trapTerminateCondition)
       
       // Add TRAP codes to conditionCodes
       trapCodes.forEach(code => {
@@ -424,7 +423,6 @@ export function convertQuestionsToLogicModel(
       const formatted = formatTerminateCondition(formattedExistingCondition, question.id, question.type)
       // Use the formatted short version, but remove "IF" prefix for merging
       formattedExistingCondition = formatted.short.replace(/^IF\s+/i, '').trim()
-      console.log(`[convertQuestionsToLogicModel] Formatted existing condition for Q${question.id}:`, formattedExistingCondition)
     }
     
     let formattedTrapCondition = trapTerminateCondition
@@ -493,7 +491,6 @@ export function convertQuestionsToLogicModel(
       }
       edges.push(terminateEdge)
       
-      console.log(`[convertQuestionsToLogicModel] Created terminate node ${terminateNodeId} for Q${question.id} with condition:`, finalTerminateCondition)
     }
     
     // Create child nodes (codes) based on question type
@@ -812,7 +809,6 @@ export function convertQuestionsToLogicModel(
           condition: askIfCondition,
         }
         edges.push(askIfEdge)
-        console.log(`[convertQuestionsToLogicModel] Created ASK_IF edge from ${sourceId} to ${question.id} with condition: ${askIfCondition}`)
       }
     }
   })

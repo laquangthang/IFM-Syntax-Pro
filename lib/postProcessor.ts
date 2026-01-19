@@ -34,7 +34,6 @@ export function resolvePipingDependencies(questions: ParsedQuestion[]): ParsedQu
           ...opt,
         }))
         
-        console.log(`   ✅ Resolved piping: ${question.id} → ${sourceId} (${resolvedQuestion.options.length} options)`)
       } else {
         console.warn(`   ⚠️  Piping source ${sourceId} not found for ${question.id}`)
       }
@@ -139,19 +138,14 @@ export function postProcessQuestions(questions: ParsedQuestion[]): {
     warnings: string[]
   }
 } {
-  console.log(`\n🔧 Post-processing ${questions.length} questions...`)
-  
   // Step 1: Sort
   const sorted = sortQuestions(questions)
-  console.log(`   ✅ Sorted questions`)
   
   // Step 2: Resolve dependencies
   const resolved = resolvePipingDependencies(sorted)
-  console.log(`   ✅ Resolved dependencies`)
   
   // Step 3: Validate
   const validation = validateQuestions(resolved)
-  console.log(`   ✅ Validation: ${validation.errors.length} errors, ${validation.warnings.length} warnings`)
   
   return {
     questions: resolved,

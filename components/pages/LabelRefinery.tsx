@@ -28,9 +28,32 @@ export default function LabelRefinery() {
   const [pdfZoom, setPdfZoom] = useState(100)
   const [currentPage, setCurrentPage] = useState(1)
 
-  // Load questions from map
+  // Helper to get synced columns from piping source
+  const getSyncedColumns = (question: ParsedQuestion): ParsedQuestion['columns'] => {
+    if (question.logic?.piping_source && (question.type === 'MA_Grid' || question.type === 'SA_Grid')) {
+      const sourceQuestion = Array.from(questionsMap.values()).find(q => q.id === question.logic?.piping_source)
+      if (sourceQuestion) {
+        const isSourceGrid = sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'SA_Grid'
+        if (isSourceGrid && sourceQuestion.rows && sourceQuestion.rows.length > 0) {
+          // Use rows from source Grid question as columns
+          return [...sourceQuestion.rows]
+        }
+      }
+    }
+    // Return original columns if no piping or piping source not found
+    return question.columns
+  }
+
+  // Load questions from map and sync columns from piping source
   const questions = useMemo(() => {
-    return Array.from(questionsMap.values())
+    return Array.from(questionsMap.values()).map(q => {
+      // Sync columns from piping source for display
+      const syncedColumns = getSyncedColumns(q)
+      if (syncedColumns !== q.columns) {
+        return { ...q, columns: syncedColumns }
+      }
+      return q
+    })
   }, [questionsMap])
 
   // Filter questions
@@ -100,10 +123,13 @@ export default function LabelRefinery() {
             {questions.map((question, qIndex) => {
               const isSelected = selectedQuestionId === question.id
               
+              // Get synced columns from piping source for display
+              const displayColumns = getSyncedColumns(question)
+              
               // Check if this is a Matrix MA question (MA or MA_Grid with rows and columns)
               const isMatrixMA = (question.type === 'MA' || question.type === 'MA_Grid') && 
                                   question.rows && question.rows.length > 0 && 
-                                  question.columns && question.columns.length > 0
+                                  displayColumns && displayColumns.length > 0
 
               // Get table rows for this question (only codes/options) - NOT for Matrix MA
               const tableRows: Array<{
@@ -237,7 +263,7 @@ export default function LabelRefinery() {
                                 <span className="text-xs font-normal opacity-70">VN</span>
                               </div>
                             </th>
-                            {question.columns.map((column, colIdx) => (
+                            {displayColumns.map((column, colIdx) => (
                               <th key={colIdx} className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-900">
                                 <div className="flex flex-col items-center">
                                   <span className="text-gray-900 font-bold font-mono">{column.code}</span>
@@ -283,7 +309,7 @@ export default function LabelRefinery() {
                       </table>
                       {/* Matrix Info */}
                       <div className="px-4 py-2 bg-gray-50 border-t border-gray-300 text-xs text-gray-600">
-                        Matrix: {question.rows.length} rows × {question.columns.length} columns = {question.rows.length * question.columns.length} variables
+                        Matrix: {question.rows.length} rows × {displayColumns.length} columns = {question.rows.length * displayColumns.length} variables
                       </div>
                     </div>
                   ) : (

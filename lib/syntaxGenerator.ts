@@ -67,6 +67,22 @@ function generateSAOESyntax(question: ParsedQuestion, oldVariables: string[] = [
 }
 
 /**
+ * Generate syntax for SA (Single Answer)
+ * Alias to SA/OE generator (kept for backward compatibility)
+ */
+function generateSASyntax(question: ParsedQuestion, oldVariables: string[] = []): SyntaxOutput {
+  return generateSAOESyntax(question, oldVariables)
+}
+
+/**
+ * Generate syntax for OE (Open Ended)
+ * Alias to SA/OE generator (kept for backward compatibility)
+ */
+function generateOESyntax(question: ParsedQuestion, oldVariables: string[] = []): SyntaxOutput {
+  return generateSAOESyntax(question, oldVariables)
+}
+
+/**
  * Generate syntax for MA questions
  */
 function generateMASyntax(question: ParsedQuestion, oldVariables: string[] = []): SyntaxOutput {

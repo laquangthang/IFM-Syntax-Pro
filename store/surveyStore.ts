@@ -79,7 +79,6 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     const uniqueNewQuestions = newQuestions.filter(q => !existingIds.has(q.id))
     
     if (uniqueNewQuestions.length === 0) {
-      console.log('   ℹ️  No new questions to append (all duplicates)')
       return
     }
     
@@ -110,8 +109,6 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       qcLogicGraph,
     })
     
-    console.log(`   ✅ Appended ${uniqueNewQuestions.length} new questions (${newQuestions.length - uniqueNewQuestions.length} duplicates skipped)`)
-    console.log(`   📊 Total questions: ${mergedQuestions.length}`)
   },
   
   setQuestionsMap: (map) => {

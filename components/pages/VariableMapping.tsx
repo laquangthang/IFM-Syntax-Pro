@@ -81,7 +81,6 @@ export default function VariableMapping() {
     setTimeout(() => {
       setIsAICleaning(false)
       // Here you would call the actual AI cleaning API
-      console.log('Clean Label action triggered - AI cleaning completed')
     }, 2000)
   }
 

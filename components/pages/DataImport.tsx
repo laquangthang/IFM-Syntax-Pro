@@ -1,27 +1,20 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useCallback } from 'react'
+import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useSurveyStore } from '@/store/surveyStore'
-import { parseSurveyPDF, parseSurveyPDFChunked, parseSurveyPDFStructured, listAvailableModels } from '@/lib/geminiParser'
+import { parseSurveyPDFStructured } from '@/lib/pdfParser'
 import MainLayout from '../Layout/MainLayout'
 import ThemeToggle from '../ThemeToggle'
-import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Download, Eye, EyeOff } from 'lucide-react'
+import { Upload, FileText, AlertCircle, Loader2, Download } from 'lucide-react'
 
 export default function DataImport() {
-  // Run diagnostic on mount
-  useEffect(() => {
-    listAvailableModels()
-  }, [])
   const router = useRouter()
-  const { setParsedQuestions, appendParsedQuestions, setLoading, setError, setCurrentStep, isLoading, error, parsedQuestions } = useSurveyStore()
+  const { setParsedQuestions, setLoading, setError, setCurrentStep, isLoading, error, parsedQuestions } = useSurveyStore()
   const [isDragging, setIsDragging] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [progress, setProgress] = useState(0)
-  const [showJSON, setShowJSON] = useState(false)
-  const [parsingMode, setParsingMode] = useState<'structured' | 'chunked' | 'normal'>('structured') // Default to structured
-  const [chunkInfo, setChunkInfo] = useState<{ current: number; total: number; totalParsed: number } | null>(null)
   const [phaseInfo, setPhaseInfo] = useState<{ phase: string; details: string } | null>(null)
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -61,31 +54,58 @@ export default function DataImport() {
     [setError]
   )
 
-  // Function to download JSON file
-  const downloadJSON = (data: any, filename: string) => {
-    const jsonString = JSON.stringify(data, null, 2) // Pretty print with 2 spaces
+  const [workbookBase64, setWorkbookBase64] = useState<string | null>(null)
+  const [workbookFileName, setWorkbookFileName] = useState<string | null>(null)
+
+  // Export JSON from memory
+  const exportJSON = () => {
+    if (!parsedQuestions || parsedQuestions.length === 0) {
+      alert('No data to export. Please extract PDF first.')
+      return
+    }
+    
+    const jsonString = JSON.stringify({ questions: parsedQuestions }, null, 2)
     const blob = new Blob([jsonString], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = filename
+    link.download = `parsed_survey_${new Date().toISOString().split('T')[0]}.json`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-    console.log(`✅ JSON exported: ${filename}`)
   }
 
-  // Export JSON from memory (store)
-  const exportStoredJSON = () => {
-    if (!parsedQuestions || parsedQuestions.length === 0) {
-      alert('Không có dữ liệu JSON trong bộ nhớ. Vui lòng parse PDF trước.')
+  // Export Excel (XLSX) from ConvertAPI result
+  const exportExcel = () => {
+    if (!workbookBase64 || !workbookFileName) {
+      alert('No Excel data available. Please extract PDF first.')
       return
     }
     
-    const filename = `parsed_survey_${new Date().toISOString().split('T')[0]}.json`
-    downloadJSON({ questions: parsedQuestions }, filename)
-    console.log(`📥 Exported ${parsedQuestions.length} questions from memory`)
+    try {
+      // Convert base64 to blob
+      const binaryString = atob(workbookBase64)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      
+      // Download
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = workbookFileName || `extracted_${new Date().toISOString().split('T')[0]}.xlsx`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      
+    } catch (error) {
+      console.error('❌ Error exporting Excel:', error)
+      alert('Failed to export Excel file')
+    }
   }
 
   const processFile = async (file: File) => {
@@ -93,87 +113,68 @@ export default function DataImport() {
     setLoading(true)
     setError(null)
     setProgress(0)
-    setChunkInfo(null)
     setPhaseInfo(null)
+    
+    const onProgress = (progressValue: number, phase?: string, details?: string) => {
+      setProgress(progressValue)
+      if (phase && details) {
+        setPhaseInfo({ phase, details })
+      }
+    }
 
     try {
-      let questions: any[] = []
+      setParsedQuestions([])
+      setWorkbookBase64(null)
+      setWorkbookFileName(null)
       
-      if (parsingMode === 'structured') {
-        // Use structured extraction (recommended)
-        console.log('📦 Using structured extraction mode')
-        setParsedQuestions([]) // Reset before parsing
-        
-        questions = await parseSurveyPDFStructured(
-          file,
-          (progressValue, phase, details) => {
-            setProgress(progressValue)
-            if (phase && details) {
-              setPhaseInfo({ phase, details })
-            }
-          }
-        )
-        setParsedQuestions(questions)
-      } else if (parsingMode === 'chunked') {
-        // Use chunked parsing for better reliability
-        console.log('📦 Using chunked parsing mode')
-        setParsedQuestions([]) // Reset before chunked parsing
-        
-        questions = await parseSurveyPDFChunked(
-          file,
-          (progressValue, chunkIndex, totalChunks) => {
-            setProgress(progressValue)
-            if (chunkIndex !== undefined && totalChunks !== undefined) {
-              // Get current count from store
-              const { parsedQuestions: currentQuestions } = useSurveyStore.getState()
-              setChunkInfo({
-                current: chunkIndex + 1,
-                total: totalChunks,
-                totalParsed: currentQuestions.length,
-              })
-            }
-          },
-          (chunkIndex, chunkQuestions, totalParsed) => {
-            // Save each chunk immediately
-            appendParsedQuestions(chunkQuestions)
-            setChunkInfo(prev => prev ? {
-              ...prev,
-              totalParsed,
-            } : null)
-            console.log(`✅ Chunk ${chunkIndex + 1} saved: ${chunkQuestions.length} questions`)
-          },
-          10 // 10 questions per chunk
-        )
-        
-        // Final merge (should already be done via appendParsedQuestions)
-        const { parsedQuestions: finalQuestions } = useSurveyStore.getState()
-        questions = finalQuestions
-      } else {
-        // Use normal parsing
-        console.log('📄 Using normal parsing mode')
-        questions = await parseSurveyPDF(file, (progressValue) => {
-          setProgress(progressValue)
-        })
-        setParsedQuestions(questions)
+      // Call API directly to get workbook data
+      const formData = new FormData()
+      formData.append('file', file)
+      
+      onProgress(10, 'Uploading', 'Sending PDF to server...')
+      
+      const response = await fetch('/api/parse-survey-structured', {
+        method: 'POST',
+        body: formData,
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        const msg =
+          errorData.details ||
+          errorData.error ||
+          `Failed to extract PDF: ${response.statusText}`
+        throw new Error(msg)
       }
       
-      // Export JSON to file for inspection
-      const pdfName = file.name.replace(/\.pdf$/i, '')
-      const jsonFilename = `${pdfName}_parsed_${new Date().toISOString().split('T')[0]}.json`
-      downloadJSON({ questions }, jsonFilename)
+      onProgress(90, 'Processing', 'Finalizing results...')
       
-      // Auto-navigate to mapping step
+      const data = await response.json()
+      
+      if (!data.success || !Array.isArray(data.questions)) {
+        throw new Error('Invalid response format from extraction API')
+      }
+      
+      // Store questions
+      setParsedQuestions(data.questions)
+      
+      // Store workbook data for Excel export
+      if (data.workbookBase64 && data.workbookFileName) {
+        setWorkbookBase64(data.workbookBase64)
+        setWorkbookFileName(data.workbookFileName)
+      
+      onProgress(100, 'Complete', `Extracted ${data.questions.length} questions`)
+      
+      // Auto-navigate to next step
       setCurrentStep('mapping')
       router.push('/refinery')
     } catch (err) {
       console.error('Error processing PDF:', err)
-      setError(err instanceof Error ? err.message : 'Failed to parse PDF. Please try again.')
+      setError(err instanceof Error ? err.message : 'Failed to extract PDF. Please try again.')
       setProgress(0)
-      setChunkInfo(null)
       setPhaseInfo(null)
     } finally {
       setLoading(false)
-      setChunkInfo(null)
       setPhaseInfo(null)
     }
   }
@@ -183,20 +184,32 @@ export default function DataImport() {
       {/* Header */}
       <header className="h-16 flex items-center justify-between px-8 border-b border-glass-border-light dark:border-glass-border-dark glass-panel z-40 relative bg-background-light dark:bg-background-dark">
         <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2 dark:text-gray-400 text-gray-600 text-sm font-medium">
-            <span className="text-white">Data Import</span>
-          </div>
+          <span className="text-white font-medium">PDF Extraction</span>
         </div>
         <div className="flex items-center gap-4">
           {parsedQuestions && parsedQuestions.length > 0 && (
-            <button
-              onClick={exportStoredJSON}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border border-orange-500/30 rounded-lg transition-all duration-200 text-sm font-medium"
-              title="Export JSON từ bộ nhớ"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export JSON ({parsedQuestions.length} questions)</span>
-            </button>
+            <>
+              <button
+                onClick={exportJSON}
+                className="flex items-center gap-2 px-4 py-2 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 rounded-lg transition-all duration-200 text-sm font-medium"
+              >
+                <Download className="w-4 h-4" />
+                <span>Export JSON ({parsedQuestions.length})</span>
+              </button>
+              <button
+                onClick={exportExcel}
+                disabled={!workbookBase64}
+                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-all duration-200 text-sm font-medium ${
+                  workbookBase64
+                    ? 'bg-green-500/20 hover:bg-green-500/30 text-green-400 border-green-500/30 cursor-pointer active:scale-95'
+                    : 'bg-gray-600/30 text-gray-400 border-gray-600/40 cursor-not-allowed hover:bg-gray-600/40'
+                }`}
+                title={workbookBase64 ? 'Export Excel file from ConvertAPI' : 'Excel export not available (no workbook data from ConvertAPI)'}
+              >
+                <FileText className="w-4 h-4" />
+                <span>Export Excel</span>
+              </button>
+            </>
           )}
           <ThemeToggle />
         </div>
@@ -204,58 +217,13 @@ export default function DataImport() {
 
       {/* Main Content */}
       <main className="flex-1 p-8 relative flex flex-col overflow-hidden">
-        <div className="max-w-4xl mx-auto w-full flex flex-col gap-8">
+        <div className="max-w-3xl mx-auto w-full flex flex-col gap-6">
           {/* Title */}
           <div className="flex flex-col gap-2">
-            <h1 className="text-3xl font-bold text-white">Upload Survey PDF</h1>
-            <p className="text-white">
-              Upload your questionnaire PDF to automatically extract questions, options, and logic
+            <h1 className="text-3xl font-bold text-white">Extract from PDF</h1>
+            <p className="text-gray-400 text-sm">
+              Upload a questionnaire PDF to extract questions, options, and logic using rule-based extraction
             </p>
-            {/* Parsing Mode Selection */}
-            <div className="flex flex-col gap-3 mt-4">
-              <label className="text-sm text-white font-medium">Parsing Mode:</label>
-              <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="parsingMode"
-                    value="structured"
-                    checked={parsingMode === 'structured'}
-                    onChange={(e) => setParsingMode(e.target.value as any)}
-                    className="w-4 h-4 border-glass-border-light dark:border-glass-border-dark bg-glass-bg-light dark:bg-glass-bg-dark text-primary focus:ring-2 focus:ring-primary"
-                  />
-                  <span className="text-sm text-white">
-                    Structured Extraction (Recommended) - Most accurate, handles complex PDFs
-                  </span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="parsingMode"
-                    value="chunked"
-                    checked={parsingMode === 'chunked'}
-                    onChange={(e) => setParsingMode(e.target.value as any)}
-                    className="w-4 h-4 border-glass-border-light dark:border-glass-border-dark bg-glass-bg-light dark:bg-glass-bg-dark text-primary focus:ring-2 focus:ring-primary"
-                  />
-                  <span className="text-sm text-white">
-                    Chunked Parsing - Good for large PDFs, incremental save
-                  </span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="parsingMode"
-                    value="normal"
-                    checked={parsingMode === 'normal'}
-                    onChange={(e) => setParsingMode(e.target.value as any)}
-                    className="w-4 h-4 border-glass-border-light dark:border-glass-border-dark bg-glass-bg-light dark:bg-glass-bg-dark text-primary focus:ring-2 focus:ring-primary"
-                  />
-                  <span className="text-sm text-white">
-                    Normal Parsing - Fast but may fail on complex PDFs
-                  </span>
-                </label>
-              </div>
-            </div>
           </div>
 
           {/* Error Display */}
@@ -276,7 +244,7 @@ export default function DataImport() {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             className={`
-              relative border-2 border-dashed rounded-2xl p-12
+              relative border-2 border-dashed rounded-xl p-12
               transition-all duration-300
               ${
                 isDragging
@@ -299,93 +267,58 @@ export default function DataImport() {
             <label htmlFor="pdf-upload" className="flex flex-col items-center gap-6 cursor-pointer">
               {isLoading ? (
                 <>
-                  {/* Holographic Scanning Effect */}
                   <div className="relative">
                     <motion.div
-                      animate={{
-                        rotate: 360,
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: 'linear',
-                      }}
-                      className="size-24 rounded-full border-4 border-primary/30"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                      className="size-20 rounded-full border-4 border-primary/30"
                     >
                       <motion.div
-                        animate={{
-                          rotate: -360,
-                        }}
-                        transition={{
-                          duration: 1,
-                          repeat: Infinity,
-                          ease: 'linear',
-                        }}
+                        animate={{ rotate: -360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                         className="absolute inset-0 rounded-full border-t-4 border-primary"
                       />
                     </motion.div>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <Loader2 className="size-8 text-primary animate-spin" />
+                      <Loader2 className="size-6 text-primary animate-spin" />
                     </div>
                   </div>
-                  <div className="text-center mt-6 w-full">
-                    <h3 className="text-lg font-bold text-white mb-2">Processing PDF...</h3>
-                    <p className="text-sm dark:text-gray-400 text-gray-600 mb-4">
-                      {parsingMode === 'structured'
-                        ? 'Using structured extraction for maximum accuracy...'
-                        : parsingMode === 'chunked'
-                        ? 'Extracting questions in chunks...'
-                        : 'Extracting questions and logic with AI'}
-                    </p>
-                    {/* Phase/Chunk Info */}
+                  <div className="text-center w-full">
+                    <h3 className="text-lg font-bold text-white mb-2">Extracting from PDF...</h3>
                     {phaseInfo && (
-                      <div className="mb-4 text-center">
-                        <p className="text-xs dark:text-gray-300 text-gray-700 font-medium">
-                          {phaseInfo.phase}: {phaseInfo.details}
-                        </p>
-                      </div>
+                      <p className="text-xs text-gray-400 mb-3">
+                        {phaseInfo.phase}: {phaseInfo.details}
+                      </p>
                     )}
-                    {parsingMode === 'chunked' && chunkInfo && (
-                      <div className="mb-4 text-center">
-                        <p className="text-xs dark:text-gray-300 text-gray-700 font-medium">
-                          Chunk {chunkInfo.current}/{chunkInfo.total} • {chunkInfo.totalParsed} questions parsed
-                        </p>
-                      </div>
-                    )}
-                    {/* Progress Bar */}
                     <div className="w-full max-w-xs mx-auto">
-                      <div className="h-2 bg-glass-bg-light dark:bg-glass-bg-dark rounded-full overflow-hidden border border-glass-border-light dark:border-glass-border-dark">
+                      <div className="h-2 bg-glass-bg-light dark:bg-glass-bg-dark rounded-full overflow-hidden">
                         <motion.div
                           className="h-full bg-gradient-to-r from-primary to-primary-light"
                           initial={{ width: 0 }}
                           animate={{ width: `${progress}%` }}
-                          transition={{ duration: 0.3, ease: 'easeOut' }}
+                          transition={{ duration: 0.3 }}
                         />
                       </div>
-                      <p className="text-xs dark:text-gray-400 text-gray-600 mt-2 text-center">
-                        {Math.round(progress)}%
-                      </p>
+                      <p className="text-xs text-gray-500 mt-2 text-center">{Math.round(progress)}%</p>
                     </div>
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="size-20 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center">
-                    <Upload className="size-10 text-primary" />
+                  <div className="size-16 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center">
+                    <Upload className="size-8 text-primary" />
                   </div>
                   <div className="text-center">
                     <h3 className="text-lg font-bold text-white mb-2">
                       {uploadedFile ? 'File Ready' : 'Drop PDF here or click to upload'}
                     </h3>
                     {uploadedFile ? (
-                      <div className="flex items-center gap-2 text-primary">
+                      <div className="flex items-center gap-2 text-primary text-sm">
                         <FileText className="size-4" />
-                        <span className="text-sm">{uploadedFile.name}</span>
+                        <span>{uploadedFile.name}</span>
                       </div>
                     ) : (
-                      <p className="text-sm dark:text-gray-400 text-gray-600">
-                        Supported format: PDF (Questionnaire files)
-                      </p>
+                      <p className="text-sm text-gray-400">Supported format: PDF</p>
                     )}
                   </div>
                 </>
@@ -393,87 +326,45 @@ export default function DataImport() {
             </label>
           </motion.div>
 
-          {/* Instructions */}
-          {!isLoading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="glass-card p-6"
-            >
-              <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">
-                What will be extracted:
-              </h3>
-              <ul className="space-y-2 text-sm dark:text-gray-400 text-gray-600">
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="size-4 text-primary mt-0.5 flex-shrink-0" />
-                  <span>Question IDs (Q1, Q2, Q3A, etc.)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="size-4 text-primary mt-0.5 flex-shrink-0" />
-                  <span>Clean question labels (removed notes, scripts, terminate conditions)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="size-4 text-primary mt-0.5 flex-shrink-0" />
-                  <span>Answer options with codes</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="size-4 text-primary mt-0.5 flex-shrink-0" />
-                  <span>Grid/Matrix structures (rows and columns)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="size-4 text-primary mt-0.5 flex-shrink-0" />
-                  <span>Logic conditions (Ask IF, Terminate)</span>
-                </li>
-              </ul>
-            </motion.div>
-          )}
-
-          {/* View Parsed JSON */}
-          {parsedQuestions && parsedQuestions.length > 0 && (
+          {/* Results Summary */}
+          {parsedQuestions && parsedQuestions.length > 0 && !isLoading && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="glass-card p-6"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                  Parsed JSON Data ({parsedQuestions.length} questions)
-                </h3>
-                <button
-                  onClick={() => setShowJSON(!showJSON)}
-                  className="flex items-center gap-2 px-3 py-1.5 text-xs bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-lg transition-all"
-                >
-                  {showJSON ? (
-                    <>
-                      <EyeOff className="w-4 h-4" />
-                      <span>Ẩn JSON</span>
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="w-4 h-4" />
-                      <span>Xem JSON</span>
-                    </>
-                  )}
-                </button>
-              </div>
-              
-              {showJSON && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mt-4"
-                >
-                  <div className="relative bg-[#1e1e1e] dark:bg-[#0d1117] rounded-lg border border-glass-border-light dark:border-glass-border-dark overflow-hidden">
-                    <pre className="p-4 overflow-auto max-h-[600px] text-xs font-mono text-gray-300 dark:text-gray-200">
-                      <code>{JSON.stringify({ questions: parsedQuestions }, null, 2)}</code>
-                    </pre>
-                  </div>
-                  <p className="text-xs dark:text-gray-500 text-gray-500 mt-2">
-                    💡 JSON này được lưu trong bộ nhớ (Zustand store). Refresh page sẽ mất dữ liệu.
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-1">
+                    Extraction Complete
+                  </h3>
+                  <p className="text-sm text-gray-400">
+                    {parsedQuestions.length} questions extracted successfully
                   </p>
-                </motion.div>
-              )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={exportJSON}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 rounded-lg transition-all text-sm font-medium"
+                  >
+                    <Download className="w-4 h-4" />
+                    Export JSON
+                  </button>
+                  <button
+                    onClick={exportExcel}
+                    disabled={!workbookBase64}
+                    className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-all text-sm font-medium ${
+                      workbookBase64
+                        ? 'bg-green-500/20 hover:bg-green-500/30 text-green-400 border-green-500/30 cursor-pointer active:scale-95'
+                        : 'bg-gray-600/30 text-gray-400 border-gray-600/40 cursor-not-allowed hover:bg-gray-600/40'
+                    }`}
+                    title={workbookBase64 ? 'Export Excel file from ConvertAPI' : 'Excel export not available (no workbook data from ConvertAPI)'}
+                  >
+                    <FileText className="w-4 h-4" />
+                    Export Excel
+                  </button>
+                </div>
+              </div>
             </motion.div>
           )}
         </div>
@@ -481,4 +372,3 @@ export default function DataImport() {
     </MainLayout>
   )
 }
-

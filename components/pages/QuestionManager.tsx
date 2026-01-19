@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSurveyStore } from '@/store/surveyStore'
-import { loadJSONFromFile } from '@/lib/jsonLoader'
+import { loadExcelFromFile } from '@/lib/excelLoader'
 import { ParsedQuestion } from '@/lib/geminiParser'
 import MainLayout from '@/components/Layout/MainLayout'
 import { 
@@ -77,58 +77,36 @@ export default function QuestionManager() {
     return Array.from(types).sort()
   }, [questions])
 
-  // Debug: Log when expandedQuestions changes
-  useEffect(() => {
-    console.log('🔄 [QuestionManager] expandedQuestions state changed:', Array.from(expandedQuestions))
-    console.log('📊 [QuestionManager] Total expanded questions:', expandedQuestions.size)
-  }, [expandedQuestions])
-
   // Toggle question expansion
   const toggleQuestion = (id: string) => {
-    console.log('🔄 [QuestionManager] toggleQuestion called:', id)
-    console.log('📊 [QuestionManager] Current expandedQuestions:', Array.from(expandedQuestions))
-    
     setExpandedQuestions((prev) => {
       const newExpanded = new Set(prev)
-      const wasExpanded = newExpanded.has(id)
-      
-      if (wasExpanded) {
+      if (newExpanded.has(id)) {
         newExpanded.delete(id)
-        console.log('⬇️ [QuestionManager] Collapsing question:', id)
       } else {
         newExpanded.add(id)
-        console.log('⬆️ [QuestionManager] Expanding question:', id)
       }
-      
-      console.log('📊 [QuestionManager] New expandedQuestions:', Array.from(newExpanded))
       return newExpanded
     })
   }
 
-  // Handle JSON file import
+  // Handle Excel file import
   const handleFileImport = async (file: File) => {
     try {
       setLoading(true)
       setError(null)
       
-      const json = await loadJSONFromFile(file)
-      console.log('📥 Loaded JSON:', json)
-      console.log('📊 Questions count:', json.questions.length)
-      if (json.questions.length > 0) {
-        console.log('🔍 First question sample:', json.questions[0])
-        console.log('📋 First question options:', json.questions[0].options)
-      }
-      
-      setParsedQuestions(json.questions)
+      const excel = await loadExcelFromFile(file)
+      setParsedQuestions(excel.questions)
       
       // Auto-expand first question
-      if (json.questions.length > 0) {
-        setExpandedQuestions(new Set([json.questions[0].id]))
-        setSelectedQuestion(json.questions[0].id)
+      if (excel.questions.length > 0) {
+        setExpandedQuestions(new Set([excel.questions[0].id]))
+        setSelectedQuestion(excel.questions[0].id)
       }
     } catch (err) {
-      console.error('❌ Error loading JSON:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load JSON file')
+      console.error('❌ Error loading Excel:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load Excel file')
     } finally {
       setLoading(false)
     }
@@ -223,7 +201,7 @@ export default function QuestionManager() {
             className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-all text-sm font-medium"
           >
             <Upload className="w-4 h-4" />
-            <span>Import JSON</span>
+            <span>Import Excel</span>
           </button>
         </div>
       </header>
@@ -245,14 +223,14 @@ export default function QuestionManager() {
                 No Questions Loaded
               </h2>
               <p className="dark:text-gray-400 text-gray-600 mb-6">
-                Import a JSON file to start managing questions
+                Import an Excel file to start managing questions
               </p>
               <button
                 onClick={() => setShowImportModal(true)}
                 className="flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg transition-all mx-auto"
               >
                 <Upload className="w-5 h-5" />
-                <span>Import JSON File</span>
+                <span>Import Excel File</span>
               </button>
             </motion.div>
           </div>
@@ -321,17 +299,12 @@ export default function QuestionManager() {
                 <AnimatePresence mode="popLayout">
                   {filteredQuestions.map((question, index) => {
                     const isExpanded = expandedQuestions.has(question.id)
-                    // Only log MA questions to reduce noise
-                    if (question.type === 'MA') {
-                      console.log(`📋 [QuestionManager] Rendering QuestionCard - ID: ${question.id}, Type: ${question.type}, isExpanded: ${isExpanded}`)
-                    }
                     return (
                       <QuestionCard
                         key={question.id}
                         question={question}
                         isExpanded={isExpanded}
                         onToggle={() => {
-                          console.log(`🔘 [QuestionManager] onToggle callback triggered for: ${question.id}`)
                           toggleQuestion(question.id)
                         }}
                         index={index}
@@ -375,14 +348,14 @@ export default function QuestionManager() {
               className="glass-card p-6 rounded-2xl max-w-md w-full"
             >
               <h3 className="text-xl font-bold text-white mb-4">
-                Import JSON File
+                Import Excel File
               </h3>
               <p className="text-sm dark:text-gray-400 text-gray-600 mb-6">
-                Select a JSON file containing parsed questions
+                Select an Excel (.xlsx) file containing parsed questions
               </p>
               <input
                 type="file"
-                accept=".json"
+                accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                 onChange={(e) => {
                   const file = e.target.files?.[0]
                   if (file) {

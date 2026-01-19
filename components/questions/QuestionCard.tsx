@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { ParsedQuestion, QuestionOption } from '@/lib/geminiParser'
+import { useSurveyStore } from '@/store/surveyStore'
 import { 
   ChevronDown, 
   ChevronUp,
@@ -17,9 +18,8 @@ import {
   Edit,
   Plus,
   Link2,
-  CheckCircle
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, forwardRef } from 'react'
 import EditQuestionModal from './EditQuestionModal'
 
 interface QuestionCardProps {
@@ -30,19 +30,31 @@ interface QuestionCardProps {
   onUpdate?: (updatedQuestion: ParsedQuestion) => void
 }
 
-export default function QuestionCard({ question, isExpanded, onToggle, index, onUpdate }: QuestionCardProps) {
+const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
+  function QuestionCard({ question, isExpanded, onToggle, index, onUpdate }, ref) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isEditingLabel, setIsEditingLabel] = useState(false)
   const [editedLabel, setEditedLabel] = useState(question.label)
-  const [isMandatory, setIsMandatory] = useState(false) // Placeholder for mandatory field
   
-  // Debug log for render (only for MA questions to reduce noise)
-  if ((question.type === 'MA' || question.type === 'MA_Grid') && isExpanded) {
-    console.log(`🎴 [QuestionCard] Render - ID: ${question.id}, Type: ${question.type}, isExpanded: ${isExpanded}`)
-    console.log(`📊 [QuestionCard] Rows:`, question.rows)
-    console.log(`📊 [QuestionCard] Columns:`, question.columns)
-    console.log(`📊 [QuestionCard] Options:`, question.options)
-  }
+  // Get parsedQuestions from store for piping sync
+  const { parsedQuestions } = useSurveyStore()
+  
+  // Sync columns from piping source for display
+  const displayColumns = (() => {
+    if (question.logic?.piping_source && (question.type === 'MA_Grid' || question.type === 'SA_Grid')) {
+      const sourceQuestion = parsedQuestions.find((q: ParsedQuestion) => q.id === question.logic?.piping_source)
+      if (sourceQuestion) {
+        const isSourceGrid = sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'SA_Grid'
+        if (isSourceGrid && sourceQuestion.rows && sourceQuestion.rows.length > 0) {
+          // Use rows from source Grid question as columns
+          return sourceQuestion.rows
+        }
+      }
+    }
+    // Return original columns if no piping or piping source not found
+    return question.columns
+  })()
+  
   
   // Get human-readable question type labels
   const getQuestionTypeLabel = (type: string): string => {
@@ -60,9 +72,6 @@ export default function QuestionCard({ question, isExpanded, onToggle, index, on
     return labels[type] || type
   }
 
-  // Calculate AI confidence (placeholder - you can enhance this)
-  const aiConfidence = 98 // Placeholder - could be calculated based on parsing quality
-
   // Handle label update
   const handleLabelUpdate = () => {
     if (onUpdate && editedLabel !== question.label) {
@@ -76,12 +85,6 @@ export default function QuestionCard({ question, isExpanded, onToggle, index, on
     if (onUpdate) {
       onUpdate({ ...question, type: newType })
     }
-  }
-
-  // Handle mandatory toggle
-  const handleMandatoryToggle = (checked: boolean) => {
-    setIsMandatory(checked)
-    // You can add this to question logic or a new field if needed
   }
 
   // Handle exclusive/trap toggle for option
@@ -165,6 +168,102 @@ export default function QuestionCard({ question, isExpanded, onToggle, index, on
 
   const TypeIcon = getTypeIcon(question.type)
 
+  const getLogicBadges = () => {
+    const logic = question.logic
+    const badges: Array<{ key: string; label: string; className: string }> = []
+
+    const askIf = (logic?.ask_if_condition || '').trim()
+    const terminateIf = (logic?.terminate_if || '').trim()
+
+    if (logic?.type && logic.type !== 'Normal') {
+      badges.push({
+        key: 'type',
+        label: `Type: ${logic.type}`,
+        className: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30',
+      })
+    }
+
+    // Piping can be "set" via either logic.type === 'Piping' or piping_source present
+    if (logic?.type === 'Piping' || logic?.piping_source) {
+      badges.push({
+        key: 'piping',
+        label: logic?.piping_source ? `Piping: ${logic.piping_source}` : 'Piping',
+        className: 'bg-blue-500/10 text-blue-300 border-blue-500/30',
+      })
+    }
+
+    if (askIf.length > 0) {
+      // Try to show source in short form if available
+      const src = askIf.match(/\b(Q\d+(?:\.\d+)?[A-Z]?)\b/i)?.[1]
+      badges.push({
+        key: 'ask_if',
+        label: src ? `Ask If: ${src.toUpperCase()}` : 'Ask If',
+        className: 'bg-orange-500/10 text-orange-300 border-orange-500/30',
+      })
+    }
+
+    if (terminateIf.length > 0) {
+      badges.push({
+        key: 'terminate',
+        label: 'Terminate If',
+        className: 'bg-red-500/10 text-red-300 border-red-500/30',
+      })
+    }
+
+    // Option-level logic badges (Exclusive/Trap/Terminate/Other) - also count on rows/columns if present
+    // Use displayColumns for synced columns from piping source
+    const allOptions: QuestionOption[] = [
+      ...(question.options || []),
+      ...(question.rows || []),
+      ...(displayColumns || []),
+    ]
+
+    const counts = allOptions.reduce(
+      (acc, opt) => {
+        const t = opt.codeType || 'Normal'
+        if (t === 'Exclusive') acc.exclusive++
+        else if (t === 'Trap') acc.trap++
+        else if (t === 'Terminate') acc.terminateOpt++
+        else if (t === 'Other') acc.other++
+        return acc
+      },
+      { exclusive: 0, trap: 0, terminateOpt: 0, other: 0 }
+    )
+
+    if (counts.exclusive > 0) {
+      badges.push({
+        key: 'exclusive_opt',
+        label: `Exclusive: ${counts.exclusive}`,
+        className: 'bg-primary/10 text-primary border-primary/30',
+      })
+    }
+    if (counts.trap > 0) {
+      badges.push({
+        key: 'trap_opt',
+        label: `Trap: ${counts.trap}`,
+        className: 'bg-red-500/10 text-red-300 border-red-500/30',
+      })
+    }
+    if (counts.terminateOpt > 0) {
+      badges.push({
+        key: 'terminate_opt',
+        label: `Terminate Opt: ${counts.terminateOpt}`,
+        className: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
+      })
+    }
+    if (counts.other > 0) {
+      badges.push({
+        key: 'other_opt',
+        label: `Other: ${counts.other}`,
+        className: 'bg-pink-500/10 text-pink-300 border-pink-500/30',
+      })
+    }
+
+    return badges
+  }
+
+  const logicBadges = getLogicBadges()
+
   // Format logic for display
   const formatLogic = () => {
     if (!question.logic) return null
@@ -175,6 +274,9 @@ export default function QuestionCard({ question, isExpanded, onToggle, index, on
     }
     if (question.logic.piping_source) {
       parts.push(`Piping: ${question.logic.piping_source}`)
+    }
+    if (question.logic.ask_if_condition) {
+      parts.push('Ask If')
     }
     if (question.logic.terminate_if) {
       parts.push(`Terminate: ${question.logic.terminate_if}`)
@@ -219,6 +321,7 @@ export default function QuestionCard({ question, isExpanded, onToggle, index, on
 
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
@@ -232,33 +335,19 @@ export default function QuestionCard({ question, isExpanded, onToggle, index, on
       {!isExpanded && (
         <div 
           onClick={(e) => {
-            console.log(`🖱️ [QuestionCard] ⚡ CLICK DETECTED on collapsed header - ID: ${question.id}, Type: ${question.type}`)
-            console.log('📍 [QuestionCard] Event target:', e.target)
-            console.log('📍 [QuestionCard] Current target:', e.currentTarget)
-            console.log('📍 [QuestionCard] Event type:', e.type)
-            console.log('📍 [QuestionCard] Event bubbles:', e.bubbles)
             e.preventDefault()
             e.stopPropagation()
-            console.log(`✅ [QuestionCard] Calling onToggle for: ${question.id}`)
             try {
               onToggle()
-              console.log(`✅✅ [QuestionCard] onToggle called successfully for: ${question.id}`)
             } catch (error) {
-              console.error(`❌ [QuestionCard] Error calling onToggle:`, error)
+              console.error(`[QuestionCard] Error calling onToggle:`, error)
             }
-          }}
-          onMouseDown={(e) => {
-            console.log(`🖱️ [QuestionCard] MouseDown on collapsed header - ID: ${question.id}`)
-          }}
-          onMouseUp={(e) => {
-            console.log(`🖱️ [QuestionCard] MouseUp on collapsed header - ID: ${question.id}`)
           }}
           className="relative z-20 p-5 cursor-pointer hover:bg-surface-border/30 transition-colors"
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
-              console.log(`⌨️ [QuestionCard] Keyboard event - ID: ${question.id}, Key: ${e.key}`)
               e.preventDefault()
               onToggle()
             }
@@ -292,10 +381,8 @@ export default function QuestionCard({ question, isExpanded, onToggle, index, on
             </div>
             <button
               onClick={(e) => {
-                console.log(`🖱️ [QuestionCard] Click detected on collapse button - ID: ${question.id}`)
                 e.preventDefault()
                 e.stopPropagation()
-                console.log(`✅ [QuestionCard] Calling onToggle to collapse: ${question.id}`)
                 onToggle()
               }}
               className="p-2 hover:bg-surface-border rounded-lg text-gray-400 dark:text-gray-400 hover:text-white transition"
@@ -369,23 +456,26 @@ export default function QuestionCard({ question, isExpanded, onToggle, index, on
               <label className="block text-xs text-gray-400 dark:text-gray-400 font-medium mb-1.5">
                 Logic Settings
               </label>
-              <div className="flex items-center gap-2 h-[38px]">
-                <label className="inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isMandatory}
-                    onChange={(e) => handleMandatoryToggle(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="relative w-9 h-5 bg-surface-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-                  <span className="ms-2 text-sm font-medium text-gray-300">Mandatory</span>
-                </label>
+              <div className="flex flex-wrap items-center gap-2 min-h-[38px]">
+                {logicBadges.length > 0 ? (
+                  logicBadges.map((b) => (
+                    <span
+                      key={b.key}
+                      className={`inline-flex items-center px-2 py-1 rounded border text-xs font-medium ${b.className}`}
+                      title={b.label}
+                    >
+                      {b.label}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-sm text-gray-400">None</span>
+                )}
               </div>
             </div>
           </div>
 
           {/* Matrix Table for MA questions with rows and columns */}
-          {((question.type === 'MA' || question.type === 'MA_Grid') && question.rows && question.rows.length > 0 && question.columns && question.columns.length > 0) ? (
+          {((question.type === 'MA' || question.type === 'MA_Grid') && question.rows && question.rows.length > 0 && displayColumns && displayColumns.length > 0) ? (
             <div className="rounded-lg border border-surface-border overflow-hidden bg-[#131118] mb-4">
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
@@ -398,7 +488,7 @@ export default function QuestionCard({ question, isExpanded, onToggle, index, on
                           <span className="text-[10px] opacity-70">VN</span>
                         </div>
                       </th>
-                      {question.columns.map((column, colIdx) => (
+                      {displayColumns.map((column, colIdx) => (
                         <th key={colIdx} className="px-3 py-2 text-center text-xs font-mono text-gray-400 dark:text-gray-400 border-r border-surface-border last:border-r-0">
                           <div className="flex flex-col items-center">
                             <span className="text-primary font-bold">{column.code}</span>
@@ -421,7 +511,7 @@ export default function QuestionCard({ question, isExpanded, onToggle, index, on
                             <span className="text-xs text-white mt-0.5">{row.label}</span>
                           </div>
                         </td>
-                        {question.columns.map((column, colIdx) => (
+                        {displayColumns.map((column, colIdx) => (
                           <td
                             key={colIdx}
                             className="px-3 py-2 text-center border-r border-surface-border last:border-r-0"
@@ -440,7 +530,7 @@ export default function QuestionCard({ question, isExpanded, onToggle, index, on
               </div>
               {/* Matrix Info */}
               <div className="px-3 py-2 bg-[#252030]/50 border-t border-surface-border text-xs text-gray-400 dark:text-gray-400">
-                <span>Matrix: {question.rows.length} rows × {question.columns.length} columns = {question.rows.length * question.columns.length} variables</span>
+                <span>Matrix: {question.rows.length} rows × {displayColumns.length} columns = {question.rows.length * displayColumns.length} variables</span>
               </div>
             </div>
           ) : question.options && question.options.length > 0 ? (
@@ -589,10 +679,10 @@ export default function QuestionCard({ question, isExpanded, onToggle, index, on
               {question.rows && question.rows.length > 0 && (
                 <div className="text-xs opacity-70">Rows: {question.rows.length} found</div>
               )}
-              {question.columns && question.columns.length > 0 && (
-                <div className="text-xs opacity-70">Columns: {question.columns.length} found</div>
+              {displayColumns && displayColumns.length > 0 && (
+                <div className="text-xs opacity-70">Columns: {displayColumns.length} found</div>
               )}
-              {(!question.rows || question.rows.length === 0) && (!question.columns || question.columns.length === 0) && (
+              {(!question.rows || question.rows.length === 0) && (!displayColumns || displayColumns.length === 0) && (
                 <div className="text-xs opacity-70 mt-2">This MA question needs rows and columns to display as a matrix</div>
               )}
             </div>
@@ -615,11 +705,25 @@ export default function QuestionCard({ question, isExpanded, onToggle, index, on
             </div>
           )}
 
-          {/* Footer with AI Confidence and Link Logic */}
+          {/* Footer with Logic Summary and Link Logic */}
           <div className="px-5 py-3 bg-[#131118]/50 border-t border-surface-border rounded-b-xl flex justify-between items-center relative z-10">
-            <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-400">
-              <CheckCircle className="w-4 h-4 text-green-400" />
-              <span>AI Confidence: {aiConfidence}%</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <Zap className="w-4 h-4 text-primary shrink-0" />
+              <div className="flex flex-wrap items-center gap-2">
+                {logicBadges.length > 0 ? (
+                  logicBadges.map((b) => (
+                    <span
+                      key={`footer_${b.key}`}
+                      className={`inline-flex items-center px-2 py-0.5 rounded border text-[11px] font-medium ${b.className}`}
+                      title={b.label}
+                    >
+                      {b.label}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-gray-400">No logic set</span>
+                )}
+              </div>
             </div>
             <button
               onClick={() => setIsEditModalOpen(true)}
@@ -647,5 +751,7 @@ export default function QuestionCard({ question, isExpanded, onToggle, index, on
       )}
     </motion.div>
   )
-}
+})
+
+export default QuestionCard
 

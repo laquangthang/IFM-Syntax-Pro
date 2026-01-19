@@ -324,9 +324,6 @@ function isMainQuestionNode(nodeId: string): boolean {
  * - Groups nodes by layers (columns) based on dependencies
  */
 function layoutNodesHierarchical(nodes: QCNode[], edges: QCEdge[]): void {
-  console.log('🔵 [Layout] Starting layout algorithm')
-  console.log(`📊 [Layout] Total nodes: ${nodes.length}, Total edges: ${edges.length}`)
-  
   const nodeMap = new Map<string, QCNode>()
   nodes.forEach(node => nodeMap.set(node.id, node))
 
@@ -346,20 +343,9 @@ function layoutNodesHierarchical(nodes: QCNode[], edges: QCEdge[]): void {
     incomingEdges.get(edge.to)!.push(edge)
   })
   
-  console.log(`🔗 [Layout] Edges by type:`, {
-    PIPING: edges.filter(e => e.type === 'PIPING').length,
-    ASK_IF: edges.filter(e => e.type === 'ASK_IF').length,
-    F1: edges.filter(e => e.type === 'F1').length,
-    F2: edges.filter(e => e.type === 'F2').length,
-    F0: edges.filter(e => e.type === 'F0').length,
-  })
-
   // Separate main question nodes and child nodes
   const mainNodes = nodes.filter(n => isMainQuestionNode(n.id))
   const childNodes = nodes.filter(n => !isMainQuestionNode(n.id))
-  
-  console.log(`📦 [Layout] Main nodes: ${mainNodes.length}, Child nodes: ${childNodes.length}`)
-  console.log(`📋 [Layout] Main node IDs:`, mainNodes.map(n => n.id))
 
   // Sort main nodes by question number
   mainNodes.sort((a, b) => {
@@ -423,8 +409,6 @@ function layoutNodesHierarchical(nodes: QCNode[], edges: QCEdge[]): void {
 
   // Group main nodes by layer
   const maxLayer = Math.max(...Array.from(nodeLayer.values()), 0)
-  console.log(`📐 [Layout] Initial max layer: ${maxLayer}`)
-  
   for (let i = 0; i <= maxLayer; i++) {
     layers[i] = []
   }
@@ -433,18 +417,14 @@ function layoutNodesHierarchical(nodes: QCNode[], edges: QCEdge[]): void {
     const layer = nodeLayer.get(node.id) || 0
     layers[layer].push(node)
   })
-  
-  console.log(`📊 [Layout] Layers before redistribution:`, layers.map((l, i) => `Layer ${i}: ${l.length} nodes (${l.map(n => n.id).join(', ')})`))
 
   // If all nodes are in the same layer (layer 0), distribute them across multiple layers
   // to create a left-to-right flow based on question order
   if (maxLayer === 0 && mainNodes.length > 1) {
-    console.log(`🔄 [Layout] All nodes in same layer, redistributing...`)
     // Redistribute nodes across layers based on question order
     // Use more layers for better horizontal spread
     const targetLayers = Math.min(Math.ceil(mainNodes.length / 2), 5) // Max 5 layers
     const nodesPerLayer = Math.ceil(mainNodes.length / targetLayers)
-    console.log(`📊 [Layout] Target layers: ${targetLayers}, Nodes per layer: ${nodesPerLayer}`)
     layers.length = 0 // Clear existing layers
     
     mainNodes.forEach((node, index) => {
@@ -455,15 +435,12 @@ function layoutNodesHierarchical(nodes: QCNode[], edges: QCEdge[]): void {
       layers[newLayer].push(node)
       nodeLayer.set(node.id, newLayer)
     })
-    console.log(`✅ [Layout] Redistributed layers:`, layers.map((l, i) => `Layer ${i}: ${l.length} nodes (${l.map(n => n.id).join(', ')})`))
   }
 
   // Ensure layers are properly initialized (remove empty layers at the end)
   while (layers.length > 0 && layers[layers.length - 1].length === 0) {
     layers.pop()
   }
-  
-  console.log(`📐 [Layout] Final layers count: ${layers.length}`)
 
   // Layout constants
   const LAYER_WIDTH = 350  // Horizontal spacing between layers
@@ -475,8 +452,6 @@ function layoutNodesHierarchical(nodes: QCNode[], edges: QCEdge[]): void {
   // Position main nodes
   layers.forEach((layerNodes, layerIndex) => {
     if (layerNodes.length === 0) return
-    
-    console.log(`\n📍 [Layout] Processing Layer ${layerIndex} with ${layerNodes.length} nodes`)
     
     // Sort nodes in layer by question number
     layerNodes.sort((a, b) => {
@@ -517,9 +492,6 @@ function layoutNodesHierarchical(nodes: QCNode[], edges: QCEdge[]): void {
       }
     })
     
-    console.log(`🔀 [Layout] Layer ${layerIndex} source groups:`, Array.from(sourceGroups.entries()).map(([source, nodes]) => 
-      `${source}: [${nodes.map(n => n.id).join(', ')}]`
-    ))
 
     // Sort source groups: default first, then by source question number
     const sortedSources = Array.from(sourceGroups.keys()).sort((a, b) => {
@@ -563,7 +535,6 @@ function layoutNodesHierarchical(nodes: QCNode[], edges: QCEdge[]): void {
         const x = START_X + layerIndex * LAYER_WIDTH
         const y = groupY + index * NODE_HEIGHT
         node.position = { x, y }
-        console.log(`  ✅ [Layout] Positioned ${node.id} at (${x}, ${y}) from source ${sourceId}`)
       })
     })
   })
@@ -608,13 +579,7 @@ function layoutNodesHierarchical(nodes: QCNode[], edges: QCEdge[]): void {
   if (nodesWithoutPosition.length > 0) {
     console.warn(`⚠️ [Layout] ${nodesWithoutPosition.length} nodes without position:`, nodesWithoutPosition.map(n => n.id))
   } else {
-    console.log(`✅ [Layout] All ${nodes.length} nodes have positions assigned`)
   }
-  
-  // Log sample positions
-  const sampleNodes = nodes.slice(0, 5)
-  console.log(`📊 [Layout] Sample node positions:`, sampleNodes.map(n => `${n.id}: (${n.position?.x}, ${n.position?.y})`))
-  console.log('🟢 [Layout] Layout algorithm completed\n')
 }
 
 /**
@@ -649,12 +614,7 @@ export function convertQuestionsToQCGraph(questions: ParsedQuestion[]): QCLogicG
   })
   
   // Advanced layout: hierarchical layout with branch separation for piping
-  console.log('\n🚀 [QC Graph] Starting graph conversion...')
-  console.log(`📝 [QC Graph] Converting ${questions.length} questions to graph`)
-  
   layoutNodesHierarchical(allNodes, allEdges)
-  
-  console.log(`✅ [QC Graph] Graph conversion completed: ${allNodes.length} nodes, ${allEdges.length} edges\n`)
   
   return {
     nodes: allNodes,

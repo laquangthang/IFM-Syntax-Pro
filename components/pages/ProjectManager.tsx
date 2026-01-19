@@ -51,7 +51,6 @@ export default function ProjectManager() {
       const value = localStorage.getItem(key)
       if (value && (value.includes('light') || value === 'light')) {
         foundLightTheme = true
-        console.log(`Found light theme in ${key}:`, value)
         // Clear and set to dark
         try {
           const parsed = JSON.parse(value)
@@ -68,7 +67,6 @@ export default function ProjectManager() {
     })
     
     if (foundLightTheme) {
-      console.log('Fixed light theme in localStorage, setting theme to dark')
       setTheme('dark')
     }
   }, []) // Only run once on mount
@@ -242,28 +240,7 @@ export default function ProjectManager() {
                       type="text"
                       value={newProjectName}
                       onChange={(e) => {
-                        const html = document.documentElement
-                        const isDark = html.classList.contains('dark') || html.className.includes('dark')
-                        console.log('Input onChange:', {
-                          value: e.target.value,
-                          computedStyle: window.getComputedStyle(e.target).color,
-                          className: e.target.className,
-                          htmlClass: html.className,
-                          theme: isDark ? 'dark' : 'light',
-                          cssVar: getComputedStyle(html).getPropertyValue('--foreground')
-                        })
                         setNewProjectName(e.target.value)
-                      }}
-                      onFocus={(e) => {
-                        const html = document.documentElement
-                        const isDark = html.classList.contains('dark') || html.className.includes('dark')
-                        console.log('Input onFocus:', {
-                          computedStyle: window.getComputedStyle(e.target).color,
-                          className: e.target.className,
-                          htmlClass: html.className,
-                          theme: isDark ? 'dark' : 'light',
-                          cssVar: getComputedStyle(html).getPropertyValue('--foreground')
-                        })
                       }}
                       placeholder="Enter project name"
                       className="w-full px-3 py-2 rounded-lg bg-background-light dark:bg-background-dark border border-glass-border-light dark:border-glass-border-dark text-gray-900 dark:text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
@@ -279,28 +256,7 @@ export default function ProjectManager() {
                     <textarea
                       value={newProjectDescription}
                       onChange={(e) => {
-                        const html = document.documentElement
-                        const isDark = html.classList.contains('dark') || html.className.includes('dark')
-                        console.log('Textarea onChange:', {
-                          value: e.target.value,
-                          computedStyle: window.getComputedStyle(e.target).color,
-                          className: e.target.className,
-                          htmlClass: html.className,
-                          theme: isDark ? 'dark' : 'light',
-                          cssVar: getComputedStyle(html).getPropertyValue('--foreground')
-                        })
                         setNewProjectDescription(e.target.value)
-                      }}
-                      onFocus={(e) => {
-                        const html = document.documentElement
-                        const isDark = html.classList.contains('dark') || html.className.includes('dark')
-                        console.log('Textarea onFocus:', {
-                          computedStyle: window.getComputedStyle(e.target).color,
-                          className: e.target.className,
-                          htmlClass: html.className,
-                          theme: isDark ? 'dark' : 'light',
-                          cssVar: getComputedStyle(html).getPropertyValue('--foreground')
-                        })
                       }}
                       placeholder="Enter project description (optional)"
                       rows={2}

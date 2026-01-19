@@ -47,6 +47,254 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
   const [askIfConditions, setAskIfConditions] = useState<AskIfCondition[]>([])
   const [askIfConnectors, setAskIfConnectors] = useState<('AND' | 'OR')[]>([]) // Connectors between conditions (length = conditions.length - 1)
 
+  // Terminate If state - similar structure to Ask If
+  interface TerminateIfCondition {
+    id: string
+    source: string
+    operator: string
+    selectedCodes: Set<string | number>
+  }
+  const [terminateIfConditions, setTerminateIfConditions] = useState<TerminateIfCondition[]>([])
+  const [terminateIfConnectors, setTerminateIfConnectors] = useState<('AND' | 'OR')[]>([])
+
+  // Piping Source state - with operator
+  const [pipingOperator, setPipingOperator] = useState<string>('is_exactly_equal')
+
+  /**
+   * Split a condition string by top-level AND/OR connectors only.
+   * IMPORTANT: Do not split on lowercase "or" inside a single condition
+   * (e.g. "Q1 = 1 or Q1 = 2"), otherwise reopening the modal will create
+   * extra UI conditions.
+   */
+  const splitByTopLevelConnectors = (raw: string): { conditionParts: string[]; connectors: ('AND' | 'OR')[] } => {
+    const s = raw.replace(/\s+/g, ' ').trim()
+    const conditionParts: string[] = []
+    const connectors: ('AND' | 'OR')[] = []
+
+    let buf = ''
+    let depth = 0
+
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i]
+
+      if (ch === '(') depth++
+      if (ch === ')' && depth > 0) depth--
+
+      // Only treat AND/OR as connectors at top-level and in uppercase form
+      if (depth === 0) {
+        if (s.slice(i, i + 5) === ' AND ') {
+          if (buf.trim()) conditionParts.push(buf.trim())
+          connectors.push('AND')
+          buf = ''
+          i += 4
+          continue
+        }
+        if (s.slice(i, i + 4) === ' OR ') {
+          if (buf.trim()) conditionParts.push(buf.trim())
+          connectors.push('OR')
+          buf = ''
+          i += 3
+          continue
+        }
+      }
+
+      buf += ch
+    }
+
+    if (buf.trim()) conditionParts.push(buf.trim())
+    return { conditionParts, connectors }
+  }
+
+  // Parse existing terminate_if condition to populate state
+  const parseTerminateIfCondition = (condition: string | null | undefined) => {
+    if (!condition) {
+      setTerminateIfConditions([])
+      setTerminateIfConnectors([])
+      return
+    }
+
+    // For terminate_if, handle special case: multiple mis() calls with same source should be merged
+    // Example: "mis(Q1R1) and mis(Q1R2)" should be 1 condition with codes [1, 2], not 2 separate conditions
+    const cleanCondition = condition.replace(/^IF\s+/i, '').trim()
+    
+    // Check if this is a pattern like "mis(Q1R1) and mis(Q1R2) and mis(Q1R3)" - all same source
+    const allMisPattern = /^mis\(Q(\d+)R(\d+)\)(?:\s+and\s+mis\(Q\1R(\d+)\))*$/i
+    const misMatches = cleanCondition.match(/mis\(Q(\d+)R(\d+)\)/gi)
+    
+    if (misMatches && misMatches.length > 1) {
+      // Check if all mis() calls are for the same source question
+      const firstMatch = misMatches[0].match(/mis\(Q(\d+)/i)
+      if (firstMatch) {
+        const sourceId = `Q${firstMatch[1]}`
+        const allSameSource = misMatches.every(m => m.includes(`Q${firstMatch[1]}`))
+        
+        if (allSameSource) {
+          // Merge all codes into one condition
+          const sourceQuestion = parsedQuestions.find(q => q.id === sourceId)
+          const codes = new Set<string | number>()
+          
+          const normalizeCode = (codeStr: string): string | number => {
+            if (!sourceQuestion) return Number(codeStr)
+            const options = sourceQuestion.options || sourceQuestion.rows || []
+            if (options.length > 0) {
+              const firstOptionCode = options[0].code
+              return typeof firstOptionCode === 'string' ? codeStr : Number(codeStr)
+            }
+            return Number(codeStr)
+          }
+          
+          misMatches.forEach(match => {
+            const codeMatch = match.match(/mis\(Q\d+R(\d+)\)/i)
+            if (codeMatch) {
+              codes.add(normalizeCode(codeMatch[1]))
+            }
+          })
+          
+          if (codes.size > 0) {
+            setTerminateIfConditions([{
+              id: `term_cond_${Date.now()}`,
+              source: sourceId,
+              operator: 'is_not_one_of',
+              selectedCodes: codes,
+            }])
+            setTerminateIfConnectors([])
+            return
+          }
+        }
+      }
+    }
+    
+    // Fallback to original parsing logic for other cases
+    const { conditionParts, connectors } = splitByTopLevelConnectors(cleanCondition)
+    
+    const conditions: TerminateIfCondition[] = []
+    
+    for (let i = 0; i < conditionParts.length; i++) {
+      const part = conditionParts[i].trim()
+      const cleanPart = part.replace(/^\(|\)$/g, '')
+      const sourceMatch = cleanPart.match(/Q\d+/i)
+      const sourceId = sourceMatch ? sourceMatch[0] : ''
+      
+      if (!sourceId) continue
+      
+      let operator = 'is_exactly_equal'
+      if (cleanPart.includes('mis(')) {
+        operator = 'is_not_one_of'
+      } else if (cleanPart.includes('NOT')) {
+        operator = 'is_not_one_of'
+      } else if (cleanPart.includes('or') || cleanPart.includes('OR')) {
+        operator = 'is_one_of'
+      } else if (cleanPart.includes('IS NOT MISSING')) {
+        operator = 'is_answered'
+      } else if (cleanPart.includes('IS MISSING')) {
+        operator = 'is_not_answered'
+      }
+      
+      const codes = new Set<string | number>()
+      const sourceQuestion = parsedQuestions.find(q => q.id === sourceId)
+      const isMatrixMA = sourceQuestion && 
+                        (sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'MA') && 
+                        sourceQuestion.rows && sourceQuestion.rows.length > 0 && 
+                        sourceQuestion.columns && sourceQuestion.columns.length > 0
+      
+      // Helper to normalize code type to match sourceQuestion option.code type
+      const normalizeCode = (codeStr: string): string | number => {
+        if (!sourceQuestion) return Number(codeStr)
+        const options = sourceQuestion.options || sourceQuestion.rows || []
+        if (options.length > 0) {
+          const firstOptionCode = options[0].code
+          // If first option code is string, keep as string; otherwise convert to number
+          return typeof firstOptionCode === 'string' ? codeStr : Number(codeStr)
+        }
+        return Number(codeStr)
+      }
+
+      if (operator === 'is_not_one_of' && cleanPart.includes('mis(')) {
+        if (isMatrixMA) {
+          const misMatches = cleanPart.match(/mis\(Q\d+_(\d+)R(\d+)\)/g)
+          if (misMatches) {
+            misMatches.forEach(match => {
+              const codeMatch = match.match(/mis\(Q\d+_(\d+)R(\d+)\)/)
+              if (codeMatch) {
+                const [, colCode, rowCode] = codeMatch
+                codes.add(`R${rowCode}C${colCode}`)
+              }
+            })
+          }
+        }
+        if (codes.size === 0) {
+          const misMatches = cleanPart.match(/mis\(Q\d+R?(\d+)\)/g)
+          if (misMatches) {
+            misMatches.forEach(match => {
+              const codeMatch = match.match(/mis\(Q\d+R?(\d+)\)/)
+              if (codeMatch) {
+                codes.add(normalizeCode(codeMatch[1]))
+              }
+            })
+          }
+        }
+      } else if (operator !== 'is_answered' && operator !== 'is_not_answered') {
+        if (isMatrixMA) {
+          const gridMatches = cleanPart.match(/Q\d+_(\d+)R(\d+)\s*=\s*\d+/g)
+          if (gridMatches) {
+            gridMatches.forEach(match => {
+              const codeMatch = match.match(/Q\d+_(\d+)R(\d+)\s*=\s*\d+/)
+              if (codeMatch) {
+                const [, colCode, rowCode] = codeMatch
+                codes.add(`R${rowCode}C${colCode}`)
+              }
+            })
+          }
+        }
+        if (codes.size === 0) {
+          const codeMatches = cleanPart.match(/(?:Q\d+R)?(\d+)\s*=\s*\d+/g)
+          if (codeMatches) {
+            codeMatches.forEach(match => {
+              const codeMatch = match.match(/(\d+)\s*=\s*\d+/)
+              if (codeMatch) {
+                codes.add(normalizeCode(codeMatch[1]))
+              }
+            })
+          }
+        }
+      }
+      
+      conditions.push({
+        id: `term_cond_${Date.now()}_${i}`,
+        source: sourceId,
+        operator,
+        selectedCodes: codes,
+      })
+    }
+    
+    setTerminateIfConditions(conditions)
+    setTerminateIfConnectors(connectors)
+  }
+
+  // Generate terminate_if condition string from multiple conditions
+  const generateTerminateIfConditionFromMultiple = (conditions: TerminateIfCondition[], connectors: ('AND' | 'OR')[]): string | null => {
+    if (conditions.length === 0) return null
+    
+    const conditionStrings: string[] = []
+    
+    conditions.forEach((cond, index) => {
+      const sourceQuestion = parsedQuestions.find(q => q.id === cond.source)
+      const condStr = generateSingleCondition(cond.source, cond.operator, cond.selectedCodes, sourceQuestion)
+      if (condStr) {
+        conditionStrings.push(condStr)
+        
+        if (index < conditions.length - 1) {
+          const connector = connectors[index] || 'AND'
+          conditionStrings.push(connector)
+        }
+      }
+    })
+    
+    if (conditionStrings.length === 0) return null
+    
+    return conditionStrings.join(' ')
+  }
+
   // Parse existing ask_if_condition to populate state (support multiple conditions with AND/OR)
   const parseAskIfCondition = (condition: string | null | undefined) => {
     if (!condition) {
@@ -57,20 +305,12 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
 
     // Split by AND/OR (case insensitive)
     // Pattern: "IF (condition1) AND (condition2) OR (condition3)"
-    const parts = condition.replace(/^IF\s+/i, '').split(/\s+(AND|OR)\s+/i)
+    const { conditionParts, connectors } = splitByTopLevelConnectors(condition.replace(/^IF\s+/i, ''))
     
     const conditions: AskIfCondition[] = []
-    const connectors: ('AND' | 'OR')[] = []
     
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i].trim()
-      
-      // Check if this is a connector
-      if (part.toUpperCase() === 'AND' || part.toUpperCase() === 'OR') {
-        connectors.push(part.toUpperCase() as 'AND' | 'OR')
-        continue
-      }
-      
+    for (let i = 0; i < conditionParts.length; i++) {
+      const part = conditionParts[i].trim()
       // This is a condition - parse it
       const cleanPart = part.replace(/^\(|\)$/g, '') // Remove outer parentheses
       
@@ -101,6 +341,18 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                         (sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'MA') && 
                         sourceQuestion.rows && sourceQuestion.rows.length > 0 && 
                         sourceQuestion.columns && sourceQuestion.columns.length > 0
+      
+      // Helper to normalize code type to match sourceQuestion option.code type
+      const normalizeCode = (codeStr: string): string | number => {
+        if (!sourceQuestion) return Number(codeStr)
+        const options = sourceQuestion.options || sourceQuestion.rows || []
+        if (options.length > 0) {
+          const firstOptionCode = options[0].code
+          // If first option code is string, keep as string; otherwise convert to number
+          return typeof firstOptionCode === 'string' ? codeStr : Number(codeStr)
+        }
+        return Number(codeStr)
+      }
 
       if (operator === 'is_not_one_of' && cleanPart.includes('mis(')) {
         // Handle MA_Grid format: mis(Q7_1R1) -> R1C1
@@ -123,7 +375,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
             misMatches.forEach(match => {
               const codeMatch = match.match(/mis\(Q\d+R?(\d+)\)/)
               if (codeMatch) {
-                codes.add(Number(codeMatch[1]))
+                codes.add(normalizeCode(codeMatch[1]))
               }
             })
           }
@@ -149,7 +401,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
             codeMatches.forEach(match => {
               const codeMatch = match.match(/(\d+)\s*=\s*\d+/)
               if (codeMatch) {
-                codes.add(Number(codeMatch[1]))
+                codes.add(normalizeCode(codeMatch[1]))
               }
             })
           }
@@ -296,6 +548,36 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
         }
       }
       
+      // Auto-sync from piping source
+      if (questionToLoad.logic?.piping_source) {
+        const sourceQuestion = parsedQuestions.find(q => q.id === questionToLoad.logic?.piping_source)
+        if (sourceQuestion) {
+          // If source question is a Grid question, use its ROWS as piping source
+          const isSourceGrid = sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'SA_Grid'
+          
+          if (isSourceGrid && sourceQuestion.rows && sourceQuestion.rows.length > 0) {
+            // Source is Grid → use rows from source
+            if (questionToLoad.type === 'MA_Grid' || questionToLoad.type === 'SA_Grid') {
+              // Target is also Grid → sync rows from source as columns
+              questionToLoad.columns = [...sourceQuestion.rows]
+            } else if (questionToLoad.type === 'MA') {
+              // Target is MA → use source rows as options
+              questionToLoad.options = [...sourceQuestion.rows]
+            }
+          }
+          // If source is regular MA question, use its options
+          else if (sourceQuestion.type === 'MA' && sourceQuestion.options && sourceQuestion.options.length > 0) {
+            if (questionToLoad.type === 'MA_Grid' || questionToLoad.type === 'SA_Grid') {
+              // Target is Grid → use source options as columns
+              questionToLoad.columns = [...sourceQuestion.options]
+            } else if (questionToLoad.type === 'MA') {
+              // Target is MA → sync options
+              questionToLoad.options = [...sourceQuestion.options]
+            }
+          }
+        }
+      }
+      
       setEditedQuestion(questionToLoad)
       setNewOptionCode('')
       setNewOptionLabel('')
@@ -307,8 +589,53 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
 
       // Parse existing ask_if_condition
       parseAskIfCondition(question.logic?.ask_if_condition)
+      
+      // Parse existing terminate_if condition
+      parseTerminateIfCondition(question.logic?.terminate_if)
+      
+      // Initialize piping operator (default to is_exactly_equal)
+      setPipingOperator('is_exactly_equal')
     }
-  }, [question, isOpen, oldVariableMapping])
+  }, [question, isOpen, oldVariableMapping, parsedQuestions])
+  
+  // Additional effect to sync columns when parsedQuestions changes (e.g., Q7 data becomes available)
+  // This ensures columns are synced even if source question data loads after modal opens
+  useEffect(() => {
+    if (isOpen && editedQuestion.logic?.piping_source && (editedQuestion.type === 'MA_Grid' || editedQuestion.type === 'SA_Grid')) {
+      const sourceQuestion = parsedQuestions.find(q => q.id === editedQuestion.logic?.piping_source)
+      if (sourceQuestion) {
+        const isSourceGrid = sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'SA_Grid'
+        
+        if (isSourceGrid && sourceQuestion.rows && sourceQuestion.rows.length > 0) {
+          // Always sync columns from source rows when piping is active
+          // This ensures columns are up-to-date even if question had old Excel data
+          const sourceRows = sourceQuestion.rows
+          
+          // Use functional update to check current state and sync if needed
+          setEditedQuestion(prev => {
+            const currentColumns = prev.columns || []
+            
+            // Check if sync is needed (different length or different content)
+            const needsSync = currentColumns.length !== sourceRows.length || 
+              currentColumns.some((col, idx) => {
+                const sourceRow = sourceRows[idx]
+                return !sourceRow || col.code !== sourceRow.code || col.label !== sourceRow.label
+              })
+            
+            if (needsSync) {
+              // Force sync columns from source rows
+              return {
+                ...prev,
+                columns: [...sourceRows]
+              }
+            }
+            
+            return prev
+          })
+        }
+      }
+    }
+  }, [isOpen, editedQuestion.logic?.piping_source, editedQuestion.type, parsedQuestions])
 
   // Prevent background scrolling when modal is open
   useEffect(() => {
@@ -363,29 +690,47 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
     
     // Generate ask_if_condition from multiple conditions before saving
     const fullCondition = generateAskIfConditionFromMultiple(askIfConditions, askIfConnectors)
-    if (fullCondition) {
-      updateLogic('ask_if_condition', fullCondition)
-    } else if (askIfConditions.length === 0) {
-      updateLogic('ask_if_condition', null)
-    }
     
-    // Set piping_source to first condition's source if available
+    // Generate terminate_if condition from multiple conditions before saving
+    const fullTerminateCondition = generateTerminateIfConditionFromMultiple(terminateIfConditions, terminateIfConnectors)
+    
+    // Build final question object with all updates applied synchronously
+    // Use current editedQuestion state directly (not in setState callback to avoid render-phase updates)
+    const currentQuestion = editedQuestion
+    
+    // Determine piping_source: prefer from Ask If conditions, otherwise keep existing if set for Piping type
+    let finalPipingSource: string | null = currentQuestion.logic?.piping_source || null
     if (askIfConditions.length > 0 && askIfConditions[0].source) {
-      updateLogic('piping_source', askIfConditions[0].source)
+      finalPipingSource = askIfConditions[0].source
     } else if (askIfConditions.length === 0) {
       // Only clear piping_source if no conditions and it was set for ask_if
-      if (editedQuestion.logic?.ask_if_condition && editedQuestion.logic?.piping_source) {
+      if (currentQuestion.logic?.ask_if_condition && currentQuestion.logic?.piping_source) {
         // Keep piping_source if it was set for other purposes (e.g., Piping type)
-        if (editedQuestion.logic?.type !== 'Piping') {
-          updateLogic('piping_source', null)
+        if (currentQuestion.logic?.type !== 'Piping') {
+          finalPipingSource = null
         }
       }
     }
     
-    // Save old variables to store
-    setQuestionOldVariables(editedQuestion.id, oldVars)
+    // Build final question object with all updates applied synchronously
+    const finalQuestion: ParsedQuestion = {
+      ...currentQuestion,
+      logic: {
+        ...currentQuestion.logic,
+        ask_if_condition: fullCondition || null,
+        terminate_if: fullTerminateCondition || null,
+        piping_source: finalPipingSource,
+      },
+    }
     
-    onSave(editedQuestion)
+    // Update local state for UI consistency (even though we're about to save)
+    setEditedQuestion(finalQuestion)
+    
+    // Save old variables to store (outside of setState to avoid render-phase updates)
+    setQuestionOldVariables(finalQuestion.id, oldVars)
+    
+    // Save the final question with all updates
+    onSave(finalQuestion)
     onClose()
   }
   
@@ -656,71 +1001,150 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
             </div>
 
             {/* Logic */}
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-2">
                 <Zap className="w-4 h-4" />
                 Logic
               </h3>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Logic Type
-                  </label>
-                  <select
-                    value={editedQuestion.logic?.type || 'Normal'}
-                    onChange={(e) => updateLogic('type', e.target.value as QuestionLogic['type'])}
-                    className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  >
-                    {LOGIC_TYPES.map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                </div>
+              {/* Logic Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Logic Type
+                </label>
+                <select
+                  value={editedQuestion.logic?.type || 'Normal'}
+                  onChange={(e) => updateLogic('type', e.target.value as QuestionLogic['type'])}
+                  className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                >
+                  {LOGIC_TYPES.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {/* Piping Source - Redesigned */}
+              <div className="p-4 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Piping Source
                   </label>
-                  <select
-                    value={editedQuestion.logic?.piping_source || ''}
-                    onChange={(e) => {
-                      const sourceId = e.target.value || null
-                      updateLogic('piping_source', sourceId)
-                      
-                      // Auto-copy options if MA question and piping source is selected
-                      if (sourceId && editedQuestion.type === 'MA') {
-                        const sourceQuestion = parsedQuestions.find(q => q.id === sourceId)
-                        if (sourceQuestion && sourceQuestion.options) {
-                          updateField('options', [...sourceQuestion.options])
-                        }
-                      }
-                    }}
-                    className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  >
-                    <option value="">None</option>
-                    {parsedQuestions
-                      .filter(q => q.id !== editedQuestion.id) // Don't show current question
-                      .map(q => (
-                        <option key={q.id} value={q.id}>
-                          {q.id} - {q.label.substring(0, 50)}{q.label.length > 50 ? '...' : ''}
-                        </option>
-                      ))}
-                  </select>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    {editedQuestion.type === 'MA' && editedQuestion.logic?.piping_source 
-                      ? 'Options will be copied from source question'
-                      : 'Select a question to pipe codes from'}
-                  </p>
+                  <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">
+                    Pipe codes from another question
+                  </span>
                 </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                      Source Question
+                    </label>
+                    <select
+                      value={editedQuestion.logic?.piping_source || ''}
+                      onChange={(e) => {
+                        const sourceId = e.target.value || null
+                        updateLogic('piping_source', sourceId)
+                        
+                        if (sourceId) {
+                          const sourceQuestion = parsedQuestions.find(q => q.id === sourceId)
+                          if (sourceQuestion) {
+                            // If source question is a Grid question, use its ROWS as piping source
+                            const isSourceGrid = sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'SA_Grid'
+                            
+                            if (isSourceGrid && sourceQuestion.rows) {
+                              // Source is Grid → use rows from source
+                              if (editedQuestion.type === 'MA_Grid' || editedQuestion.type === 'SA_Grid') {
+                                // Target is also Grid → copy rows from source as columns
+                                updateField('columns', [...sourceQuestion.rows])
+                              } else if (editedQuestion.type === 'MA') {
+                                // Target is MA → use source rows as options
+                                updateField('options', [...sourceQuestion.rows])
+                              }
+                            }
+                            // If source is regular MA question, use its options
+                            else if (sourceQuestion.type === 'MA' && sourceQuestion.options) {
+                              if (editedQuestion.type === 'MA_Grid' || editedQuestion.type === 'SA_Grid') {
+                                // Target is Grid → use source options as columns
+                                updateField('columns', [...sourceQuestion.options])
+                              } else if (editedQuestion.type === 'MA') {
+                                // Target is MA → copy options
+                                updateField('options', [...sourceQuestion.options])
+                              }
+                            }
+                          }
+                        }
+                      }}
+                      className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                    >
+                      <option value="">None</option>
+                      {/* Include current question */}
+                      <option value={editedQuestion.id}>
+                        {editedQuestion.id} - {editedQuestion.label.substring(0, 50)}{editedQuestion.label.length > 50 ? '...' : ''} (Current)
+                      </option>
+                      {parsedQuestions
+                        .filter(q => q.id !== editedQuestion.id)
+                        .map(q => (
+                          <option key={q.id} value={q.id}>
+                            {q.id} - {q.label.substring(0, 50)}{q.label.length > 50 ? '...' : ''}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  {editedQuestion.logic?.piping_source && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                        Logic Operator
+                      </label>
+                      <select
+                        value={pipingOperator}
+                        onChange={(e) => setPipingOperator(e.target.value)}
+                        className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                      >
+                        {LOGIC_OPERATORS.map(op => (
+                          <option key={op.value} value={op.value}>{op.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+                
+                {editedQuestion.logic?.piping_source && (() => {
+                  const sourceQuestion = parsedQuestions.find(q => q.id === editedQuestion.logic?.piping_source)
+                  const isSourceGrid = sourceQuestion && (sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'SA_Grid')
+                  
+                  if (isSourceGrid) {
+                    return (
+                      <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                        Rows (codes and labels) from source Grid question will be used
+                        {editedQuestion.type === 'MA_Grid' || editedQuestion.type === 'SA_Grid' 
+                          ? ' as columns'
+                          : ' as options'}
+                      </p>
+                    )
+                  } else {
+                    return (
+                      <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                        {editedQuestion.type === 'MA' 
+                          ? 'Options will be copied from source question'
+                          : 'Codes will be piped from the selected question'}
+                      </p>
+                    )
+                  }
+                })()}
               </div>
 
               {/* Ask If Condition - Multiple Conditions with AND/OR */}
-              <div className="space-y-3">
+              <div className="p-4 bg-gradient-to-br from-orange-50/50 to-red-50/50 dark:from-orange-900/10 dark:to-red-900/10 rounded-lg border border-orange-200/50 dark:border-orange-800/50 space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Ask If Condition
-                  </label>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Ask If Condition
+                    </label>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Show this question only when condition(s) are met
+                    </p>
+                  </div>
                   <button
                     onClick={() => {
                       const newCondition: AskIfCondition = {
@@ -735,9 +1159,9 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                         setAskIfConnectors([...askIfConnectors, 'AND'])
                       }
                     }}
-                    className="px-3 py-1 text-xs bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors flex items-center gap-1"
+                    className="px-3 py-1.5 text-xs bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded-lg transition-colors flex items-center gap-1.5 font-medium"
                   >
-                    <Plus className="w-3 h-3" />
+                    <Plus className="w-3.5 h-3.5" />
                     Add Condition
                   </button>
                 </div>
@@ -824,6 +1248,10 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                 className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
                               >
                                 <option value="">None</option>
+                                {/* Include current question */}
+                                <option value={editedQuestion.id}>
+                                  {editedQuestion.id} - {editedQuestion.label.substring(0, 40)}{editedQuestion.label.length > 40 ? '...' : ''} (Current)
+                                </option>
                                 {parsedQuestions
                                   .filter(q => q.id !== editedQuestion.id)
                                   .map(q => (
@@ -873,7 +1301,8 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                               </label>
                               <div className="max-h-96 overflow-y-auto p-4 bg-white dark:bg-surface-dark-lighter rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
                                 {(() => {
-                                  const sourceQuestion = parsedQuestions.find(q => q.id === condition.source)
+                                  const sourceQuestion = parsedQuestions.find(q => q.id === condition.source) || 
+                                                         (condition.source === editedQuestion.id ? editedQuestion : null)
                                   if (!sourceQuestion) {
                                     return <p className="text-xs text-gray-500 dark:text-gray-400">Question not found</p>
                                   }
@@ -1048,30 +1477,333 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                 )}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Terminate If (Condition)
-                </label>
-                <input
-                  type="text"
-                  value={editedQuestion.logic?.terminate_if ? `IF ${editedQuestion.logic.terminate_if}` : ''}
-                  onChange={(e) => {
-                    // Remove IF prefix for storage (it will be added when displaying)
-                    const value = e.target.value.trim()
-                    const cleanValue = value.replace(/^IF\s+/i, '').trim()
-                    updateLogic('terminate_if', cleanValue || null)
-                  }}
-                  className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 font-mono text-sm"
-                  placeholder="IF MIS(Q7_1R1) and MIS(Q7_1R2)..."
-                />
+              {/* Terminate If Condition - Multiple Conditions with AND/OR */}
+              <div className="p-4 bg-gradient-to-br from-red-50/50 to-pink-50/50 dark:from-red-900/10 dark:to-pink-900/10 rounded-lg border border-red-200/50 dark:border-red-800/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Terminate If Condition
+                    </label>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      End survey when condition(s) are met
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const newCondition: TerminateIfCondition = {
+                        id: `term_cond_${Date.now()}`,
+                        source: '',
+                        operator: '',
+                        selectedCodes: new Set(),
+                      }
+                      setTerminateIfConditions([...terminateIfConditions, newCondition])
+                      // Add connector if there's already a condition
+                      if (terminateIfConditions.length > 0) {
+                        setTerminateIfConnectors([...terminateIfConnectors, 'AND'])
+                      }
+                    }}
+                    className="px-3 py-1.5 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-lg transition-colors flex items-center gap-1.5 font-medium"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add Condition
+                  </button>
+                </div>
+                
+                {terminateIfConditions.length === 0 ? (
+                  <div className="text-center py-4 text-sm text-gray-500 dark:text-gray-400 bg-white/50 dark:bg-surface-dark/50 rounded-lg">
+                    No conditions. Click "Add Condition" to add one.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {terminateIfConditions.map((condition, index) => (
+                      <div key={condition.id} className="space-y-2">
+                        {/* Connector selector (between conditions) */}
+                        {index > 0 && (
+                          <div className="flex items-center justify-center">
+                            <select
+                              value={terminateIfConnectors[index - 1] || 'AND'}
+                              onChange={(e) => {
+                                const newConnectors = [...terminateIfConnectors]
+                                newConnectors[index - 1] = e.target.value as 'AND' | 'OR'
+                                setTerminateIfConnectors(newConnectors)
+                                const fullCondition = generateTerminateIfConditionFromMultiple(terminateIfConditions, newConnectors)
+                                updateLogic('terminate_if', fullCondition)
+                              }}
+                              className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 font-semibold"
+                            >
+                              <option value="AND">AND</option>
+                              <option value="OR">OR</option>
+                            </select>
+                          </div>
+                        )}
+                        
+                        {/* Condition block */}
+                        <div className="p-3 bg-white dark:bg-surface-dark-lighter rounded-lg border border-gray-200 dark:border-gray-700">
+                          <div className="flex items-start justify-between mb-2">
+                            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Condition {index + 1}</span>
+                            {terminateIfConditions.length > 1 && (
+                              <button
+                                onClick={() => {
+                                  const newConditions = terminateIfConditions.filter(c => c.id !== condition.id)
+                                  setTerminateIfConditions(newConditions)
+                                  const newConnectors = terminateIfConnectors.filter((_, i) => i !== index - 1)
+                                  setTerminateIfConnectors(newConnectors)
+                                  const fullCondition = generateTerminateIfConditionFromMultiple(newConditions, newConnectors)
+                                  updateLogic('terminate_if', fullCondition)
+                                }}
+                                className="p-1 hover:bg-red-500/10 text-red-500 rounded transition-colors"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                Source Question
+                              </label>
+                              <select
+                                value={condition.source}
+                                onChange={(e) => {
+                                  const newConditions = [...terminateIfConditions]
+                                  newConditions[index] = {
+                                    ...condition,
+                                    source: e.target.value,
+                                    selectedCodes: new Set(),
+                                  }
+                                  setTerminateIfConditions(newConditions)
+                                  if (!e.target.value) {
+                                    const fullCondition = generateTerminateIfConditionFromMultiple(newConditions, terminateIfConnectors)
+                                    updateLogic('terminate_if', fullCondition)
+                                  }
+                                }}
+                                className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                              >
+                                <option value="">None</option>
+                                {/* Include current question */}
+                                <option value={editedQuestion.id}>
+                                  {editedQuestion.id} - {editedQuestion.label.substring(0, 40)}{editedQuestion.label.length > 40 ? '...' : ''} (Current)
+                                </option>
+                                {parsedQuestions
+                                  .filter(q => q.id !== editedQuestion.id)
+                                  .map(q => (
+                                    <option key={q.id} value={q.id}>
+                                      {q.id} - {q.label.substring(0, 40)}{q.label.length > 40 ? '...' : ''}
+                                    </option>
+                                  ))}
+                              </select>
+                            </div>
+
+                            {condition.source && (
+                              <div>
+                                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                  Logic Operator
+                                </label>
+                                <select
+                                  value={condition.operator}
+                                  onChange={(e) => {
+                                    const operator = e.target.value
+                                    const newConditions = [...terminateIfConditions]
+                                    newConditions[index] = {
+                                      ...condition,
+                                      operator,
+                                      selectedCodes: operator === 'is_answered' || operator === 'is_not_answered' ? new Set() : condition.selectedCodes,
+                                    }
+                                    setTerminateIfConditions(newConditions)
+                                    const fullCondition = generateTerminateIfConditionFromMultiple(newConditions, terminateIfConnectors)
+                                    updateLogic('terminate_if', fullCondition)
+                                  }}
+                                  className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                                >
+                                  {LOGIC_OPERATORS.map(op => (
+                                    <option key={op.value} value={op.value}>{op.label}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Code selection - Reuse the same logic from Ask If */}
+                          {condition.source && condition.operator && 
+                           condition.operator !== 'is_answered' && 
+                           condition.operator !== 'is_not_answered' && (
+                            <div className="mt-3">
+                              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                Select Codes
+                              </label>
+                              <div className="max-h-96 overflow-y-auto p-4 bg-white dark:bg-surface-dark-lighter rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                                {(() => {
+                                  const sourceQuestion = parsedQuestions.find(q => q.id === condition.source) || 
+                                                         (condition.source === editedQuestion.id ? editedQuestion : null)
+                                  if (!sourceQuestion) {
+                                    return <p className="text-xs text-gray-500 dark:text-gray-400">Question not found</p>
+                                  }
+
+                                  // Check if this is a Matrix MA question
+                                  const isMatrixMA = (sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'MA') && 
+                                                    sourceQuestion.rows && sourceQuestion.rows.length > 0 && 
+                                                    sourceQuestion.columns && sourceQuestion.columns.length > 0
+
+                                  // Matrix table for MA_Grid
+                                  if (isMatrixMA) {
+                                    return (
+                                      <div className="space-y-2">
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                          Matrix: {sourceQuestion.rows.length} rows × {sourceQuestion.columns.length} columns
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                          <table className="w-full border-collapse text-xs">
+                                            <thead>
+                                              <tr className="bg-gray-50 dark:bg-surface-dark-lighter border-b-2 border-gray-300 dark:border-gray-600">
+                                                <th className="px-3 py-2 text-left font-semibold text-gray-800 dark:text-gray-200 border-r border-gray-300 dark:border-gray-600 sticky left-0 bg-gray-50 dark:bg-surface-dark-lighter z-10">
+                                                  <div className="flex flex-col">
+                                                    <span className="text-xs">CODE</span>
+                                                    <span className="text-[10px] font-normal text-gray-600 dark:text-gray-400">VN</span>
+                                                  </div>
+                                                </th>
+                                                {sourceQuestion.columns.map((column, colIdx) => (
+                                                  <th key={colIdx} className="px-3 py-2 text-center font-semibold text-gray-800 dark:text-gray-200 border-r border-gray-300 dark:border-gray-600 last:border-r-0 min-w-[80px]">
+                                                    <div className="flex flex-col items-center">
+                                                      <span className="font-mono font-bold text-primary text-sm">{column.code}</span>
+                                                      <span className="text-[10px] font-normal text-gray-600 dark:text-gray-400 mt-0.5 leading-tight">{column.label}</span>
+                                                    </div>
+                                                  </th>
+                                                ))}
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {sourceQuestion.rows.map((row, rowIdx) => (
+                                                <tr
+                                                  key={rowIdx}
+                                                  className="border-b border-gray-200 dark:border-gray-700 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors"
+                                                >
+                                                  <td className="px-3 py-2 border-r border-gray-300 dark:border-gray-600 sticky left-0 bg-white dark:bg-surface-dark z-10">
+                                                    <div className="flex flex-col">
+                                                      <span className="font-mono font-bold text-primary text-sm">{row.code}</span>
+                                                      <span className="text-[10px] text-gray-600 dark:text-gray-400 mt-0.5 leading-tight">{row.label}</span>
+                                                    </div>
+                                                  </td>
+                                                  {sourceQuestion.columns.map((column, colIdx) => {
+                                                    const compositeKey = `R${row.code}C${column.code}`
+                                                    const isChecked = condition.selectedCodes.has(compositeKey)
+                                                    
+                                                    return (
+                                                      <td
+                                                        key={colIdx}
+                                                        className="px-3 py-2 text-center border-r border-gray-300 dark:border-gray-600 last:border-r-0"
+                                                      >
+                                                        <label className="flex items-center justify-center cursor-pointer group relative">
+                                                          <input
+                                                            type="checkbox"
+                                                            checked={isChecked}
+                                                            onChange={(e) => {
+                                                              const newSelected = new Set(condition.selectedCodes)
+                                                              if (e.target.checked) {
+                                                                newSelected.add(compositeKey)
+                                                              } else {
+                                                                newSelected.delete(compositeKey)
+                                                              }
+                                                              const newConditions = [...terminateIfConditions]
+                                                              newConditions[index] = {
+                                                                ...condition,
+                                                                selectedCodes: newSelected,
+                                                              }
+                                                              setTerminateIfConditions(newConditions)
+                                                              const fullCondition = generateTerminateIfConditionFromMultiple(newConditions, terminateIfConnectors)
+                                                              updateLogic('terminate_if', fullCondition)
+                                                            }}
+                                                            className="w-5 h-5 text-primary border-gray-300 rounded focus:ring-2 focus:ring-primary/50 cursor-pointer"
+                                                          />
+                                                          {isChecked && (
+                                                            <span className="absolute inset-0 bg-primary/10 rounded pointer-events-none"></span>
+                                                          )}
+                                                        </label>
+                                                      </td>
+                                                    )
+                                                  })}
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      </div>
+                                    )
+                                  }
+
+                                  // Regular options/rows list
+                                  const options = sourceQuestion.options || sourceQuestion.rows || []
+                                  const mainOptions = options.filter(opt => !String(opt.code).endsWith('_O'))
+
+                                  if (mainOptions.length === 0) {
+                                    return <p className="text-xs text-gray-500 dark:text-gray-400">No options available</p>
+                                  }
+
+                                  return (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                      {mainOptions.map((option) => {
+                                        const isChecked = condition.selectedCodes.has(option.code)
+                                        return (
+                                          <label
+                                            key={option.code}
+                                            className={`flex items-center gap-2.5 p-3 rounded-lg cursor-pointer transition-all border ${
+                                              isChecked 
+                                                ? 'bg-primary/10 dark:bg-primary/20 border-primary/30 shadow-sm' 
+                                                : 'bg-gray-50 dark:bg-surface-dark border-gray-200 dark:border-gray-700 hover:border-primary/20 hover:bg-gray-100 dark:hover:bg-surface-dark-lighter'
+                                            }`}
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              checked={isChecked}
+                                              onChange={(e) => {
+                                                const newSelected = new Set(condition.selectedCodes)
+                                                if (e.target.checked) {
+                                                  newSelected.add(option.code)
+                                                } else {
+                                                  newSelected.delete(option.code)
+                                                }
+                                                const newConditions = [...terminateIfConditions]
+                                                newConditions[index] = {
+                                                  ...condition,
+                                                  selectedCodes: newSelected,
+                                                }
+                                                setTerminateIfConditions(newConditions)
+                                                const fullCondition = generateTerminateIfConditionFromMultiple(newConditions, terminateIfConnectors)
+                                                updateLogic('terminate_if', fullCondition)
+                                              }}
+                                              className="w-5 h-5 text-primary border-gray-300 rounded focus:ring-2 focus:ring-primary/50 shrink-0 cursor-pointer"
+                                            />
+                                            <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2 flex-1">
+                                              <span className={`font-mono text-xs font-bold px-2 py-1 rounded ${
+                                                isChecked 
+                                                  ? 'bg-primary text-white' 
+                                                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                              }`}>
+                                                {option.code}
+                                              </span>
+                                              <span className="flex-1">{option.label}</span>
+                                            </span>
+                                          </label>
+                                        )
+                                      })}
+                                    </div>
+                                  )
+                                })()}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Preview generated condition */}
                 {editedQuestion.logic?.terminate_if && (
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Format: {editedQuestion.type === 'MA_Grid' || (editedQuestion.type === 'MA' && editedQuestion.rows && editedQuestion.columns) 
-                      ? 'Q{id}_{columnCode}R{rowCode} (e.g., Q7_1R1)' 
-                      : editedQuestion.type === 'MA' 
-                      ? 'Q{id}R{code} = {code} (e.g., Q4R1 = 1)'
-                      : 'Q{id} = {code} (e.g., Q3 = 1)'}
-                  </p>
+                  <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
+                    <p className="text-xs font-medium text-red-900 dark:text-red-300 mb-1">Generated Condition:</p>
+                    <p className="text-xs font-mono text-red-800 dark:text-red-200">{editedQuestion.logic.terminate_if}</p>
+                  </div>
                 )}
               </div>
             </div>
@@ -1267,11 +1999,42 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
             {isGridType && editedQuestion.type !== 'OE_Grid' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                    <Grid className="w-4 h-4" />
-                    Columns ({(editedQuestion.columns || []).length})
-                  </h3>
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <Grid className="w-4 h-4" />
+                      Columns ({(editedQuestion.columns || []).length})
+                    </h3>
+                    {editedQuestion.logic?.piping_source && (() => {
+                      const sourceQuestion = parsedQuestions.find(q => q.id === editedQuestion.logic?.piping_source)
+                      const isSourceGrid = sourceQuestion && (sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'SA_Grid')
+                      if (isSourceGrid) {
+                        return (
+                          <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded border border-blue-200 dark:border-blue-800">
+                            Piped from {editedQuestion.logic.piping_source} (rows)
+                          </span>
+                        )
+                      }
+                      return null
+                    })()}
+                  </div>
                 </div>
+
+                {/* Piping Info */}
+                {editedQuestion.logic?.piping_source && (() => {
+                  const sourceQuestion = parsedQuestions.find(q => q.id === editedQuestion.logic?.piping_source)
+                  const isSourceGrid = sourceQuestion && (sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'SA_Grid')
+                  if (isSourceGrid) {
+                    return (
+                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                          <span className="font-semibold">Columns initially synced from {editedQuestion.logic.piping_source}</span>
+                          {' '}(rows from source Grid question). You can still edit these columns if needed.
+                        </p>
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
 
                 {/* Add New Column */}
                 <div className="p-4 bg-gray-50 dark:bg-surface-dark rounded-lg border border-gray-200 dark:border-gray-700">
@@ -1307,39 +2070,48 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
 
                 {/* Columns List */}
                 <div className="space-y-2">
-                  {(editedQuestion.columns || []).map((col, index) => (
-                    <div key={index} className="p-3 bg-gray-50 dark:bg-surface-dark rounded-lg border border-gray-200 dark:border-gray-700">
-                      <div className="grid grid-cols-12 gap-2 items-center">
-                        <div className="col-span-2">
-                          <input
-                            type="text"
-                            value={col.code}
-                            onChange={(e) => {
-                              const val = isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value)
-                              updateColumn(index, 'code', val)
-                            }}
-                            className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50 font-mono"
-                          />
-                        </div>
-                        <div className="col-span-9">
-                          <input
-                            type="text"
-                            value={col.label}
-                            onChange={(e) => updateColumn(index, 'label', e.target.value)}
-                            className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
-                          />
-                        </div>
-                        <div className="col-span-1">
-                          <button
-                            onClick={() => deleteColumn(index)}
-                            className="w-full p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded transition-colors flex items-center justify-center"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                  {(editedQuestion.columns || []).map((col, index) => {
+                    const isPiped = editedQuestion.logic?.piping_source && (() => {
+                      const sourceQuestion = parsedQuestions.find(q => q.id === editedQuestion.logic?.piping_source)
+                      return sourceQuestion && (sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'SA_Grid')
+                    })()
+                    
+                    return (
+                      <div key={index} className={`p-3 bg-gray-50 dark:bg-surface-dark rounded-lg border border-gray-200 dark:border-gray-700 ${
+                        isPiped ? 'bg-blue-50/30 dark:bg-blue-900/10 border-blue-200/50 dark:border-blue-800/50' : ''
+                      }`}>
+                        <div className="grid grid-cols-12 gap-2 items-center">
+                          <div className="col-span-2">
+                            <input
+                              type="text"
+                              value={col.code}
+                              onChange={(e) => {
+                                const val = isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value)
+                                updateColumn(index, 'code', val)
+                              }}
+                              className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50 font-mono"
+                            />
+                          </div>
+                          <div className="col-span-9">
+                            <input
+                              type="text"
+                              value={col.label}
+                              onChange={(e) => updateColumn(index, 'label', e.target.value)}
+                              className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                            />
+                          </div>
+                          <div className="col-span-1">
+                            <button
+                              onClick={() => deleteColumn(index)}
+                              className="w-full p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded transition-colors flex items-center justify-center"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
