@@ -22,6 +22,148 @@ import {
 import { useState, forwardRef } from 'react'
 import EditQuestionModal from './EditQuestionModal'
 
+// Component for displaying SA_Grid rows with expandable options
+function SAGridRowsDisplay({ 
+  question, 
+  onUpdate
+}: {
+  question: ParsedQuestion
+  onUpdate?: (updatedQuestion: ParsedQuestion) => void
+}) {
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
+  
+  const toggleRow = (rowIndex: string) => {
+    const newExpanded = new Set(expandedRows)
+    if (newExpanded.has(rowIndex)) {
+      newExpanded.delete(rowIndex)
+    } else {
+      newExpanded.add(rowIndex)
+    }
+    setExpandedRows(newExpanded)
+  }
+  
+  const getRowOptions = (rowIndex: string | number): QuestionOption[] => {
+    if (!question.rowOptionsMap) return []
+    const indexStr = String(rowIndex)
+    return question.rowOptionsMap[indexStr] || []
+  }
+  
+  const updateRowOptions = (rowIndex: string | number, updatedOptions: QuestionOption[]) => {
+    if (!onUpdate) return
+    const indexStr = String(rowIndex)
+    const newRowOptionsMap = { ...question.rowOptionsMap }
+    newRowOptionsMap[indexStr] = updatedOptions
+    onUpdate({ ...question, rowOptionsMap: newRowOptionsMap })
+  }
+  
+  return (
+    <div className="space-y-2 mb-4">
+      <div className="rounded-lg border border-surface-border overflow-hidden bg-[#131118]">
+        <div className="bg-[#252030] border-b border-surface-border px-3 py-2">
+          <span className="text-xs font-mono text-gray-400 dark:text-gray-400">SUB-QUESTIONS (Click to view codes)</span>
+        </div>
+        {question.rows && question.rows.map((row, idx) => {
+          const rowIndex = String(row.code)
+          const isExpanded = expandedRows.has(rowIndex)
+          const rowOptions = getRowOptions(row.code)
+          
+          return (
+            <div key={idx} className="border-b border-surface-border/50 last:border-b-0">
+              {/* Row Header - Clickable */}
+              <div
+                onClick={() => toggleRow(rowIndex)}
+                className="grid grid-cols-[40px_60px_1fr] gap-0 items-center px-3 py-2 group hover:bg-surface-border/30 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center justify-center">
+                  {isExpanded ? (
+                    <ChevronUp className="w-4 h-4 text-gray-400" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  )}
+                </div>
+                <span className="text-primary font-bold font-mono text-sm">{row.code}</span>
+                <input
+                  type="text"
+                  value={row.label}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    if (!onUpdate) return
+                    const updatedRows = [...question.rows!]
+                    updatedRows[idx] = {
+                      ...updatedRows[idx],
+                      label: e.target.value
+                    }
+                    onUpdate({ ...question, rows: updatedRows })
+                  }}
+                  className="w-full bg-transparent text-sm text-white border-none focus:ring-0 p-0"
+                />
+                {rowOptions.length > 0 && (
+                  <span className="text-xs text-gray-400 ml-2">
+                    ({rowOptions.length} codes)
+                  </span>
+                )}
+              </div>
+              
+              {/* Expanded Options for this Row */}
+              {isExpanded && rowOptions.length > 0 && (
+                <div className="bg-[#0d0b16] border-t border-surface-border/50">
+                  {/* Table Header */}
+                  <div className="grid grid-cols-[60px_1fr] gap-0 bg-[#252030]/50 border-b border-surface-border px-3 py-2">
+                    <span className="text-xs font-mono text-gray-400 dark:text-gray-400">CODE</span>
+                    <span className="text-xs font-mono text-gray-400 dark:text-gray-400">LABEL</span>
+                  </div>
+                  
+                  {/* Table Rows */}
+                  {rowOptions.map((option, optIdx) => (
+                    <div
+                      key={optIdx}
+                      className="grid grid-cols-[60px_1fr] gap-0 border-b border-surface-border/30 items-center px-3 py-1.5 hover:bg-surface-border/20 transition-colors"
+                    >
+                      <input
+                        type="text"
+                        value={option.code}
+                        onChange={(e) => {
+                          const updatedOptions = [...rowOptions]
+                          updatedOptions[optIdx] = {
+                            ...updatedOptions[optIdx],
+                            code: isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value)
+                          }
+                          updateRowOptions(row.code, updatedOptions)
+                        }}
+                        className="w-10 bg-transparent text-center font-mono text-sm text-primary font-bold border-none focus:ring-0 p-0"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <input
+                        type="text"
+                        value={option.label}
+                        onChange={(e) => {
+                          const updatedOptions = [...rowOptions]
+                          updatedOptions[optIdx] = {
+                            ...updatedOptions[optIdx],
+                            label: e.target.value
+                          }
+                          updateRowOptions(row.code, updatedOptions)
+                        }}
+                        className="w-full bg-transparent text-sm text-white border-none focus:ring-0 p-0"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+              {isExpanded && rowOptions.length === 0 && (
+                <div className="bg-[#0d0b16] border-t border-surface-border/50 px-3 py-2 text-xs text-gray-400">
+                  No codes found for this sub-question
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 interface QuestionCardProps {
   question: ParsedQuestion
   isExpanded: boolean
@@ -130,11 +272,11 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
   const handleAddOption = () => {
     if (!onUpdate || !question.options) return
     
-    const newCode = question.options.length > 0 
-      ? (typeof question.options[question.options.length - 1].code === 'number'
-          ? question.options[question.options.length - 1].code + 1
-          : question.options.length + 1)
-      : 1
+    const last = question.options.length > 0 ? question.options[question.options.length - 1] : undefined
+    const newCode: number =
+      last && typeof last.code === 'number'
+        ? last.code + 1
+        : question.options.length + 1
     
     const newOption: QuestionOption = {
       code: newCode,
@@ -474,8 +616,8 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
             </div>
           </div>
 
-          {/* Matrix Table for MA questions with rows and columns */}
-          {((question.type === 'MA' || question.type === 'MA_Grid') && question.rows && question.rows.length > 0 && displayColumns && displayColumns.length > 0) ? (
+          {/* Matrix Table for MA_Grid questions with rows and columns */}
+          {(question.type === 'MA_Grid' && question.rows && question.rows.length > 0 && displayColumns && displayColumns.length > 0) ? (
             <div className="rounded-lg border border-surface-border overflow-hidden bg-[#131118] mb-4">
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
@@ -533,6 +675,12 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
                 <span>Matrix: {question.rows.length} rows × {displayColumns.length} columns = {question.rows.length * displayColumns.length} variables</span>
               </div>
             </div>
+          ) : question.type === 'SA_Grid' && question.rows && question.rows.length > 0 ? (
+            // SA_Grid: Display rows (sub-questions), each row can expand to show its own options
+            <SAGridRowsDisplay
+              question={question}
+              onUpdate={onUpdate}
+            />
           ) : question.options && question.options.length > 0 ? (
             <div className="rounded-lg border border-surface-border overflow-hidden bg-[#131118] mb-4">
               {/* Table Header */}
@@ -693,7 +841,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
           )}
 
           {/* Add Option Button */}
-          {question.options && (
+          {question.options && question.type !== 'SA_Grid' && (
             <div className="mt-2 flex justify-start mb-6">
               <button
                 onClick={handleAddOption}

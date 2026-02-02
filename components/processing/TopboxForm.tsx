@@ -184,21 +184,21 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             1. Chọn câu hỏi (có thể chọn nhiều):
           </label>
           <div className="relative" ref={dropdownRef}>
             <button
               type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
             >
-              <span className="text-sm font-medium text-white dark:text-black">
+              <span className="text-sm font-medium text-white">
                 {selectedQuestions.length > 0 
                   ? `Đã chọn ${selectedQuestions.length} câu hỏi` 
                   : 'Chọn câu hỏi'}
               </span>
-              <ChevronDown className={`size-5 transition-transform text-white dark:text-black ${dropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`size-5 transition-transform text-white ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             
             {dropdownOpen && (
@@ -234,7 +234,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className={`text-sm font-medium ${
-                              isSelected ? 'text-primary' : 'text-black dark:text-white'
+                              isSelected ? 'text-primary' : 'text-white'
                             }`}>
                               {q.id}
                             </span>
@@ -258,13 +258,13 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
         {selectedQuestions.length > 0 && availableCodes.length > 0 && (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-3 text-white dark:text-black">
+              <label className="block text-sm font-medium mb-3 text-white">
                 2. Chọn codes cho Top-Box và Bottom-Box:
               </label>
               <div className="grid grid-cols-2 gap-4">
                 {/* Top-Box */}
                 <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
-                  <h4 className="text-sm font-semibold mb-2 text-white dark:text-black">Top-Box (T2B)</h4>
+                  <h4 className="text-sm font-semibold mb-2 text-white">Top-Box (T2B)</h4>
                   <div className="max-h-40 overflow-y-auto space-y-2">
                     {availableCodes.map(code => (
                       <label key={`t2b-${code}`} className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-1 rounded">
@@ -274,7 +274,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                           onChange={() => toggleCode(code, 't2b')}
                           className="rounded"
                         />
-                        <span className="text-sm text-white dark:text-black">{code}</span>
+                        <span className="text-sm text-white">{code}</span>
                       </label>
                     ))}
                   </div>
@@ -287,7 +287,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
 
                 {/* Non Top-Box */}
                 <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
-                  <h4 className="text-sm font-semibold mb-2 text-white dark:text-black">Non Top-Box (Non T2B)</h4>
+                  <h4 className="text-sm font-semibold mb-2 text-white">Non Top-Box (Non T2B)</h4>
                   <div className="max-h-40 overflow-y-auto space-y-2">
                     {availableCodes.map(code => (
                       <label key={`nonT2b-${code}`} className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-1 rounded">
@@ -297,7 +297,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                           onChange={() => toggleCode(code, 'nonT2b')}
                           className="rounded"
                         />
-                        <span className="text-sm text-white dark:text-black">{code}</span>
+                        <span className="text-sm text-white">{code}</span>
                       </label>
                     ))}
                   </div>
@@ -310,7 +310,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
 
                 {/* Bottom-Box */}
                 <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
-                  <h4 className="text-sm font-semibold mb-2 text-white dark:text-black">Bottom-Box (B2B)</h4>
+                  <h4 className="text-sm font-semibold mb-2 text-white">Bottom-Box (B2B)</h4>
                   <div className="max-h-40 overflow-y-auto space-y-2">
                     {availableCodes.map(code => (
                       <label key={`b2b-${code}`} className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-1 rounded">
@@ -320,7 +320,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                           onChange={() => toggleCode(code, 'b2b')}
                           className="rounded"
                         />
-                        <span className="text-sm text-white dark:text-black">{code}</span>
+                        <span className="text-sm text-white">{code}</span>
                       </label>
                     ))}
                   </div>
@@ -333,7 +333,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
 
                 {/* Non Bottom-Box */}
                 <div className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
-                  <h4 className="text-sm font-semibold mb-2 text-white dark:text-black">Non Bottom-Box (Non B2B)</h4>
+                  <h4 className="text-sm font-semibold mb-2 text-white">Non Bottom-Box (Non B2B)</h4>
                   <div className="max-h-40 overflow-y-auto space-y-2">
                     {availableCodes.map(code => (
                       <label key={`nonB2b-${code}`} className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-1 rounded">
@@ -343,7 +343,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                           onChange={() => toggleCode(code, 'nonB2b')}
                           className="rounded"
                         />
-                        <span className="text-sm text-white dark:text-black">{code}</span>
+                        <span className="text-sm text-white">{code}</span>
                       </label>
                     ))}
                   </div>
@@ -362,7 +362,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                 <label className="block text-xs font-medium mb-1 text-gray-400 dark:text-gray-600">
                   Top-Box (tự động điền):
                 </label>
-                <div className="px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-white dark:text-black">
+                <div className="px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-white">
                   {formData.t2b || '(chưa chọn)'}
                 </div>
               </div>
@@ -370,7 +370,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                 <label className="block text-xs font-medium mb-1 text-gray-400 dark:text-gray-600">
                   Non Top-Box (tự động điền):
                 </label>
-                <div className="px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-white dark:text-black">
+                <div className="px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-white">
                   {formData.nonT2b || '(chưa chọn)'}
                 </div>
               </div>
@@ -378,7 +378,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                 <label className="block text-xs font-medium mb-1 text-gray-400 dark:text-gray-600">
                   Bottom-Box (tự động điền):
                 </label>
-                <div className="px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-white dark:text-black">
+                <div className="px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-white">
                   {formData.b2b || '(chưa chọn)'}
                 </div>
               </div>
@@ -386,7 +386,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                 <label className="block text-xs font-medium mb-1 text-gray-400 dark:text-gray-600">
                   Non Bottom-Box (tự động điền):
                 </label>
-                <div className="px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-white dark:text-black">
+                <div className="px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-white">
                   {formData.nonB2b || '(chưa chọn)'}
                 </div>
               </div>
@@ -424,7 +424,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+        <label className="block text-sm font-medium mb-2 text-white">
           1. Tên biến (mỗi biến 1 dòng):
         </label>
         <textarea
@@ -438,7 +438,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+        <label className="block text-sm font-medium mb-2 text-white">
           2. Nhãn biến (mỗi nhãn 1 dòng, theo thứ tự):
         </label>
         <textarea
@@ -453,7 +453,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             3. Giá trị Top-Box (vd: 4,5):
           </label>
             <input
@@ -465,7 +465,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
             />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             4. Giá trị còn lại cho Top-Box (vd: 1,2,3):
           </label>
           <input
@@ -477,7 +477,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             5. Giá trị Bottom-Box (vd: 1,2):
           </label>
           <input
@@ -489,7 +489,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             6. Giá trị còn lại cho Bottom-Box (vd: 3,4,5):
           </label>
           <input

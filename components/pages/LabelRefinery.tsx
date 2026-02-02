@@ -274,7 +274,7 @@ export default function LabelRefinery() {
                           </tr>
                         </thead>
                         <tbody>
-                          {question.rows.map((row, rowIdx) => (
+                          {(question.rows || []).map((row, rowIdx) => (
                             <tr
                               key={rowIdx}
                               className={`border-b border-gray-300 hover:bg-gray-50 transition-colors ${
@@ -293,7 +293,7 @@ export default function LabelRefinery() {
                                   <span className="text-xs text-gray-700 mt-0.5">{row.label}</span>
                                 </div>
                               </td>
-                              {question.columns.map((column, colIdx) => (
+                              {(displayColumns || []).map((column, colIdx) => (
                                 <td
                                   key={colIdx}
                                   className="border border-gray-300 px-4 py-2 text-center"
@@ -309,7 +309,7 @@ export default function LabelRefinery() {
                       </table>
                       {/* Matrix Info */}
                       <div className="px-4 py-2 bg-gray-50 border-t border-gray-300 text-xs text-gray-600">
-                        Matrix: {question.rows.length} rows × {displayColumns.length} columns = {question.rows.length * displayColumns.length} variables
+                        Matrix: {(question.rows || []).length} rows × {displayColumns.length} columns = {(question.rows || []).length * displayColumns.length} variables
                       </div>
                     </div>
                   ) : (

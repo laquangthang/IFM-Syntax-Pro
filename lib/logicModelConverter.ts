@@ -570,8 +570,8 @@ export function convertQuestionsToLogicModel(
         })
       }
     } else if (question.type === 'MA_Grid') {
-      // For MA_Grid, create intermediate nodes (one per row) and child nodes (columns per row)
-      // Structure: Q10 (parent) -> Q10_1, Q10_2, ... (intermediate) -> Q10_1R1, Q10_1R2, ... (children)
+      // For MA_Grid, create intermediate nodes (one per COLUMN) and child nodes (rows per column)
+      // Structure: Q7 (parent) -> Q7_1, Q7_2, ... (intermediate from columns) -> Q7_1R1, Q7_1R2, ... (children from rows)
       // Only create child nodes if there are multiple rows and columns
       if (question.rows && question.columns) {
         // Filter out _O rows
@@ -580,27 +580,27 @@ export function convertQuestionsToLogicModel(
         if (mainRows.length > 1 || question.columns.length > 1) {
           const parentY = parentNode.position.y
           
-          // Calculate spacing for intermediate nodes (rows) - center them around parent
-          const rowSpacing = 150 // Space between row groups
-          const totalIntermediateHeight = mainRows.length * rowSpacing
-          const intermediateCenterOffset = parentY - (totalIntermediateHeight / 2) + (rowSpacing / 2)
+          // Calculate spacing for intermediate nodes (columns) - center them around parent
+          const columnSpacing = 150 // Space between column groups
+          const totalIntermediateHeight = question.columns.length * columnSpacing
+          const intermediateCenterOffset = parentY - (totalIntermediateHeight / 2) + (columnSpacing / 2)
           
-          // Create intermediate nodes (one per row) - centered around parent
-          const intermediateNodes: LogicModelNode[] = mainRows.map((row, rowIndex) => {
-            const intermediateNodeId = `${question.id}_${row.code}`
+          // Create intermediate nodes (one per COLUMN) - centered around parent
+          const intermediateNodes: LogicModelNode[] = question.columns.map((col, colIndex) => {
+            const intermediateNodeId = `${question.id}_${col.code}`
             return {
               id: intermediateNodeId,
               type: 'intermediate' as const,
               data: {
                 label: intermediateNodeId,
                 questionId: question.id,
-                rowCode: row.code,
+                columnCode: col.code,
                 isIntermediate: true,
                 questionType: question.type,
               },
               position: {
                 x: startX + questionIndex * xSpacing + childXOffset,
-                y: intermediateCenterOffset + rowIndex * rowSpacing,
+                y: intermediateCenterOffset + colIndex * columnSpacing,
               },
             }
           })
@@ -623,43 +623,42 @@ export function convertQuestionsToLogicModel(
           edges.push(edge)
         })
         
-        // Create child nodes for each row-column combination - centered around each intermediate node
-        // Only create child nodes if there are multiple columns
-        if (question.columns.length > 1) {
-          intermediateNodes.forEach((intermediateNode, rowIndex) => {
-            const row = mainRows[rowIndex]
-            const columnCount = question.columns!.length
-            const totalColumnHeight = columnCount * childYSpacing
-            const intermediateY = intermediateNode.position.y
-            const columnCenterOffset = intermediateY - (totalColumnHeight / 2) + (childYSpacing / 2) // Center columns around intermediate node
+        // Create child nodes for each column-row combination - centered around each intermediate node
+        // Create child nodes from rows for each column
+        intermediateNodes.forEach((intermediateNode, colIndex) => {
+          const col = question.columns![colIndex]
+          const rowCount = mainRows.length
+          const totalRowHeight = rowCount * childYSpacing
+          const intermediateY = intermediateNode.position.y
+          const rowCenterOffset = intermediateY - (totalRowHeight / 2) + (childYSpacing / 2) // Center rows around intermediate node
+          
+          mainRows.forEach((row, rowIndex) => {
+            const childNodeId = `${question.id}_${col.code}R${row.code}`
+            // MA_Grid format: Q7_1R1 (column_row)
+            const childVariableName = `${question.id}_${col.code}R${row.code}`
             
-            question.columns!.forEach((col, colIndex) => {
-              const childNodeId = `${question.id}_${col.code}R${row.code}`
-              // MA_Grid format: Q8_1R1
-              const childVariableName = `${question.id}_${col.code}R${row.code}`
-              
-              childNodes.push({
-                id: childNodeId,
-                type: 'code' as const,
-                data: {
-                  label: childVariableName,
-                  questionId: question.id,
-                  code: `${col.code}_${row.code}`,
-                  parentId: intermediateNode.id,
-                  optionLabel: col.label, // Store original column label for tooltip
-                },
-                position: {
-                  x: startX + questionIndex * xSpacing + childXOffset * 2, // Further right for children
-                  y: columnCenterOffset + colIndex * childYSpacing,
-                },
-              })
+            childNodes.push({
+              id: childNodeId,
+              type: 'code' as const,
+              data: {
+                label: childVariableName,
+                questionId: question.id,
+                code: `${col.code}_${row.code}`,
+                parentId: intermediateNode.id,
+                  optionLabel: (row as any).label || String(row.code), // Store original row label for tooltip
+              },
+              position: {
+                x: startX + questionIndex * xSpacing + childXOffset * 2, // Further right for children
+                y: rowCenterOffset + rowIndex * childYSpacing,
+              },
             })
           })
+        })
           
           // Create edges from intermediate nodes to child nodes
           intermediateNodes.forEach((intermediateNode) => {
-            const rowChildren = childNodes.filter(child => child.data.parentId === intermediateNode.id)
-            rowChildren.forEach((childNode) => {
+            const columnChildren = childNodes.filter(child => child.data.parentId === intermediateNode.id)
+            columnChildren.forEach((childNode) => {
               const edge: LogicModelEdge = {
                 id: `${intermediateNode.id}-${childNode.id}`,
                 source: intermediateNode.id,
@@ -670,7 +669,6 @@ export function convertQuestionsToLogicModel(
               edges.push(edge)
             })
           })
-        }
         }
       }
     } else if (question.type === 'Rank_Fixed' || question.type === 'Rank_Upto') {

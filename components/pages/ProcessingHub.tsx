@@ -261,7 +261,7 @@ export default function ProcessingHub() {
               </button>
             </div>
           </div>
-          <pre className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark font-mono text-sm overflow-y-auto max-h-96 text-white custom-scrollbar" style={{ scrollBehavior: 'smooth' }}>
+          <pre className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark font-mono text-sm overflow-y-auto max-h-96 text-white custom-scrollbar monokai-ifm" style={{ scrollBehavior: 'smooth', color: '#ffffff' }}>
             {syntax}
           </pre>
         </motion.div>

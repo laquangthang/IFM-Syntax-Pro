@@ -131,21 +131,21 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             1. Chọn các câu hỏi Grid (có thể chọn nhiều):
           </label>
           <div className="relative" ref={dropdownRef}>
             <button
               type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
             >
-              <span className="text-sm font-medium text-white dark:text-black">
+              <span className="text-sm font-medium text-white">
                 {selectedQuestions.length > 0 
                   ? `Đã chọn ${selectedQuestions.length} câu hỏi` 
                   : 'Chọn câu hỏi Grid'}
               </span>
-              <ChevronDown className={`size-5 transition-transform text-white dark:text-black ${dropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`size-5 transition-transform text-white ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             
             {dropdownOpen && (
@@ -205,7 +205,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
         {selectedQuestions.length > 0 && (
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+              <label className="block text-sm font-medium mb-2 text-white">
                 2. Số lượng Brand:
               </label>
               <input
@@ -218,7 +218,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+              <label className="block text-sm font-medium mb-2 text-white">
                 3. Tên biến INDEX:
               </label>
               <input
@@ -234,7 +234,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
 
         {selectedQuestions.length > 0 && (
           <div>
-            <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+            <label className="block text-sm font-medium mb-2 text-white">
               4. Tên các Brand (mỗi tên 1 dòng):
             </label>
             <textarea
@@ -248,7 +248,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
         )}
 
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             5. Biến KEEP (cách nhau bởi dấu phẩy, tùy chọn):
           </label>
           <input
@@ -282,7 +282,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             1. Danh sách biến (mỗi biến 1 dòng):
           </label>
           <textarea
@@ -295,7 +295,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             2. Số lượng Brand:
           </label>
           <input
@@ -308,7 +308,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
             className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg mb-4"
           />
           
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             3. Tên các Brand (mỗi tên 1 dòng):
           </label>
           <textarea
@@ -324,7 +324,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             4. Tên các biến output (mỗi tên 1 dòng):
           </label>
           <textarea
@@ -337,7 +337,7 @@ export default function RestructForm({ mode, questions = [], onSyntaxGenerated, 
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             5. Biến KEEP (cách nhau bởi dấu phẩy):
           </label>
           <input

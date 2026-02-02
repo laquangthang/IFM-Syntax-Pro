@@ -33,20 +33,220 @@ function mapQuestionTypeToVariableType(type: ParsedQuestion['type']): VariableTy
 
 /**
  * Parse terminate_if condition to extract source question and condition
+ * Supports formats:
+ *   - Q3 = 1
+ *   - Q3 = 1 or Q3 = 2
+ *   - (Q3 = 1 or Q3 = 2)
+ *   - Q3R1 = 1
+ *   - IF (Q3 = 1)
+ *   - IF NOT(Q3 = 1)
  */
-function parseTerminateCondition(terminateIf: string | null | undefined): { sourceId: string, condition: string } | null {
-  if (!terminateIf) return null
+function parseTerminateCondition(terminateIf: string | null | undefined): Array<{ sourceId: string, condition: string }> {
+  if (!terminateIf) return []
   
-  // Pattern: IF NOT(Q.code == 1) or IF (Q.code != 1) or similar
-  const match = terminateIf.match(/Q(\d+[A-Za-z0-9_.]*)/i)
-  if (!match) return null
+  const results: Array<{ sourceId: string, condition: string }> = []
   
-  const sourceId = `Q${match[1]}`
-  // Extract the condition part (e.g., "code == 1")
-  const conditionMatch = terminateIf.match(/\((.+)\)/)
-  const condition = conditionMatch ? conditionMatch[1] : terminateIf
+  // Remove "IF" prefix if present
+  let conditionStr = terminateIf.replace(/^IF\s+/i, '').trim()
   
-  return { sourceId, condition }
+  // Handle "IF NOT" - extract the NOT part
+  const hasNot = /^NOT\s+/i.test(conditionStr)
+  if (hasNot) {
+    conditionStr = conditionStr.replace(/^NOT\s+/i, '').trim()
+  }
+  
+  // Remove outer parentheses if present: (Q3 = 1) -> Q3 = 1
+  if (conditionStr.startsWith('(') && conditionStr.endsWith(')')) {
+    // Check if it's a single outer parentheses (not nested)
+    let depth = 0
+    let isOuterOnly = true
+    for (let i = 1; i < conditionStr.length - 1; i++) {
+      if (conditionStr[i] === '(') depth++
+      else if (conditionStr[i] === ')') depth--
+      if (depth < 0) {
+        isOuterOnly = false
+        break
+      }
+    }
+    if (isOuterOnly && depth === 0) {
+      conditionStr = conditionStr.slice(1, -1).trim()
+    }
+  }
+  
+  // Split by "or" / "OR" to get individual conditions
+  const conditions: string[] = []
+  let currentCondition = ''
+  let parenDepth = 0
+  
+  for (let i = 0; i < conditionStr.length; i++) {
+    const char = conditionStr[i]
+    if (char === '(') parenDepth++
+    else if (char === ')') parenDepth--
+    else if (parenDepth === 0 && conditionStr.slice(i, i + 2).toUpperCase() === 'OR') {
+      if (currentCondition.trim()) {
+        conditions.push(currentCondition.trim())
+        currentCondition = ''
+      }
+      i += 1 // Skip "OR"
+      continue
+    }
+    currentCondition += char
+  }
+  
+  if (currentCondition.trim()) {
+    conditions.push(currentCondition.trim())
+  }
+  
+  // If no OR found, treat the whole string as one condition
+  if (conditions.length === 0) {
+    conditions.push(conditionStr)
+  }
+  
+  // Parse each condition: Q3 = 1, Q3R1 = 1, etc.
+  conditions.forEach(cond => {
+    // Pattern to match question IDs: Q1, Q2, Q8_1, H1, Q3R1, etc.
+    const questionMatch = cond.match(/(Q|H)(\d+[A-Za-z0-9_.]*)(?:R([A-Z0-9]+))?/i)
+    if (questionMatch) {
+      // Extract base question ID (Q3, Q1, H1, etc.)
+      const baseQId = `${questionMatch[1]}${questionMatch[2]}`
+      const rowCode = questionMatch[3] // R1, etc.
+      
+      // Extract operator and value: = 1, != 2, etc.
+      const operatorMatch = cond.match(/([=!<>]+)\s*(\d+)/)
+      const operator = operatorMatch ? operatorMatch[1] : '='
+      const value = operatorMatch ? operatorMatch[2] : ''
+      
+      // Build condition string
+      let condition = ''
+      if (rowCode) {
+        condition = `${baseQId}R${rowCode} ${operator} ${value}`.trim()
+      } else {
+        condition = `${baseQId} ${operator} ${value}`.trim()
+      }
+      
+      // Use base question ID as source (not the full Q3R1)
+      results.push({ 
+        sourceId: baseQId, 
+        condition: condition || cond 
+      })
+    } else {
+      // Fallback: try to extract any question ID
+      const fallbackMatch = cond.match(/(Q|H)(\d+[A-Za-z0-9_.]*)/i)
+      if (fallbackMatch) {
+        results.push({ 
+          sourceId: fallbackMatch[0], 
+          condition: cond 
+        })
+      }
+    }
+  })
+  
+  return results
+}
+
+/**
+ * Parse ask_if_condition to extract source questions and conditions
+ * Supports multiple conditions with AND/OR: IF (Q1 = 1) AND (Q2 = 2) OR (Q3 = 3)
+ * Format examples:
+ *   - IF (Q5R6 = 6 OR Q5R7 = 7)
+ *   - IF (Q1RX = 1)
+ *   - IF NOT (Q1RX = 1)
+ * Returns array of { sourceId, condition } pairs
+ */
+function parseAskIfCondition(askIf: string | null | undefined): Array<{ sourceId: string, condition: string }> {
+  if (!askIf) return []
+  
+  const results: Array<{ sourceId: string, condition: string }> = []
+  
+  // Remove "IF" prefix if present
+  let conditionStr = askIf.replace(/^IF\s+/i, '').trim()
+  
+  // Handle "IF NOT" - extract the NOT part
+  const hasNot = /^NOT\s+/i.test(conditionStr)
+  if (hasNot) {
+    conditionStr = conditionStr.replace(/^NOT\s+/i, '').trim()
+  }
+  
+  // Remove outer parentheses if present: (Q1 = 1) -> Q1 = 1
+  if (conditionStr.startsWith('(') && conditionStr.endsWith(')')) {
+    conditionStr = conditionStr.slice(1, -1).trim()
+  }
+  
+  // Split by AND/OR to get individual conditions
+  // Pattern: Match AND/OR that are not inside parentheses
+  const conditions: string[] = []
+  let currentCondition = ''
+  let parenDepth = 0
+  
+  for (let i = 0; i < conditionStr.length; i++) {
+    const char = conditionStr[i]
+    if (char === '(') parenDepth++
+    else if (char === ')') parenDepth--
+    else if (parenDepth === 0 && (conditionStr.slice(i, i + 3).toUpperCase() === 'AND' || conditionStr.slice(i, i + 2).toUpperCase() === 'OR')) {
+      if (currentCondition.trim()) {
+        conditions.push(currentCondition.trim())
+        currentCondition = ''
+      }
+      // Skip the AND/OR
+      if (conditionStr.slice(i, i + 3).toUpperCase() === 'AND') {
+        i += 2 // Skip "AND"
+      } else {
+        i += 1 // Skip "OR"
+      }
+      continue
+    }
+    currentCondition += char
+  }
+  
+  if (currentCondition.trim()) {
+    conditions.push(currentCondition.trim())
+  }
+  
+  // If no AND/OR found, treat the whole string as one condition
+  if (conditions.length === 0) {
+    conditions.push(conditionStr)
+  }
+  
+  // Parse each condition: Q5R6 = 6, Q1RX = 1, etc.
+  conditions.forEach(cond => {
+    // Pattern to match question IDs: Q1, Q2, Q8_1, H1, Q5R6, Q1RX, etc.
+    const questionMatch = cond.match(/(Q|H)(\d+[A-Za-z0-9_.]*)(?:R([A-Z0-9]+))?/i)
+    if (questionMatch) {
+      // Extract base question ID (Q5, Q1, H1, etc.)
+      const baseQId = `${questionMatch[1]}${questionMatch[2]}`
+      const rowCode = questionMatch[3] // R6, RX, etc.
+      
+      // Extract operator and value: = 6, != 2, etc.
+      const operatorMatch = cond.match(/([=!<>]+)\s*(\d+)/)
+      const operator = operatorMatch ? operatorMatch[1] : '='
+      const value = operatorMatch ? operatorMatch[2] : ''
+      
+      // Build condition string
+      let condition = ''
+      if (rowCode) {
+        condition = `${baseQId}R${rowCode} ${operator} ${value}`.trim()
+      } else {
+        condition = `${baseQId} ${operator} ${value}`.trim()
+      }
+      
+      // Use base question ID as source (not the full Q5R6)
+      results.push({ 
+        sourceId: baseQId, 
+        condition: condition || cond 
+      })
+    } else {
+      // Fallback: try to extract any question ID
+      const fallbackMatch = cond.match(/(Q|H)(\d+[A-Za-z0-9_.]*)/i)
+      if (fallbackMatch) {
+        results.push({ 
+          sourceId: fallbackMatch[0], 
+          condition: cond 
+        })
+      }
+    }
+  })
+  
+  return results
 }
 
 /**
@@ -161,8 +361,10 @@ function createEdgesFromLogic(
 ): QCEdge[] {
   const edges: QCEdge[] = []
   
-  // Handle piping_source (ASK_IF or PIPING edge)
-  if (question.logic?.piping_source) {
+  // Handle piping_source (PIPING edge)
+  // Note: If ask_if_condition exists, it will create ASK_IF edges instead
+  // PIPING edge is only created if there's piping_source but no ask_if_condition
+  if (question.logic?.piping_source && !question.logic?.ask_if_condition) {
     const sourceId = question.logic.piping_source
     const sourceNode = allNodes.get(sourceId)
     
@@ -177,27 +379,91 @@ function createEdgesFromLogic(
     }
   }
   
-  // Handle terminate_if (ASK_IF edge with condition)
-  if (question.logic?.terminate_if) {
-    const terminateInfo = parseTerminateCondition(question.logic.terminate_if)
-    if (terminateInfo) {
-      const sourceNode = allNodes.get(terminateInfo.sourceId)
+  // Handle ask_if_condition (ASK_IF edge with condition)
+  // This takes priority over piping_source for ASK_IF edges
+  if (question.logic?.ask_if_condition) {
+    const askIfConditions = parseAskIfCondition(question.logic.ask_if_condition)
+    
+    askIfConditions.forEach((askIfInfo, index) => {
+      const sourceNode = allNodes.get(askIfInfo.sourceId)
       if (sourceNode) {
         edges.push({
-          id: `edge_${terminateInfo.sourceId}_${question.id}_askif`,
-          from: terminateInfo.sourceId,
+          id: `edge_${askIfInfo.sourceId}_${question.id}_askif${index > 0 ? `_${index}` : ''}`,
+          from: askIfInfo.sourceId,
           to: question.id,
           type: 'ASK_IF',
           label: 'Ask If',
           condition: {
             type: 'comparison',
-            operator: '=', // Will be parsed more intelligently later
-            value: terminateInfo.condition,
+            operator: '=',
+            value: askIfInfo.condition,
           },
         })
       }
+    })
+  }
+  
+  // Handle terminate_if (ASK_IF edge with condition)
+  // Also check for options with codeType = 'Terminate' if terminate_if is not set
+  let terminateConditions: Array<{ sourceId: string, condition: string }> = []
+  
+  if (question.logic?.terminate_if) {
+    terminateConditions = parseTerminateCondition(question.logic.terminate_if)
+  } else if (question.options) {
+    // If no terminate_if but has options with codeType = 'Terminate', create conditions
+    const terminateOptions = question.options.filter(opt => opt.codeType === 'Terminate')
+    if (terminateOptions.length > 0) {
+      const isMA = question.type === 'MA' || question.type === 'MA_Grid'
+      terminateOptions.forEach(opt => {
+        if (opt.code !== undefined && opt.code !== null) {
+          const code = String(opt.code)
+          const condition = isMA ? `${question.id}R${code} = ${code}` : `${question.id} = ${code}`
+          terminateConditions.push({
+            sourceId: question.id,
+            condition: condition
+          })
+        }
+      })
     }
   }
+  
+  // Group terminate conditions by sourceId to avoid duplicate edges
+  const terminateBySource = new Map<string, string[]>()
+  terminateConditions.forEach(terminateInfo => {
+    if (!terminateBySource.has(terminateInfo.sourceId)) {
+      terminateBySource.set(terminateInfo.sourceId, [])
+    }
+    terminateBySource.get(terminateInfo.sourceId)!.push(terminateInfo.condition)
+  })
+  
+  // Create edges for each unique source
+  terminateBySource.forEach((conditions, sourceId) => {
+    const sourceNode = allNodes.get(sourceId)
+    const terminateNode = allNodes.get('TERMINATE')
+    
+    if (!sourceNode || !terminateNode) return
+    
+    // Combine all conditions for this source into one condition string
+    const combinedCondition = conditions.length === 1 
+      ? conditions[0] 
+      : `(${conditions.join(' or ')})`
+    
+    // Determine if this is a self-terminate (terminate condition from the same question)
+    const isSelfTerminate = sourceId === question.id
+    
+    edges.push({
+      id: `edge_${sourceId}_TERMINATE${isSelfTerminate ? '_self' : ''}`,
+      from: sourceId,
+      to: 'TERMINATE',
+      type: 'ASK_IF',
+      label: 'Terminate If', // Explicit label for terminate conditions
+      condition: {
+        type: 'comparison',
+        operator: '=',
+        value: combinedCondition,
+      },
+    })
+  })
   
   // Create hierarchy edges for Grid questions
   if (question.type === 'SA_Grid' || question.type === 'OE_Grid') {
@@ -574,6 +840,17 @@ function layoutNodesHierarchical(nodes: QCNode[], edges: QCEdge[]): void {
     }
   })
   
+  // Position TERMINATE node at the bottom right
+  const terminateNode = nodeMap.get('TERMINATE')
+  if (terminateNode) {
+    const maxX = Math.max(...nodes.filter(n => n.position).map(n => n.position!.x), START_X)
+    const maxY = Math.max(...nodes.filter(n => n.position && n.id !== 'TERMINATE').map(n => n.position!.y), START_Y)
+    terminateNode.position = {
+      x: maxX + LAYER_WIDTH,
+      y: maxY + 200, // Position below the main flow
+    }
+  }
+  
   // Final check: verify all nodes have positions
   const nodesWithoutPosition = nodes.filter(n => !n.position)
   if (nodesWithoutPosition.length > 0) {
@@ -606,6 +883,23 @@ export function convertQuestionsToQCGraph(questions: ParsedQuestion[]): QCLogicG
       nodesMap.set(node.id, node)
     })
   })
+  
+  // Create a terminate node if there are any terminate conditions
+  const hasTerminateConditions = questions.some(q => 
+    q.logic?.terminate_if || 
+    (q.options && q.options.some(opt => opt.codeType === 'Terminate'))
+  )
+  
+  if (hasTerminateConditions) {
+    const terminateNode: QCNode = {
+      id: 'TERMINATE',
+      name: 'TERMINATE',
+      type: 'UNCLASSIFIED',
+      position: { x: 0, y: 0 },
+    }
+    allNodes.push(terminateNode)
+    nodesMap.set('TERMINATE', terminateNode)
+  }
   
   // Create edges from logic
   questions.forEach(question => {

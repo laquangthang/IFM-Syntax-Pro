@@ -330,7 +330,81 @@ export function generateQuestionSyntax(
 }
 
 /**
+ * Compare two question IDs for sorting
+ * Handles: Q1, Q2, Q8, Q8_1, Q8_1a, Q8_1b, Q8_2, Q9, H1, H2...
+ */
+function compareQuestionIds(a: string, b: string): number {
+  // Parse question ID into parts: prefix, main number, sub-parts
+  const parseQId = (id: string) => {
+    // Match: (prefix)(number)(_sub1)(_sub2)?
+    // Examples: Q1, Q8, Q8_1, Q8_1a, Q8_1_2, H1
+    const match = id.match(/^([A-Za-z]+)(\d+)(?:_(\d+[a-z]?))?(?:_(\d+[a-z]?))?/i)
+    if (!match) return { prefix: id, num: 0, sub1: '', sub2: '' }
+    
+    return {
+      prefix: match[1].toUpperCase(),
+      num: parseInt(match[2]) || 0,
+      sub1: match[3] || '',
+      sub2: match[4] || '',
+    }
+  }
+  
+  const aParts = parseQId(a)
+  const bParts = parseQId(b)
+  
+  // Sort by prefix first (A-Z)
+  if (aParts.prefix !== bParts.prefix) {
+    return aParts.prefix.localeCompare(bParts.prefix)
+  }
+  
+  // Then by main number
+  if (aParts.num !== bParts.num) {
+    return aParts.num - bParts.num
+  }
+  
+  // Then by sub1 (if both have sub1)
+  if (aParts.sub1 || bParts.sub1) {
+    // No sub1 comes before having sub1
+    if (!aParts.sub1) return -1
+    if (!bParts.sub1) return 1
+    
+    // Compare sub1 numerically first, then alphabetically
+    const aSub1Num = parseInt(aParts.sub1) || 0
+    const bSub1Num = parseInt(bParts.sub1) || 0
+    if (aSub1Num !== bSub1Num) return aSub1Num - bSub1Num
+    
+    // Same number, compare full string (for 1a, 1b)
+    if (aParts.sub1 !== bParts.sub1) {
+      return aParts.sub1.localeCompare(bParts.sub1)
+    }
+  }
+  
+  // Then by sub2
+  if (aParts.sub2 || bParts.sub2) {
+    if (!aParts.sub2) return -1
+    if (!bParts.sub2) return 1
+    
+    const aSub2Num = parseInt(aParts.sub2) || 0
+    const bSub2Num = parseInt(bParts.sub2) || 0
+    if (aSub2Num !== bSub2Num) return aSub2Num - bSub2Num
+    
+    return aParts.sub2.localeCompare(bParts.sub2)
+  }
+  
+  return 0
+}
+
+/**
+ * Sort questions by ID with proper handling of sub-questions
+ * Q1, Q2, Q8, Q8_1, Q8_1a, Q8_1b, Q8_2, Q9, H1, H2...
+ */
+export function sortQuestionsByIdWithPrefix(questions: ParsedQuestion[]): ParsedQuestion[] {
+  return [...questions].sort((a, b) => compareQuestionIds(a.id, b.id))
+}
+
+/**
  * Generate complete SPSS syntax for all questions
+ * Questions are automatically sorted by ID with prefix priority (Q1, Q2... H1, H2...)
  */
 export function generateCompleteSyntax(
   questions: ParsedQuestion[],
@@ -341,12 +415,15 @@ export function generateCompleteSyntax(
   lines.push('* Encoding: UTF-8.')
   lines.push('')
   lines.push('* Clean Label Syntax - Auto Generated')
+  lines.push('* Questions sorted by ID (Q1, Q2... H1, H2...)')
   lines.push('')
 
-  questions.forEach((question) => {
+  // Sort questions by ID with prefix priority
+  const sortedQuestions = sortQuestionsByIdWithPrefix(questions)
+
+  sortedQuestions.forEach((question) => {
     // Comment with question ID
     lines.push(`*${question.id}.`)
-    lines.push('')
 
     // Get old variables for this question (empty array if not provided)
     const oldVariables = oldVariableMapping[question.id] || []
@@ -359,7 +436,6 @@ export function generateCompleteSyntax(
       syntax.renameStatements.forEach(stmt => {
         lines.push(stmt)
       })
-      lines.push('')
     }
 
     // Add variable label statements
@@ -367,7 +443,6 @@ export function generateCompleteSyntax(
       syntax.varLabStatements.forEach(stmt => {
         lines.push(stmt)
       })
-      lines.push('')
     }
 
     // Add recode statements
@@ -375,7 +450,6 @@ export function generateCompleteSyntax(
       syntax.recodeStatements.forEach(stmt => {
         lines.push(stmt)
       })
-      lines.push('')
     }
 
     // Add value label statements
@@ -383,9 +457,10 @@ export function generateCompleteSyntax(
       syntax.valLabStatements.forEach(stmt => {
         lines.push(stmt)
       })
-      lines.push('')
-      lines.push('')
     }
+    
+    // Empty line between questions
+    lines.push('')
   })
 
   return lines.join('\n')

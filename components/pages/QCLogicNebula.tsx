@@ -30,7 +30,7 @@ const getEdgeColor = (type: EdgeType) => {
 }
 
 export default function QCLogicNebula() {
-  const { qcLogicGraph, parsedQuestions } = useSurveyStore()
+  const { qcLogicGraph, parsedQuestions, oldVariableMapping } = useSurveyStore()
   const [generatedSyntax, setGeneratedSyntax] = useState<GeneratedQCSyntax | null>(null)
   const [showSyntaxModal, setShowSyntaxModal] = useState(false)
   const [showSyntaxBox, setShowSyntaxBox] = useState(false)
@@ -59,7 +59,7 @@ export default function QCLogicNebula() {
   useEffect(() => {
     if (parsedQuestions && parsedQuestions.length > 0) {
       try {
-        const syntax = generateQCSyntaxFromJSON(parsedQuestions)
+        const syntax = generateQCSyntaxFromJSON(parsedQuestions, oldVariableMapping)
         setSyntaxFromJSON(syntax)
       } catch (error) {
         console.error('Error generating syntax from JSON:', error)
@@ -68,7 +68,7 @@ export default function QCLogicNebula() {
     } else {
       setSyntaxFromJSON('')
     }
-  }, [parsedQuestions])
+  }, [parsedQuestions, oldVariableMapping])
 
   const handleGenerateSyntax = () => {
     if (qcLogicGraph) {
@@ -223,6 +223,11 @@ export default function QCLogicNebula() {
               const strokeColor = getEdgeColor(edge.type)
               const filterId = 'orangeGlow'
 
+              // Determine tooltip text based on edge type and label
+              const tooltipText = edge.to === 'TERMINATE' 
+                ? `Terminate If: ${edge.condition?.value || edge.label || ''}`
+                : edge.label || `${edge.type} condition`
+              
               return (
                 <g key={edge.id}>
                   {/* Main edge line with glow */}
@@ -235,7 +240,9 @@ export default function QCLogicNebula() {
                     strokeWidth="2"
                     filter={`url(#${filterId})`}
                     opacity="0.7"
-                  />
+                  >
+                    <title>{tooltipText}</title>
+                  </line>
                   {/* Edge label */}
                   {edge.label && (
                     <text
@@ -248,6 +255,7 @@ export default function QCLogicNebula() {
                       dy="-5"
                       className="pointer-events-none"
                     >
+                      <title>{tooltipText}</title>
                       {edge.label}
                     </text>
                   )}

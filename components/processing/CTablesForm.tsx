@@ -157,21 +157,21 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
     return (
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             1. Chọn câu hỏi (có thể chọn nhiều):
           </label>
           <div className="relative" ref={dropdownRef}>
             <button
               type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
             >
-              <span className="text-sm font-medium text-white dark:text-black">
+              <span className="text-sm font-medium text-white">
                 {selectedQuestions.length > 0 
                   ? `Đã chọn ${selectedQuestions.length} câu hỏi` 
                   : 'Chọn câu hỏi'}
               </span>
-              <ChevronDown className={`size-5 transition-transform text-white dark:text-black ${dropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`size-5 transition-transform text-white ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             
             {dropdownOpen && (
@@ -232,7 +232,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
           <>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+                <label className="block text-sm font-medium mb-2 text-white">
                   2. TẤT CẢ các biến (tự động điền):
                 </label>
                 <textarea
@@ -244,7 +244,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+                <label className="block text-sm font-medium mb-2 text-white">
                   3. Nhập các biến cho dòng BY (lấy từ danh sách bên trái):
                 </label>
                 <textarea
@@ -271,7 +271,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
             <div className="space-y-4">
               {columnVars.map((variable, index) => (
                 <div key={index} className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
-                  <h3 className="text-sm font-semibold mb-3 text-white dark:text-black">Công thức cho biến cột: "{variable}"</h3>
+                  <h3 className="text-sm font-semibold mb-3 text-white">Công thức cho biến cột: "{variable}"</h3>
                   <div className="space-y-2">
                     {formulas.map((formula) => (
                       <label key={formula.value} className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded">
@@ -281,7 +281,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
                           onChange={() => toggleFormula(index, formula.value)}
                           className="rounded"
                         />
-                        <span className="text-sm text-white dark:text-black">{formula.text}</span>
+                        <span className="text-sm text-white">{formula.text}</span>
                       </label>
                     ))}
                   </div>
@@ -292,7 +292,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
             <div className="flex gap-2">
               <button
                 onClick={() => setStep(1)}
-                className="flex-1 px-4 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg hover:bg-white/5 transition-all text-white dark:text-black"
+                className="flex-1 px-4 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg hover:bg-white/5 transition-all text-white"
               >
                 Quay lại
               </button>
@@ -315,7 +315,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
         <>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+              <label className="block text-sm font-medium mb-2 text-white">
                 1. Nhập TẤT CẢ các biến (mỗi biến 1 dòng):
               </label>
               <textarea
@@ -327,7 +327,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+              <label className="block text-sm font-medium mb-2 text-white">
                 2. Nhập các biến cho dòng BY (lấy từ danh sách bên trái):
               </label>
               <textarea
@@ -353,7 +353,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
           <div className="space-y-4">
             {columnVars.map((variable, index) => (
               <div key={index} className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
-                <h3 className="text-sm font-semibold mb-3 text-white dark:text-black">Công thức cho biến cột: "{variable}"</h3>
+                <h3 className="text-sm font-semibold mb-3 text-white">Công thức cho biến cột: "{variable}"</h3>
                 <div className="space-y-2">
                   {formulas.map((formula) => (
                     <label key={formula.value} className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded">
@@ -363,7 +363,7 @@ export default function CTablesForm({ mode, questions = [], onSyntaxGenerated, o
                         onChange={() => toggleFormula(index, formula.value)}
                         className="rounded"
                       />
-                      <span className="text-sm text-white dark:text-black">{formula.text}</span>
+                      <span className="text-sm text-white">{formula.text}</span>
                     </label>
                   ))}
                 </div>

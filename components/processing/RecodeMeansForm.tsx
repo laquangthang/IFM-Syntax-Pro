@@ -213,23 +213,23 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             1. Chọn câu hỏi:
           </label>
           <div className="relative" ref={dropdownRef}>
             <button
               type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
             >
-              <span className="text-sm font-medium text-white dark:text-black">
+              <span className="text-sm font-medium text-white">
                 {selectedQuestion 
                   ? questions.find(q => q.id === selectedQuestion) 
                     ? `${questions.find(q => q.id === selectedQuestion)?.id} [${questions.find(q => q.id === selectedQuestion)?.type}]`
                     : 'Chọn câu hỏi'
                   : 'Chọn câu hỏi'}
               </span>
-              <ChevronDown className={`size-5 transition-transform text-white dark:text-black ${dropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`size-5 transition-transform text-white ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             
             {dropdownOpen && (
@@ -281,7 +281,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
           <>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+                <label className="block text-sm font-medium mb-2 text-white">
                   2. Khoảng giá trị (tự động điền, có thể chỉnh sửa):
                 </label>
                 <textarea
@@ -294,7 +294,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+                <label className="block text-sm font-medium mb-2 text-white">
                   3. Means tự động tính (có thể chỉnh sửa):
                 </label>
                 <textarea
@@ -310,7 +310,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+                <label className="block text-sm font-medium mb-2 text-white">
                   4. Codes tương ứng (tự động điền):
                 </label>
                 <textarea
@@ -323,7 +323,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+                <label className="block text-sm font-medium mb-2 text-white">
                   5. Biến cần recode (tự động điền):
                 </label>
                 <textarea
@@ -361,7 +361,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             1. Khoảng giá trị (mỗi khoảng 1 dòng):
           </label>
           <textarea
@@ -374,7 +374,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             2. Means tự động tính (có thể chỉnh sửa):
           </label>
           <textarea
@@ -390,7 +390,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             3. Codes tương ứng (mỗi code 1 dòng):
           </label>
           <textarea
@@ -403,7 +403,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             4. Biến cần recode (mỗi biến 1 dòng):
           </label>
           <textarea

@@ -104,13 +104,14 @@ export function getGridVariablesForRestruct(
   questions: ParsedQuestion[],
   oldVariableMapping: OldVariableMapping
 ): {
-  variablesByCode: { [code: string]: string[] } // e.g., { 'R1': ['Q8_1R1', 'Q8_2R1', ...], 'R2': [...] }
+  // NOTE: during construction we temporarily store objects for sorting, then normalize to string[].
+  variablesByCode: { [code: string]: Array<string | { var: string; brandIndex: number; rowOrder: number }> }
   numBrands: number
   brandNames: string[]
   codes: string[] // e.g., ['R1', 'R2', ..., 'R99']
   indexVarName: string // e.g., 'Vat_Lieu', 'Khu_Vuc'
 } {
-  const variablesByCode: { [code: string]: string[] } = {}
+  const variablesByCode: { [code: string]: Array<string | { var: string; brandIndex: number; rowOrder: number }> } = {}
   const brandNames: string[] = []
   const codes: string[] = []
   let numBrands = 0

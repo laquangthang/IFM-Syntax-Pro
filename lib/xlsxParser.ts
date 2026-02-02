@@ -249,8 +249,12 @@ function parseQuestionBlock(block: any[][]): XLSXQuestionData[] {
   }
   
   // Scan rows to find all question IDs and their metadata
+  // NOTE: Shared-code blocks can have many instruction lines before the table,
+  // so we scan a larger window than 20 rows.
+  const scanLimit = Math.min(80, block.length)
+
   // First, check rows BEFORE question ID for instructions (like "Note: MA")
-  for (let i = 0; i < Math.min(20, block.length); i++) {
+  for (let i = 0; i < scanLimit; i++) {
     const row = block[i]
     const rowText = row.map(cell => String(cell || '')).join(' ')
     
@@ -263,7 +267,7 @@ function parseQuestionBlock(block: any[][]): XLSXQuestionData[] {
   }
   
   // Now scan for question IDs and associate with instructions
-  for (let i = 0; i < Math.min(20, block.length); i++) {
+  for (let i = 0; i < scanLimit; i++) {
     const row = block[i]
     const rowText = row.map(cell => String(cell || '')).join(' ')
     const firstCell = row.find(c => String(c || '').trim().length > 0)
@@ -386,6 +390,14 @@ function parseQuestionBlock(block: any[][]): XLSXQuestionData[] {
     } else {
       console.warn(`      ⚠️  ${qId}: Could not determine question structure`)
     }
+
+    // IMPORTANT: Open-ended questions (NOTE: OE) should NOT consume shared code tables.
+    // They are displayed without a code list in the UI.
+    if (meta.questionType === 'OE') {
+      options = undefined
+      rows = undefined
+      columns = undefined
+    }
     
     questions.push({
       questionId: qId,
@@ -421,8 +433,10 @@ function findTableStructure(block: any[][], questionIds: string[] = []): {
   let logicColIndex = -1
   
   // First pass: find header row
-  // Log all rows in block for debugging
-  for (let i = 0; i < Math.min(10, block.length); i++) {
+  // NOTE: Shared-code tables can appear far below question headers (after many SCRIPT/NOTE lines),
+  // so we scan a wider window than 10 rows.
+  const headerScanLimit = Math.min(120, block.length)
+  for (let i = 0; i < headerScanLimit; i++) {
     const row = block[i]
     const rowText = row.map(cell => String(cell || '').toUpperCase()).join(' ')
     

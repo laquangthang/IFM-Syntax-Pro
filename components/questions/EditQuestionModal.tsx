@@ -60,6 +60,36 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
   // Piping Source state - with operator
   const [pipingOperator, setPipingOperator] = useState<string>('is_exactly_equal')
 
+  // Sync option codeType "Terminate" based on Terminate If conditions that target THIS question.
+  const getTerminateCodesFromConditions = (qId: string, conditions: TerminateIfCondition[]) => {
+    const terminateCodes = new Set<string>()
+    conditions.forEach((c) => {
+      if (c.source !== qId) return
+      // Only treat explicit equality / one-of on current question as "terminate codes"
+      if (c.operator !== 'is_exactly_equal' && c.operator !== 'is_one_of') return
+      c.selectedCodes.forEach(code => terminateCodes.add(String(code)))
+    })
+    return terminateCodes
+  }
+
+  const syncOptionTerminateCodeTypes = (q: ParsedQuestion, conditions: TerminateIfCondition[]): ParsedQuestion => {
+    if (!q.options || q.options.length === 0) return q
+    const terminateCodes = getTerminateCodesFromConditions(q.id, conditions)
+    if (terminateCodes.size === 0) return q
+
+    let changed = false
+    const nextOptions = q.options.map((opt) => {
+      const isTerminate = terminateCodes.has(String(opt.code))
+      if (isTerminate && opt.codeType !== 'Terminate') {
+        changed = true
+        return { ...opt, codeType: 'Terminate' as const }
+      }
+      return opt
+    })
+
+    return changed ? { ...q, options: nextOptions } : q
+  }
+
   /**
    * Split a condition string by top-level AND/OR connectors only.
    * IMPORTANT: Do not split on lowercase "or" inside a single condition
@@ -287,6 +317,28 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
           const connector = connectors[index] || 'AND'
           conditionStrings.push(connector)
         }
+      } else {
+        // If generateSingleCondition returns null, try to create a basic condition
+        // This can happen if operator or codes are not recognized
+        if (cond.selectedCodes.size > 0) {
+          const isMA = sourceQuestion?.type === 'MA' || sourceQuestion?.type === 'MA_Grid'
+          const codesArray = Array.from(cond.selectedCodes)
+          if (codesArray.length === 1) {
+            const code = codesArray[0]
+            const basicCond = isMA ? `${cond.source}R${code} = ${code}` : `${cond.source} = ${code}`
+            conditionStrings.push(`(${basicCond})`)
+          } else {
+            const conditions = codesArray.map(code => 
+              isMA ? `${cond.source}R${code} = ${code}` : `${cond.source} = ${code}`
+            ).join(' or ')
+            conditionStrings.push(`(${conditions})`)
+          }
+          
+          if (index < conditions.length - 1) {
+            const connector = connectors[index] || 'AND'
+            conditionStrings.push(connector)
+          }
+        }
       }
     })
     
@@ -469,13 +521,15 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
       if (isMatrixMA && String(code).match(/^R\d+C\d+$/)) {
         return `(${convertMatrixKey(code)})`
       }
-      return isMA ? `(${sourceId}R${code} = ${code})` : `${sourceId} = ${code}`
+      // For SA: (Q1 = 1), For MA: (Q1R1 = 1)
+      return isMA ? `(${sourceId}R${code} = ${code})` : `(${sourceId} = ${code})`
     } else if (operator === 'is_not_exactly_equal' && codesArray.length === 1) {
       const code = codesArray[0]
       if (isMatrixMA && String(code).match(/^R\d+C\d+$/)) {
-        return `NOT(${convertMatrixKey(code)})`
+        return `(${convertMatrixKey(code).replace(' = ', ' # ')})`
       }
-      return isMA ? `NOT(${sourceId}R${code} = ${code})` : `NOT(${sourceId} = ${code})`
+      // For SA: (Q1 # 1), For MA: (Q1R1 # 1)
+      return isMA ? `(${sourceId}R${code} # ${code})` : `(${sourceId} # ${code})`
     } else if (operator === 'is_one_of') {
       if (codesArray.length === 0) return null
       const conditions = codesArray.map(code => {
@@ -484,7 +538,8 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
         }
         return isMA ? `${sourceId}R${code} = ${code}` : `${sourceId} = ${code}`
       }).join(' or ')
-      return isMA || isMatrixMA ? `(${conditions})` : conditions
+      // For single code: Q1R1 = 1 (no parentheses), For multiple: (Q1R1 = 1 or Q1R2 = 2)
+      return codesArray.length === 1 ? conditions : `(${conditions})`
     } else if (operator === 'is_not_one_of') {
       // For "is not one of", use missing format: mis(Q5R6) and mis(Q5R7) ...
       if (codesArray.length === 0) return null
@@ -496,9 +551,11 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
       }).join(' and ')
       return conditions
     } else if (operator === 'is_answered') {
-      return `${sourceId} IS NOT MISSING`
+      // For SA: not mis(Q1), For MA: not mis(Q1R1) - but typically used for SA
+      return `not mis(${sourceId})`
     } else if (operator === 'is_not_answered') {
-      return `${sourceId} IS MISSING`
+      // For SA: mis(Q1), For MA: mis(Q1R1) - but typically used for SA
+      return `mis(${sourceId})`
     }
 
     return null
@@ -590,8 +647,54 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
       // Parse existing ask_if_condition
       parseAskIfCondition(question.logic?.ask_if_condition)
       
-      // Parse existing terminate_if condition
-      parseTerminateIfCondition(question.logic?.terminate_if)
+      // Check for options with codeType = 'Terminate' and merge into terminate_if
+      const terminateOptions = questionToLoad.options?.filter(opt => opt.codeType === 'Terminate') || []
+      const terminateCodes = new Set<string | number>()
+      terminateOptions.forEach(opt => {
+        if (opt.code !== undefined && opt.code !== null) {
+          terminateCodes.add(opt.code)
+        }
+      })
+      
+      // Build terminate_if condition string that includes terminate options
+      let terminateIfToParse = questionToLoad.logic?.terminate_if || null
+      
+      if (terminateCodes.size > 0) {
+        // Generate condition string for terminate options
+        const isMA = questionToLoad.type === 'MA' || questionToLoad.type === 'MA_Grid'
+        const codesArray = Array.from(terminateCodes)
+        let terminateConditionStr = ''
+        
+        if (codesArray.length === 1) {
+          // Single code: Q2 = 1 or Q2R1 = 1
+          const code = codesArray[0]
+          terminateConditionStr = isMA ? `${questionToLoad.id}R${code} = ${code}` : `${questionToLoad.id} = ${code}`
+        } else {
+          // Multiple codes: (Q2 = 1 or Q2 = 2) or (Q2R1 = 1 or Q2R1 = 2)
+          const conditions = codesArray.map(code => 
+            isMA ? `${questionToLoad.id}R${code} = ${code}` : `${questionToLoad.id} = ${code}`
+          ).join(' or ')
+          terminateConditionStr = `(${conditions})`
+        }
+        
+        // Merge with existing terminate_if if any
+        if (terminateIfToParse) {
+          // Check if existing condition already includes this question
+          const existingHasThisQuestion = terminateIfToParse.includes(questionToLoad.id)
+          if (existingHasThisQuestion) {
+            // TODO: More sophisticated merging logic could be added here
+            // For now, we'll append with AND
+            terminateIfToParse = `${terminateIfToParse} AND ${terminateConditionStr}`
+          } else {
+            terminateIfToParse = `${terminateIfToParse} AND ${terminateConditionStr}`
+          }
+        } else {
+          terminateIfToParse = terminateConditionStr
+        }
+      }
+      
+      // Parse the merged terminate_if condition
+      parseTerminateIfCondition(terminateIfToParse)
       
       // Initialize piping operator (default to is_exactly_equal)
       setPipingOperator('is_exactly_equal')
@@ -681,6 +784,13 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
     }
   }, [isOpen])
 
+  // Keep Options table in sync with Terminate If (for current question).
+  useEffect(() => {
+    if (!isOpen) return
+    setEditedQuestion((prev) => syncOptionTerminateCodeTypes(prev, terminateIfConditions))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, terminateIfConditions])
+
   const handleSave = () => {
     // Parse old variables from text (one per line)
     const oldVars = oldVariablesText
@@ -688,15 +798,65 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
       .map(line => line.trim())
       .filter(line => line.length > 0)
     
+    // Build final question object with all updates applied synchronously
+    // Use current editedQuestion state directly (not in setState callback to avoid render-phase updates)
+    const currentQuestion = editedQuestion
+    
     // Generate ask_if_condition from multiple conditions before saving
     const fullCondition = generateAskIfConditionFromMultiple(askIfConditions, askIfConnectors)
     
     // Generate terminate_if condition from multiple conditions before saving
-    const fullTerminateCondition = generateTerminateIfConditionFromMultiple(terminateIfConditions, terminateIfConnectors)
+    let fullTerminateCondition = generateTerminateIfConditionFromMultiple(terminateIfConditions, terminateIfConnectors)
     
-    // Build final question object with all updates applied synchronously
-    // Use current editedQuestion state directly (not in setState callback to avoid render-phase updates)
-    const currentQuestion = editedQuestion
+    // If no terminate_if from conditions but has options with codeType = 'Terminate', create it
+    if (!fullTerminateCondition && currentQuestion.options) {
+      const terminateOptions = currentQuestion.options.filter(opt => opt.codeType === 'Terminate')
+      if (terminateOptions.length > 0) {
+        const terminateCodes = new Set<string | number>()
+        terminateOptions.forEach(opt => {
+          if (opt.code !== undefined && opt.code !== null) {
+            terminateCodes.add(opt.code)
+          }
+        })
+        
+        if (terminateCodes.size > 0) {
+          const isMA = currentQuestion.type === 'MA' || currentQuestion.type === 'MA_Grid'
+          const codesArray = Array.from(terminateCodes)
+          let terminateConditionStr = ''
+          
+          if (codesArray.length === 1) {
+            const code = codesArray[0]
+            terminateConditionStr = isMA ? `${currentQuestion.id}R${code} = ${code}` : `${currentQuestion.id} = ${code}`
+          } else {
+            const conditions = codesArray.map(code => 
+              isMA ? `${currentQuestion.id}R${code} = ${code}` : `${currentQuestion.id} = ${code}`
+            ).join(' or ')
+            terminateConditionStr = `(${conditions})`
+          }
+          
+          // Merge with existing terminate_if if any
+          if (currentQuestion.logic?.terminate_if && currentQuestion.logic.terminate_if.trim()) {
+            const existing = currentQuestion.logic.terminate_if.trim()
+            // Only merge if the new condition is different from existing
+            if (!existing.includes(terminateConditionStr)) {
+              fullTerminateCondition = `${existing} AND ${terminateConditionStr}`
+            } else {
+              fullTerminateCondition = existing
+            }
+          } else {
+            fullTerminateCondition = terminateConditionStr
+          }
+        }
+      }
+    }
+    
+    // If still no terminate_if but had one before, preserve it (user might have cleared conditions but want to keep existing)
+    if (!fullTerminateCondition && currentQuestion.logic?.terminate_if) {
+      // Only preserve if terminateIfConditions is empty (user didn't explicitly clear it)
+      if (terminateIfConditions.length === 0) {
+        fullTerminateCondition = currentQuestion.logic.terminate_if
+      }
+    }
     
     // Determine piping_source: prefer from Ask If conditions, otherwise keep existing if set for Piping type
     let finalPipingSource: string | null = currentQuestion.logic?.piping_source || null
@@ -713,15 +873,19 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
     }
     
     // Build final question object with all updates applied synchronously
-    const finalQuestion: ParsedQuestion = {
+    // Ensure logic object exists and is properly structured
+    let finalQuestion: ParsedQuestion = {
       ...currentQuestion,
       logic: {
-        ...currentQuestion.logic,
+        type: currentQuestion.logic?.type || 'Normal',
         ask_if_condition: fullCondition || null,
         terminate_if: fullTerminateCondition || null,
         piping_source: finalPipingSource,
       },
     }
+
+    // Ensure option-level Terminate flags reflect Terminate If on the same question (so UI/table stays consistent).
+    finalQuestion = syncOptionTerminateCodeTypes(finalQuestion, terminateIfConditions)
     
     // Update local state for UI consistency (even though we're about to save)
     setEditedQuestion(finalQuestion)
@@ -1314,10 +1478,12 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
 
                                   // Matrix table for MA_Grid
                                   if (isMatrixMA) {
+                                    const sourceRows = sourceQuestion.rows || []
+                                    const sourceCols = sourceQuestion.columns || []
                                     return (
                                       <div className="space-y-2">
                                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                                          Matrix: {sourceQuestion.rows.length} rows × {sourceQuestion.columns.length} columns
+                                          Matrix: {sourceRows.length} rows × {sourceCols.length} columns
                                         </div>
                                         <div className="overflow-x-auto">
                                           <table className="w-full border-collapse text-xs">
@@ -1329,7 +1495,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                                     <span className="text-[10px] font-normal text-gray-600 dark:text-gray-400">VN</span>
                                                   </div>
                                                 </th>
-                                                {sourceQuestion.columns.map((column, colIdx) => (
+                                                {sourceCols.map((column, colIdx) => (
                                                   <th key={colIdx} className="px-3 py-2 text-center font-semibold text-gray-800 dark:text-gray-200 border-r border-gray-300 dark:border-gray-600 last:border-r-0 min-w-[80px]">
                                                     <div className="flex flex-col items-center">
                                                       <span className="font-mono font-bold text-primary text-sm">{column.code}</span>
@@ -1340,7 +1506,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                               </tr>
                                             </thead>
                                             <tbody>
-                                              {sourceQuestion.rows.map((row, rowIdx) => (
+                                              {sourceRows.map((row, rowIdx) => (
                                                 <tr
                                                   key={rowIdx}
                                                   className="border-b border-gray-200 dark:border-gray-700 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors"
@@ -1351,7 +1517,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                                       <span className="text-[10px] text-gray-600 dark:text-gray-400 mt-0.5 leading-tight">{row.label}</span>
                                                     </div>
                                                   </td>
-                                                  {sourceQuestion.columns.map((column, colIdx) => {
+                                                  {sourceCols.map((column, colIdx) => {
                                                     // For MA_Grid, the code format is: {rowCode}_{columnCode}
                                                     // But for selection, we need to store it in a way that can be used in condition
                                                     // We'll use a composite key: "R{rowCode}C{columnCode}" for storage
@@ -1647,10 +1813,12 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
 
                                   // Matrix table for MA_Grid
                                   if (isMatrixMA) {
+                                    const sourceRows = sourceQuestion.rows || []
+                                    const sourceCols = sourceQuestion.columns || []
                                     return (
                                       <div className="space-y-2">
                                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                                          Matrix: {sourceQuestion.rows.length} rows × {sourceQuestion.columns.length} columns
+                                          Matrix: {sourceRows.length} rows × {sourceCols.length} columns
                                         </div>
                                         <div className="overflow-x-auto">
                                           <table className="w-full border-collapse text-xs">
@@ -1662,7 +1830,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                                     <span className="text-[10px] font-normal text-gray-600 dark:text-gray-400">VN</span>
                                                   </div>
                                                 </th>
-                                                {sourceQuestion.columns.map((column, colIdx) => (
+                                                {sourceCols.map((column, colIdx) => (
                                                   <th key={colIdx} className="px-3 py-2 text-center font-semibold text-gray-800 dark:text-gray-200 border-r border-gray-300 dark:border-gray-600 last:border-r-0 min-w-[80px]">
                                                     <div className="flex flex-col items-center">
                                                       <span className="font-mono font-bold text-primary text-sm">{column.code}</span>
@@ -1673,7 +1841,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                               </tr>
                                             </thead>
                                             <tbody>
-                                              {sourceQuestion.rows.map((row, rowIdx) => (
+                                              {sourceRows.map((row, rowIdx) => (
                                                 <tr
                                                   key={rowIdx}
                                                   className="border-b border-gray-200 dark:border-gray-700 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors"
@@ -1684,7 +1852,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                                       <span className="text-[10px] text-gray-600 dark:text-gray-400 mt-0.5 leading-tight">{row.label}</span>
                                                     </div>
                                                   </td>
-                                                  {sourceQuestion.columns.map((column, colIdx) => {
+                                                  {sourceCols.map((column, colIdx) => {
                                                     const compositeKey = `R${row.code}C${column.code}`
                                                     const isChecked = condition.selectedCodes.has(compositeKey)
                                                     

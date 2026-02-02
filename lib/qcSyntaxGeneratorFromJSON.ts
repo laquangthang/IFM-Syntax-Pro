@@ -5,11 +5,105 @@
  */
 
 import { ParsedQuestion } from './geminiParser'
+import { OldVariableMapping } from '@/store/surveyStore'
+
+/**
+ * Convert old variable names in condition strings to new variable names
+ * Example: "var1 = 1" -> "Q1 = 1", "var2O1 = 1" -> "Q2R1 = 1"
+ * Uses question structure to determine correct mapping
+ * Handles conditions with multiple questions (e.g., "var1 = 1 and var2O1 = 1")
+ */
+function convertOldVariablesInCondition(
+  condition: string,
+  question: ParsedQuestion,
+  oldVariableMapping: OldVariableMapping,
+  allQuestions: ParsedQuestion[] = []
+): string {
+  if (!condition || !oldVariableMapping || Object.keys(oldVariableMapping).length === 0) {
+    return condition
+  }
+  
+  // Create a map of all oldVar -> newVar mappings across all questions
+  const oldToNewMap = new Map<string, string>()
+  const questionMap = new Map<string, ParsedQuestion>()
+  allQuestions.forEach(q => questionMap.set(q.id, q))
+  
+  // Process all questions that have oldVariableMapping
+  Object.keys(oldVariableMapping).forEach(questionId => {
+    const oldVars = oldVariableMapping[questionId] || []
+    if (oldVars.length === 0) return
+    
+    const q = questionMap.get(questionId) || question
+    if (!q) return
+    
+    // For each old variable, determine the corresponding new variable name
+    oldVars.forEach((oldVar, index) => {
+      let newVar = questionId
+      
+      // Determine new variable name based on question type and structure
+      if (q.type === 'MA' && q.options) {
+        // MA: var2O1 -> Q2R1, var2O2 -> Q2R2, etc.
+        // Extract option number from oldVar (e.g., var2O1 -> 1)
+        const optionMatch = oldVar.match(/O(\d+)/i)
+        if (optionMatch) {
+          const optionCode = optionMatch[1]
+          newVar = `${questionId}R${optionCode}`
+        } else {
+          // Fallback: use option code from q.options[index]
+          const option = q.options[index]
+          if (option && option.code !== undefined) {
+            newVar = `${questionId}R${option.code}`
+          } else {
+            newVar = `${questionId}R${index + 1}`
+          }
+        }
+      } else if (q.type === 'MA_Grid' && q.columns && q.rows) {
+        // MA_Grid: var8O1 -> Q8_1R1, var8O2 -> Q8_1R2, etc.
+        // Parse structure: oldVar index determines column and row
+        const colIndex = Math.floor(index / q.rows.length)
+        const rowIndex = index % q.rows.length
+        const col = q.columns[colIndex]
+        const row = q.rows[rowIndex]
+        if (col && row) {
+          newVar = `${questionId}_${col.code}R${row.code}`
+        }
+      } else if ((q.type === 'SA_Grid' || q.type === 'OE_Grid') && q.rows) {
+        // SA_Grid/OE_Grid: var5_1 -> Q5_1
+        const row = q.rows[index]
+        if (row && row.code !== undefined) {
+          newVar = `${questionId}_${row.code}`
+        }
+      } else if ((q.type === 'SA_Grid' || q.type === 'OE_Grid') && q.options) {
+        // Fallback: use options
+        const option = q.options[index]
+        if (option && option.code !== undefined) {
+          newVar = `${questionId}_${option.code}`
+        }
+      }
+      // For SA, newVar = questionId (already set)
+      
+      oldToNewMap.set(oldVar, newVar)
+    })
+  })
+  
+  // Replace old variable names in condition string
+  let converted = condition
+  oldToNewMap.forEach((newVar, oldVar) => {
+    // Replace oldVar with newVar, but be careful with word boundaries
+    // Pattern: oldVar followed by space, =, ), etc.
+    const regex = new RegExp(`\\b${oldVar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi')
+    converted = converted.replace(regex, newVar)
+  })
+  
+  return converted
+}
 
 /**
  * Get variable name for a question based on question type and code
  */
 function getVariableName(questionId: string, code: string | number, questionType: ParsedQuestion['type']): string {
+  // Always generate new variable name format (e.g., H3AR1, Q2R1)
+  // This is the format after rename (var589O1727 -> H3AR1)
   if (questionType === 'MA') {
     return `${questionId}R${code}`
   } else if (questionType === 'SA_Grid' || questionType === 'OE_Grid') {
@@ -139,9 +233,30 @@ export function convertTerminateCondition(condition: string, questionId: string,
 }
 
 /**
+ * Get new variable name - always use getVariableName to generate the new format
+ * Since variables have already been renamed (var589O1727 -> H3AR1), we just need
+ * to generate the new variable name format (H3AR1, H3AR2, etc.)
+ */
+function getNewVariableName(
+  questionId: string,
+  code: string | number,
+  questionType: ParsedQuestion['type'],
+  question: ParsedQuestion,
+  oldVariableMapping: OldVariableMapping
+): string {
+  // Always use getVariableName to generate the new variable name format
+  // The rename syntax has already been generated (var589O1727 = H3AR1),
+  // so we just need to generate the new format here
+  return getVariableName(questionId, code, questionType)
+}
+
+/**
  * Generate COUNT statements for MA and Ranking questions
  */
-function generateCountStatements(questions: ParsedQuestion[]): string[] {
+function generateCountStatements(
+  questions: ParsedQuestion[],
+  oldVariableMapping: OldVariableMapping = {}
+): string[] {
   const counts: string[] = []
   
   questions.forEach(question => {
@@ -161,8 +276,9 @@ function generateCountStatements(questions: ParsedQuestion[]): string[] {
         if (codes.length > 0) {
           const firstCode = codes[0]
           const lastCode = codes[codes.length - 1]
-          const firstVar = getVariableName(question.id, firstCode, question.type)
-          const lastVar = getVariableName(question.id, lastCode, question.type)
+          // Use new variable names (already renamed, so use getVariableName which generates the new format)
+          const firstVar = getNewVariableName(question.id, firstCode, question.type, question, oldVariableMapping)
+          const lastVar = getNewVariableName(question.id, lastCode, question.type, question, oldVariableMapping)
           
           counts.push(`count count_${question.id} = ${firstVar} to ${lastVar} (1 thru ${lastCode}).`)
         }
@@ -177,8 +293,8 @@ function generateCountStatements(questions: ParsedQuestion[]): string[] {
       if (codes.length > 0) {
         const firstCode = codes[0]
         const lastCode = codes[codes.length - 1]
-        const firstVar = getVariableName(question.id, firstCode, question.type)
-        const lastVar = getVariableName(question.id, lastCode, question.type)
+        const firstVar = getNewVariableName(question.id, firstCode, question.type, question, oldVariableMapping)
+        const lastVar = getNewVariableName(question.id, lastCode, question.type, question, oldVariableMapping)
         
         // For ranking, generate count for each rank position
         for (let rank = 1; rank <= question.limit; rank++) {
@@ -216,7 +332,10 @@ function shouldAskQuestion(question: ParsedQuestion): { user: number; condition?
 /**
  * Generate CHECK statements from questions
  */
-function generateCheckStatements(questions: ParsedQuestion[]): string[] {
+function generateCheckStatements(
+  questions: ParsedQuestion[],
+  oldVariableMapping: OldVariableMapping = {}
+): string[] {
   const checks: string[] = []
   const questionMap = new Map<string, ParsedQuestion>()
   questions.forEach(q => questionMap.set(q.id, q))
@@ -253,7 +372,9 @@ function generateCheckStatements(questions: ParsedQuestion[]): string[] {
       const sourceQuestion = questionMap.get(question.logic.piping_source)
       if (sourceQuestion) {
         // Extract condition for user variable
-        const condition = question.logic.ask_if_condition.replace(/^IF\s+/i, '').trim()
+        let condition = question.logic.ask_if_condition.replace(/^IF\s+/i, '').trim()
+        // Convert old variable names to new variable names
+        condition = convertOldVariablesInCondition(condition, sourceQuestion, oldVariableMapping, questions)
         
         if (question.type === 'SA') {
           // Check specific codes based on ask_if_condition
@@ -273,7 +394,9 @@ function generateCheckStatements(questions: ParsedQuestion[]): string[] {
     
     // Terminate condition checks
     if (question.logic?.terminate_if) {
-      const condition = convertTerminateCondition(question.logic.terminate_if, question.id, question.type)
+      let condition = convertTerminateCondition(question.logic.terminate_if, question.id, question.type)
+      // Convert old variable names to new variable names
+      condition = convertOldVariablesInCondition(condition, question, oldVariableMapping, questions)
       if (condition) {
         questionChecks.push(`if ${condition} check_${question.id}_terminate = 1.`)
       }
@@ -334,7 +457,11 @@ function generateCheckStatements(questions: ParsedQuestion[]): string[] {
     if (question.logic?.ask_if_condition && question.logic?.piping_source) {
       const sourceQuestion = questionMap.get(question.logic.piping_source)
       if (sourceQuestion && sourceQuestion.type === 'MA' && question.type === 'MA') {
-        const codes = extractCodesFromCondition(question.logic.ask_if_condition, sourceQuestion.id)
+        // Convert old variable names in ask_if_condition
+        let askIfCondition = question.logic.ask_if_condition
+        askIfCondition = convertOldVariablesInCondition(askIfCondition, sourceQuestion, oldVariableMapping, questions)
+        
+        const codes = extractCodesFromCondition(askIfCondition, sourceQuestion.id)
         if (codes.length > 0) {
           // Check if source has code but question is not answered
           const firstCode = codes[0]
@@ -357,9 +484,12 @@ function generateCheckStatements(questions: ParsedQuestion[]): string[] {
 /**
  * Generate QC Syntax from ParsedQuestion JSON
  */
-export function generateQCSyntaxFromJSON(questions: ParsedQuestion[]): string {
-  const countStatements = generateCountStatements(questions)
-  const checkStatements = generateCheckStatements(questions)
+export function generateQCSyntaxFromJSON(
+  questions: ParsedQuestion[],
+  oldVariableMapping: OldVariableMapping = {}
+): string {
+  const countStatements = generateCountStatements(questions, oldVariableMapping)
+  const checkStatements = generateCheckStatements(questions, oldVariableMapping)
   
   const syntax = [
     '*Count Statement.',

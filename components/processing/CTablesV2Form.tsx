@@ -199,21 +199,21 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
     return (
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             1. Chọn công thức:
           </label>
           <div className="relative" ref={dropdownRef}>
             <button
               type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
             >
-              <span className="text-sm font-medium text-white dark:text-black">
+              <span className="text-sm font-medium text-white">
                 {selectedFormulas.length > 0 
                   ? `Đã chọn ${selectedFormulas.length} công thức` 
                   : 'Chọn công thức'}
               </span>
-              <ChevronDown className={`size-5 transition-transform text-white dark:text-black ${dropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`size-5 transition-transform text-white ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             
             {dropdownOpen && (
@@ -260,7 +260,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
               return (
                 <div key={formulaValue} className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
                   <div className="mb-3">
-                    <h3 className="text-sm font-semibold text-white dark:text-black mb-1">
+                    <h3 className="text-sm font-semibold text-white mb-1">
                       Công thức: {formula?.text}
                     </h3>
                     {vars.length > 0 && (
@@ -268,7 +268,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
                         <p className="text-xs text-gray-400 dark:text-gray-600 mb-1">
                           Các biến đã chọn ({vars.length} biến):
                         </p>
-                        <p className="text-xs font-mono text-white dark:text-black break-all">
+                        <p className="text-xs font-mono text-white break-all">
                           {vars.join(', ')}
                         </p>
                       </div>
@@ -276,7 +276,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
                   </div>
                   
                   <div className="mb-3">
-                    <label className="block text-xs font-medium mb-2 text-white dark:text-black">
+                    <label className="block text-xs font-medium mb-2 text-white">
                       Chọn câu hỏi cho công thức này:
                     </label>
                     <div className="relative" data-question-dropdown>
@@ -286,14 +286,14 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
                           ...openQuestionDropdowns,
                           [formulaValue]: !openQuestionDropdowns[formulaValue]
                         })}
-                        className="w-full px-3 py-2 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+                        className="w-full px-3 py-2 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
                       >
-                        <span className="text-sm font-medium text-white dark:text-black">
+                        <span className="text-sm font-medium text-white">
                           {selectedQs.length > 0 
                             ? `Đã chọn ${selectedQs.length} câu hỏi` 
                             : 'Chọn câu hỏi'}
                         </span>
-                        <ChevronDown className={`size-4 transition-transform text-white dark:text-black ${openQuestionDropdowns[formulaValue] ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`size-4 transition-transform text-white ${openQuestionDropdowns[formulaValue] ? 'rotate-180' : ''}`} />
                       </button>
                       
                       {openQuestionDropdowns[formulaValue] && (
@@ -345,7 +345,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
                   </div>
                   
                   <div>
-                    <label className="block text-xs font-medium mb-2 text-white dark:text-black">
+                    <label className="block text-xs font-medium mb-2 text-white">
                       Biến cho công thức này (tự động điền, có thể chỉnh sửa):
                     </label>
                     <textarea
@@ -363,7 +363,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
         )}
 
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             {selectedFormulas.length > 0 ? '2. Nhập các biến cho dòng BY (mỗi biến 1 dòng):' : '2. Nhập các biến cho dòng BY (mỗi biến 1 dòng):'}
           </label>
           <textarea
@@ -389,21 +389,21 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+        <label className="block text-sm font-medium mb-2 text-white">
           1. Chọn công thức:
         </label>
         <div className="relative" ref={dropdownRef}>
           <button
             type="button"
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+            className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
           >
-            <span className="text-sm font-medium text-white dark:text-black">
+            <span className="text-sm font-medium text-white">
               {selectedFormulas.length > 0 
                 ? `Đã chọn ${selectedFormulas.length} công thức` 
                 : 'Chọn công thức'}
             </span>
-            <ChevronDown className={`size-5 transition-transform text-white dark:text-black ${dropdownOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`size-5 transition-transform text-white ${dropdownOpen ? 'rotate-180' : ''}`} />
           </button>
           
           {dropdownOpen && (
@@ -442,7 +442,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             2. Nhập các biến cho dòng BY (mỗi biến 1 dòng):
           </label>
           <textarea
@@ -454,7 +454,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             3. Biến cho từng công thức (mỗi biến 1 dòng):
           </label>
           <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -467,7 +467,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
                 const formula = formulas.find(f => f.value === formulaValue)
                 return (
                   <div key={formulaValue} className="p-3 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
-                    <label className="block text-xs font-medium mb-2 text-white dark:text-black">
+                    <label className="block text-xs font-medium mb-2 text-white">
                       Biến áp dụng cho công thức: {formula?.text}
                     </label>
                     <textarea

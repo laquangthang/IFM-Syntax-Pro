@@ -309,7 +309,7 @@ export async function extractPDFText(file: File): Promise<ExtractedPage[]> {
       // ConvertAPI typically returns Files array with Url property
       // Format: { ConversionCost: 1, Files: [{ FileName, FileExt, FileSize, FileId, Url }] }
       // Or SDK might return: result.files (lowercase) or result.file (singular)
-      const xlsxFile = xlsxResult.Files?.[0] || xlsxResult.files?.[0] || xlsxResult.file
+      const xlsxFile = (xlsxResult as any).Files?.[0] || (xlsxResult as any).files?.[0] || (xlsxResult as any).file
       
       // Try to get file content
       if (xlsxFile?.FileData) {
@@ -323,7 +323,11 @@ export async function extractPDFText(file: File): Promise<ExtractedPage[]> {
         xlsxBuffer = await withRetries('Download XLSX (url)', () => fetchFileContent(xlsxFile.url))
       } else {
         // Try alternative URL formats
-        const xlsxUrl = xlsxResult.file?.url || xlsxResult.url || xlsxResult.Files?.[0]?.url || xlsxResult.Files?.[0]?.Url
+        const xlsxUrl =
+          (xlsxResult as any).file?.url ||
+          (xlsxResult as any).url ||
+          (xlsxResult as any).Files?.[0]?.url ||
+          (xlsxResult as any).Files?.[0]?.Url
         if (xlsxUrl) {
           xlsxBuffer = await withRetries('Download XLSX (alt url)', () => fetchFileContent(xlsxUrl))
         } else {

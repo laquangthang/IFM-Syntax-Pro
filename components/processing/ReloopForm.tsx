@@ -114,23 +114,23 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+            <label className="block text-sm font-medium mb-2 text-white">
               1. Chọn câu hỏi Grid:
             </label>
             <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+                className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
               >
-                <span className="text-sm font-medium text-white dark:text-black">
+                <span className="text-sm font-medium text-white">
                   {selectedQuestion 
                     ? availableQuestions.find(q => q.id === selectedQuestion) 
                       ? `${availableQuestions.find(q => q.id === selectedQuestion)?.id} [${availableQuestions.find(q => q.id === selectedQuestion)?.type}]`
                       : 'Chọn câu hỏi'
                     : 'Chọn câu hỏi'}
                 </span>
-                <ChevronDown className={`size-5 transition-transform text-white dark:text-black ${dropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`size-5 transition-transform text-white ${dropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               
               {dropdownOpen && (
@@ -178,23 +178,23 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+            <label className="block text-sm font-medium mb-2 text-white">
               2. Tên câu hỏi Rebase:
             </label>
             <div className="relative" ref={rebaseDropdownRef}>
               <button
                 type="button"
                 onClick={() => setRebaseDropdownOpen(!rebaseDropdownOpen)}
-                className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+                className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
               >
-                <span className="text-sm font-medium text-white dark:text-black">
+                <span className="text-sm font-medium text-white">
                   {selectedRebaseQuestion 
                     ? questions.find(q => q.id === selectedRebaseQuestion) 
                       ? questions.find(q => q.id === selectedRebaseQuestion)?.id
                       : 'Chọn câu hỏi'
                     : 'Chọn câu hỏi'}
                 </span>
-                <ChevronDown className={`size-5 transition-transform text-white dark:text-black ${rebaseDropdownOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`size-5 transition-transform text-white ${rebaseDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               
               {rebaseDropdownOpen && (
@@ -257,7 +257,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
           <>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+                <label className="block text-sm font-medium mb-2 text-white">
                   3. Số lượng thuộc tính (Attributes) - Tự động điền:
                 </label>
                 <input
@@ -271,7 +271,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+                <label className="block text-sm font-medium mb-2 text-white">
                   4. Số lượng thương hiệu (Brands) - Tự động điền:
                 </label>
                 <input
@@ -288,7 +288,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+                <label className="block text-sm font-medium mb-2 text-white">
                   5. Danh sách tên thương hiệu (tự động điền, mỗi tên 1 dòng):
                 </label>
                 <textarea
@@ -300,7 +300,7 @@ export default function ReloopForm({ mode, questions = [], onSyntaxGenerated, on
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+                <label className="block text-sm font-medium mb-2 text-white">
                   6. Danh sách tên thuộc tính (tự động điền, mỗi tên 1 dòng):
                 </label>
                 <textarea

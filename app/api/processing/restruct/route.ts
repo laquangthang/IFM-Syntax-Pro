@@ -13,11 +13,14 @@ export async function POST(request: NextRequest) {
       const brandNamesArray = Array.isArray(brandNames) 
         ? brandNames 
         : (typeof brandNames === 'string' ? brandNames.split('\n').filter(b => b.trim()) : [])
+
+      // Generators expect a string (newline-separated)
+      const brandNamesStr = brandNamesArray.join('\n')
       
       const syntax = generateRestructSyntax(
         '', // variables not needed for auto mode
         parseInt(String(numBrands)),
-        brandNamesArray,
+        brandNamesStr,
         '', // outputVars not needed for auto mode
         keepVars,
         indexVarName,

@@ -25,4 +25,7 @@ export interface ParsedQuestion {
   columns?: QuestionOption[] // For Grid questions (empty for OE_Grid)
   limit?: number // For Rank questions
   logic?: QuestionLogic
+  // For SA_Grid: map row index (as string) to options for that row
+  // e.g., { "1": [{code: 1, label: "Option 1"}, ...], "2": [...], ... }
+  rowOptionsMap?: Record<string, QuestionOption[]>
 }

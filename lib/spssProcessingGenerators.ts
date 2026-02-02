@@ -144,10 +144,11 @@ export function generateRestructSyntax(
 ): string {
   // New format: if variablesByCode is provided, use Grid question format
   if (variablesByCode && Object.keys(variablesByCode).length > 0 && questionIds && questionIds.length > 0) {
+    const brandList = (brandNames || '').split('\n').map(b => b.trim()).filter(b => b)
     return generateGridRestructSyntax(
       variablesByCode,
       numBrands,
-      brandNames,
+      brandList,
       indexVarName || 'INDEX_VAR',
       keepVars,
       questionIds

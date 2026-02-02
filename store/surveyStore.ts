@@ -5,6 +5,64 @@ import { QCLogicGraph } from '@/lib/qcLogicTypes'
 import { convertQuestionsToQCGraph } from '@/lib/qcGraphConverter'
 import { useProjectStore } from './projectStore'
 
+/**
+ * Automatically convert options with codeType = 'Terminate' to terminate_if
+ * This ensures terminate conditions are available immediately after import
+ */
+function autoConvertTerminateOptions(questions: ParsedQuestion[]): ParsedQuestion[] {
+  return questions.map(question => {
+    // Skip if already has terminate_if
+    if (question.logic?.terminate_if) {
+      return question
+    }
+    
+    // Check for options with codeType = 'Terminate'
+    if (!question.options) {
+      return question
+    }
+    
+    const terminateOptions = question.options.filter(opt => opt.codeType === 'Terminate')
+    if (terminateOptions.length === 0) {
+      return question
+    }
+    
+    // Generate terminate_if condition from terminate options
+    const terminateCodes = new Set<string | number>()
+    terminateOptions.forEach(opt => {
+      if (opt.code !== undefined && opt.code !== null) {
+        terminateCodes.add(opt.code)
+      }
+    })
+    
+    if (terminateCodes.size === 0) {
+      return question
+    }
+    
+    const isMA = question.type === 'MA' || question.type === 'MA_Grid'
+    const codesArray = Array.from(terminateCodes)
+    let terminateConditionStr = ''
+    
+    if (codesArray.length === 1) {
+      const code = codesArray[0]
+      terminateConditionStr = isMA ? `${question.id}R${code} = ${code}` : `${question.id} = ${code}`
+    } else {
+      const conditions = codesArray.map(code => 
+        isMA ? `${question.id}R${code} = ${code}` : `${question.id} = ${code}`
+      ).join(' or ')
+      terminateConditionStr = `(${conditions})`
+    }
+    
+    // Update question with terminate_if
+    return {
+      ...question,
+      logic: {
+        ...question.logic,
+        terminate_if: terminateConditionStr,
+      },
+    }
+  })
+}
+
 // Old variable mapping: questionId -> array of old variable names (ordered)
 export interface OldVariableMapping {
   [questionId: string]: string[]
@@ -54,18 +112,20 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
   ...initialState,
   
   setParsedQuestions: (questions) => {
-    const map = questionsToMap(questions)
-    set({ parsedQuestions: questions, questionsMap: map })
+    // Auto-convert terminate options to terminate_if before setting
+    const processedQuestions = autoConvertTerminateOptions(questions)
+    const map = questionsToMap(processedQuestions)
+    set({ parsedQuestions: processedQuestions, questionsMap: map })
     
     // Auto-generate QC Logic Graph when questions are set
-    if (questions.length > 0) {
+    if (processedQuestions.length > 0) {
       get().generateQCLogicGraph()
     }
     
     // Auto-save to current project
     const { qcLogicGraph, oldVariableMapping } = get()
     useProjectStore.getState().saveCurrentProjectData({
-      parsedQuestions: questions,
+      parsedQuestions: processedQuestions,
       oldVariableMapping,
       qcLogicGraph,
     })
@@ -82,8 +142,11 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       return
     }
     
+    // Auto-convert terminate options to terminate_if for new questions
+    const processedNewQuestions = autoConvertTerminateOptions(uniqueNewQuestions)
+    
     // Merge questions
-    const mergedQuestions = [...parsedQuestions, ...uniqueNewQuestions]
+    const mergedQuestions = [...parsedQuestions, ...processedNewQuestions]
     
     // Sort by question ID
     mergedQuestions.sort((a, b) => {

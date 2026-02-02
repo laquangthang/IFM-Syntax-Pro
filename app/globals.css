@@ -189,6 +189,8 @@ body {
   --syntax-comment: #5c6370; /* Gray */
   /* Background */
   --syntax-bg: #0d0b16; /* Dark */
+  /* Default text color - white */
+  color: #ffffff;
 }
 
 .syntax-keyword {

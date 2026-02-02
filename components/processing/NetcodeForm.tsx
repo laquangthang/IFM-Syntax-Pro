@@ -90,23 +90,23 @@ export default function NetcodeForm({ mode, questions = [], onSyntaxGenerated, o
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             1. Chọn câu hỏi:
           </label>
           <div className="relative" ref={dropdownRef}>
             <button
               type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white dark:text-black hover:border-primary/50 transition-all shadow-sm"
+              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
             >
-              <span className="text-sm font-medium text-white dark:text-black">
+              <span className="text-sm font-medium text-white">
                 {selectedQuestion 
                   ? availableQuestions.find(q => q.id === selectedQuestion) 
                     ? `${availableQuestions.find(q => q.id === selectedQuestion)?.id} [${availableQuestions.find(q => q.id === selectedQuestion)?.type}]`
                     : 'Chọn câu hỏi'
                   : 'Chọn câu hỏi'}
               </span>
-              <ChevronDown className={`size-5 transition-transform text-white dark:text-black ${dropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`size-5 transition-transform text-white ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
             
             {dropdownOpen && (
@@ -158,7 +158,7 @@ export default function NetcodeForm({ mode, questions = [], onSyntaxGenerated, o
           <>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+                <label className="block text-sm font-medium mb-2 text-white">
                   2. Danh sách Code (tự động điền):
                 </label>
                 <textarea
@@ -171,7 +171,7 @@ export default function NetcodeForm({ mode, questions = [], onSyntaxGenerated, o
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+                <label className="block text-sm font-medium mb-2 text-white">
                   3. Danh sách Nhãn (tự động điền, thêm [NET] cho codes cần net):
                 </label>
                 <textarea
@@ -227,7 +227,7 @@ export default function NetcodeForm({ mode, questions = [], onSyntaxGenerated, o
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             2. Danh sách Code (mỗi code 1 dòng):
           </label>
           <textarea
@@ -240,7 +240,7 @@ export default function NetcodeForm({ mode, questions = [], onSyntaxGenerated, o
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             3. Danh sách Nhãn (mỗi nhãn 1 dòng, thêm [NET] cho codes cần net):
           </label>
           <textarea

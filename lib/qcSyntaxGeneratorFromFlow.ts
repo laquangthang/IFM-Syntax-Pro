@@ -19,8 +19,9 @@ import { LogicModelNode, LogicModelEdge, LogicModelGraph } from './logicModelCon
 import { OldVariableMapping } from '@/store/surveyStore'
 
 /**
- * Get variable name from oldVariableMapping or generate default
- * oldVariableMapping array order corresponds to options order (excluding _O codes)
+ * Get new variable name - always generate the new format (H3AR1, Q2R1, etc.)
+ * Since variables have already been renamed (var589O1727 -> H3AR1), we just need
+ * to generate the new variable name format, not use oldVariableMapping
  */
 function getVariableNameForSyntax(
   questionId: string,
@@ -29,57 +30,30 @@ function getVariableNameForSyntax(
   oldVariableMapping?: OldVariableMapping,
   parsedQuestion?: any
 ): string {
-  // For parent question node
+  // For parent question node (no code)
   if (code === null) {
-    // Check if there's a mapping for the question itself
-    const oldVars = oldVariableMapping?.[questionId]
-    if (oldVars && oldVars.length > 0) {
-      // For questions, use the first variable name (usually the main question variable)
-      return oldVars[0]
-    }
     return questionId
   }
   
-  // For code nodes, find the corresponding variable in oldVariableMapping
-  const oldVars = oldVariableMapping?.[questionId]
-  if (oldVars && oldVars.length > 0 && parsedQuestion?.options) {
-    // Find code index in options (excluding _O codes)
-    const mainOptions = parsedQuestion.options.filter((opt: any) => !String(opt.code).endsWith('_O'))
-    const codeIndex = mainOptions.findIndex((opt: any) => {
-      const optCode = typeof opt.code === 'number' ? opt.code : parseInt(String(opt.code), 10)
-      const targetCode = typeof code === 'number' ? code : parseInt(String(code), 10)
-      return optCode === targetCode
-    })
-    
-    if (codeIndex >= 0 && codeIndex < oldVars.length) {
-      // Use variable at the same index position
-      return oldVars[codeIndex]
-    }
-    
-    // Fallback: try pattern matching
-    const codeStr = String(code)
-    const codeNum = typeof code === 'number' ? code : parseInt(codeStr, 10)
-    
-    if (questionType === 'MA') {
-      // Look for pattern Q1R1, Q1R2, etc.
-      const pattern = new RegExp(`${questionId}R${codeNum}(_O)?$`, 'i')
-      const matchedVar = oldVars.find(v => pattern.test(v))
-      if (matchedVar) return matchedVar
-    } else if (questionType === 'SA_Grid' || questionType === 'OE_Grid' || 
-               questionType === 'Rank_Fixed' || questionType === 'Rank_Upto') {
-      // Look for pattern Q1_1, Q1_2, etc.
-      const pattern = new RegExp(`${questionId}_${codeNum}$`, 'i')
-      const matchedVar = oldVars.find(v => pattern.test(v))
-      if (matchedVar) return matchedVar
-    }
-  }
-  
-  // Generate default variable name
+  // Always generate new variable name format (already renamed)
+  // The rename syntax has already been generated (var589O1727 = H3AR1),
+  // so we just need to generate the new format here
   if (questionType === 'MA') {
     return `${questionId}R${code}`
-  } else {
+  } else if (questionType === 'SA_Grid' || questionType === 'OE_Grid') {
+    return `${questionId}_${code}`
+  } else if (questionType === 'MA_Grid') {
+    // MA_Grid format: Q8_1R1 (row_colRcol)
+    if (typeof code === 'string' && code.includes('_')) {
+      return `${questionId}_${code}`
+    }
+    return `${questionId}_${code}`
+  } else if (questionType === 'Rank_Fixed' || questionType === 'Rank_Upto') {
     return `${questionId}_${code}`
   }
+  
+  // Default fallback
+  return `${questionId}_${code}`
 }
 
 /**
@@ -102,9 +76,9 @@ function generateCountStatements(
   }
   
   questionNodes.forEach(questionNode => {
-    const questionType = questionNode.data.questionType
     const questionId = questionNode.id
     const parsedQ = questionMap.get(questionId)
+    const questionType = questionNode.data.questionType || parsedQ?.type || 'SA'
     
     if (questionType === 'MA') {
       // Find all code nodes for this question
@@ -134,7 +108,7 @@ function generateCountStatements(
     } else if (questionType === 'Rank_Fixed' || questionType === 'Rank_Upto') {
       // Rank questions: generate COUNT statements for each rank (1, 2, 3, ...)
       // Example: count count_Q17_rank1 = Q17_1 to Q17_12 (1).
-      const limit = parsedQ?.limit || questionNode.data.limit
+      const limit = parsedQ?.limit || (questionNode.data as any).limit
       
       if (limit && limit > 0) {
       // Find all code nodes for this ranking question
@@ -316,9 +290,9 @@ function generateCheckStatements(
     }
     checks.push(`* --- ${questionNode.id} ---.`)
     
-    const questionType = questionNode.data.questionType
     const questionId = questionNode.id
     const parsedQuestion = questionMap.get(questionId)
+    const questionType = questionNode.data.questionType || parsedQuestion?.type || 'SA'
     
     // Check if question has Ask All logic
     const isAskAll = parsedQuestion?.logic?.type === 'Ask All' || 
@@ -416,7 +390,7 @@ function generateCheckStatements(
     } else if (questionType === 'Rank_Fixed' || questionType === 'Rank_Upto') {
       // Rank questions: generate CHECK statements for each rank
       // Example: if count_Q17_rank1 <> 1 check_Q17_rank1 = 1.
-      const limit = parsedQuestion?.limit || questionNode.data.limit
+      const limit = parsedQuestion?.limit || (questionNode.data as any).limit
       
       if (limit && limit > 0) {
         // Generate CHECK statement for each rank (1, 2, 3, ..., limit)

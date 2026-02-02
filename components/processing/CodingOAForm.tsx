@@ -61,7 +61,7 @@ export default function CodingOAForm({ mode, questions = [], onSyntaxGenerated, 
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             1. Upload file Excel (Vrid, Response, R1, R2, ...Rn):
           </label>
           <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-glass-border-light dark:border-glass-border-dark rounded-lg cursor-pointer hover:bg-glass-panel transition-colors">
@@ -90,7 +90,7 @@ export default function CodingOAForm({ mode, questions = [], onSyntaxGenerated, 
           </small>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+          <label className="block text-sm font-medium mb-2 text-white">
             2. Upload file TXT Codelist (cho Value Labels):
           </label>
           <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-glass-border-light dark:border-glass-border-dark rounded-lg cursor-pointer hover:bg-glass-panel transition-colors">
@@ -121,7 +121,7 @@ export default function CodingOAForm({ mode, questions = [], onSyntaxGenerated, 
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2 text-white dark:text-black">
+        <label className="block text-sm font-medium mb-2 text-white">
           3. Tên biến (VD: Q18D):
         </label>
         <input
