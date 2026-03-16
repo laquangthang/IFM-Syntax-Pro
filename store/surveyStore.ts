@@ -1,71 +1,32 @@
 import { create } from 'zustand'
-import { ParsedQuestion } from '@/lib/geminiParser'
+import { ParsedQuestion, OldVariableMapping } from '@/lib/types'
+
+export type { OldVariableMapping }
 import { questionsToMap, mapToQuestions } from '@/lib/jsonLoader'
 import { QCLogicGraph } from '@/lib/qcLogicTypes'
 import { convertQuestionsToQCGraph } from '@/lib/qcGraphConverter'
-import { useProjectStore } from './projectStore'
 
 /**
- * Automatically convert options with codeType = 'Terminate' to terminate_if
- * This ensures terminate conditions are available immediately after import
+ * Rebuild terminate_if from Trap/Terminate options - no recursive merge.
+ * Ensures output is exactly IF (H3AR12 = 12 OR H3AR13 = 13).
  */
 function autoConvertTerminateOptions(questions: ParsedQuestion[]): ParsedQuestion[] {
   return questions.map(question => {
-    // Skip if already has terminate_if
-    if (question.logic?.terminate_if) {
-      return question
-    }
-    
-    // Check for options with codeType = 'Terminate'
-    if (!question.options) {
-      return question
-    }
-    
-    const terminateOptions = question.options.filter(opt => opt.codeType === 'Terminate')
-    if (terminateOptions.length === 0) {
-      return question
-    }
-    
-    // Generate terminate_if condition from terminate options
-    const terminateCodes = new Set<string | number>()
-    terminateOptions.forEach(opt => {
-      if (opt.code !== undefined && opt.code !== null) {
-        terminateCodes.add(opt.code)
-      }
-    })
-    
-    if (terminateCodes.size === 0) {
-      return question
-    }
-    
+    const opts = (question.options || []).filter(o => o.codeType === 'Trap' || o.codeType === 'Terminate')
+    const rows = (question.rows || []).filter(r => r.codeType === 'Trap' || r.codeType === 'Terminate')
+    const arr = question.type === 'MA_Grid' || question.type === 'SA_Grid' || question.type === 'OE_Grid' ? rows : opts
+
+    if (arr.length === 0) return question
+
     const isMA = question.type === 'MA' || question.type === 'MA_Grid'
-    const codesArray = Array.from(terminateCodes)
-    let terminateConditionStr = ''
-    
-    if (codesArray.length === 1) {
-      const code = codesArray[0]
-      terminateConditionStr = isMA ? `${question.id}R${code} = ${code}` : `${question.id} = ${code}`
-    } else {
-      const conditions = codesArray.map(code => 
-        isMA ? `${question.id}R${code} = ${code}` : `${question.id} = ${code}`
-      ).join(' or ')
-      terminateConditionStr = `(${conditions})`
-    }
-    
-    // Update question with terminate_if
+    const conds = arr.map(opt => isMA ? `${question.id}R${opt.code} = ${opt.code}` : `${question.id} = ${opt.code}`)
+    const terminate_if = `IF (${conds.join(' OR ')})`
+
     return {
       ...question,
-      logic: {
-        ...question.logic,
-        terminate_if: terminateConditionStr,
-      },
+      logic: { ...question.logic, terminate_if },
     }
   })
-}
-
-// Old variable mapping: questionId -> array of old variable names (ordered)
-export interface OldVariableMapping {
-  [questionId: string]: string[]
 }
 
 interface SurveyState {
@@ -73,11 +34,14 @@ interface SurveyState {
   questionsMap: Map<string, ParsedQuestion>
   oldVariableMapping: OldVariableMapping // Mapping of question ID to old variable names
   qcLogicGraph: QCLogicGraph | null // QC Logic Graph generated from questions
+  editingQuestionId: string | null // Global: which question is being edited (for Edit modal from Canvas or Tab)
+  editingContext: 'default' | 'terminate' | 'trap' // Context when opened from Terminate/Trap node
   isLoading: boolean
   error: string | null
   currentStep: 'import' | 'mapping' | 'refinery' | 'processing'
   
   // Actions
+  setEditingQuestionId: (id: string | null, context?: 'default' | 'terminate' | 'trap') => void
   setParsedQuestions: (questions: ParsedQuestion[]) => void
   appendParsedQuestions: (questions: ParsedQuestion[]) => void // Append questions (for chunked parsing)
   setQuestionsMap: (map: Map<string, ParsedQuestion>) => void
@@ -103,6 +67,8 @@ const initialState = {
   questionsMap: new Map<string, ParsedQuestion>(),
   oldVariableMapping: {} as OldVariableMapping,
   qcLogicGraph: null as QCLogicGraph | null,
+  editingQuestionId: null as string | null,
+  editingContext: 'default' as const,
   isLoading: false,
   error: null,
   currentStep: 'import' as const,
@@ -112,23 +78,10 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
   ...initialState,
   
   setParsedQuestions: (questions) => {
-    // Auto-convert terminate options to terminate_if before setting
     const processedQuestions = autoConvertTerminateOptions(questions)
     const map = questionsToMap(processedQuestions)
     set({ parsedQuestions: processedQuestions, questionsMap: map })
-    
-    // Auto-generate QC Logic Graph when questions are set
-    if (processedQuestions.length > 0) {
-      get().generateQCLogicGraph()
-    }
-    
-    // Auto-save to current project
-    const { qcLogicGraph, oldVariableMapping } = get()
-    useProjectStore.getState().saveCurrentProjectData({
-      parsedQuestions: processedQuestions,
-      oldVariableMapping,
-      qcLogicGraph,
-    })
+    // QC graph is computed lazily when user navigates to /qc-logic (QCLogicNebula)
   },
   
   appendParsedQuestions: (newQuestions) => {
@@ -158,38 +111,11 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     
     const map = questionsToMap(mergedQuestions)
     set({ parsedQuestions: mergedQuestions, questionsMap: map })
-    
-    // Regenerate QC Logic Graph with all questions
-    if (mergedQuestions.length > 0) {
-      get().generateQCLogicGraph()
-    }
-    
-    // Auto-save to current project
-    const { qcLogicGraph, oldVariableMapping } = get()
-    useProjectStore.getState().saveCurrentProjectData({
-      parsedQuestions: mergedQuestions,
-      oldVariableMapping,
-      qcLogicGraph,
-    })
-    
   },
   
   setQuestionsMap: (map) => {
     const questions = mapToQuestions(map)
     set({ questionsMap: map, parsedQuestions: questions })
-    
-    // Regenerate QC Logic Graph when questions are updated
-    if (questions.length > 0) {
-      get().generateQCLogicGraph()
-    }
-    
-    // Auto-save to current project
-    const { qcLogicGraph, oldVariableMapping } = get()
-    useProjectStore.getState().saveCurrentProjectData({
-      parsedQuestions: questions,
-      oldVariableMapping,
-      qcLogicGraph,
-    })
   },
   
   updateQuestion: (id, updates) => {
@@ -215,44 +141,16 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     set({ oldVariableMapping: newMapping })
   },
   
-  setOldVariableMapping: (mapping) => {
-    set({ oldVariableMapping: mapping })
-    // Auto-save to current project
-    const { parsedQuestions, qcLogicGraph } = get()
-    useProjectStore.getState().saveCurrentProjectData({
-      parsedQuestions,
-      oldVariableMapping: mapping,
-      qcLogicGraph,
-    })
-  },
+  setOldVariableMapping: (mapping) => set({ oldVariableMapping: mapping }),
   
   setQuestionOldVariables: (questionId, oldVars) => {
     const { oldVariableMapping } = get()
-    const newMapping = {
-      ...oldVariableMapping,
-      [questionId]: oldVars,
-    }
-    set({ oldVariableMapping: newMapping })
-    
-    // Auto-save to current project
-    const { parsedQuestions, qcLogicGraph } = get()
-    useProjectStore.getState().saveCurrentProjectData({
-      parsedQuestions,
-      oldVariableMapping: newMapping,
-      qcLogicGraph,
-    })
+    set({ oldVariableMapping: { ...oldVariableMapping, [questionId]: oldVars } })
   },
   
-  setQCLogicGraph: (graph) => {
-    set({ qcLogicGraph: graph })
-    // Auto-save to current project
-    const { parsedQuestions, oldVariableMapping } = get()
-    useProjectStore.getState().saveCurrentProjectData({
-      parsedQuestions,
-      oldVariableMapping,
-      qcLogicGraph: graph,
-    })
-  },
+  setQCLogicGraph: (graph) => set({ qcLogicGraph: graph }),
+  
+  setEditingQuestionId: (id, context = 'default') => set({ editingQuestionId: id, editingContext: id ? context : 'default' }),
   
   generateQCLogicGraph: () => {
     const { parsedQuestions } = get()

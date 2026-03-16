@@ -1,9 +1,9 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { ParsedQuestion } from '@/lib/geminiParser'
-import { OldVariableMapping } from './surveyStore'
+import { ParsedQuestion, OldVariableMapping } from '@/lib/types'
 import { QCLogicGraph } from '@/lib/qcLogicTypes'
 
+/** Project data - JSON-serializable only. No ArrayBuffers, Base64, or binary data. */
 export interface ProjectData {
   id: string
   name: string

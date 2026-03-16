@@ -6,7 +6,12 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-  --background-dark: #131022;
+  --background-dark: #09090b;
+  --background-light: #ffffff;
+  --surface-dark: #18181b;
+  --surface-light: #f4f4f5;
+  --border-dark: #27272a;
+  --border-light: #e4e4e7;
 }
 
 * {
@@ -24,21 +29,21 @@ body {
 
 .dark {
   --foreground: #ffffff;
-  --muted-foreground: #a19cba;
+  --muted-foreground: #a1a1aa;
 }
 
 .light {
-  --foreground: #000000;
-  --muted-foreground: #6b7280;
+  --foreground: #18181b;
+  --muted-foreground: #71717a;
 }
 
 .dark body {
-  background: #050505;
+  background: #09090b;
   color: var(--foreground);
 }
 
 .light body {
-  background: #FDFDFD;
+  background: #ffffff;
   color: var(--foreground);
 }
 
@@ -50,43 +55,30 @@ body {
   color: var(--muted-foreground);
 }
 
-/* Glassmorphism utilities - Theme aware */
-.glass-panel {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+/* Flat surface utilities — The True IFM */
+.flat-panel {
+  background: var(--surface-light);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
-.dark .glass-panel {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+.dark .flat-panel {
+  background: var(--surface-dark);
+  border-color: var(--border-dark);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3);
 }
 
-.light .glass-panel {
-  background: rgba(0, 0, 0, 0.05);
-  border-color: rgba(0, 0, 0, 0.1);
+.flat-card {
+  background: var(--surface-light);
+  border: 1px solid var(--border-light);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
 
-.glass-card {
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-}
-
-.dark .glass-card {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.light .glass-card {
-  background: rgba(0, 0, 0, 0.05);
-  border-color: rgba(0, 0, 0, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
-}
-
-/* 3D Perspective Container */
-.perspective-container {
-  perspective: 1000px;
-  transform-style: preserve-3d;
+.dark .flat-card {
+  background: var(--surface-dark);
+  border-color: var(--border-dark);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3);
 }
 
 /* Custom Scrollbar */
@@ -135,61 +127,19 @@ body {
 /* Grid Background */
 .bg-grid-pattern {
   background-size: 50px 50px;
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
 
-/* 3D Tilt Effect */
-.tilt-3d {
-  transform-style: preserve-3d;
-  transition: transform 0.1s ease-out;
-}
-
-/* Cyber Grid Background */
-.cyber-grid-bg {
-  background-size: 50px 50px;
-  background-image: linear-gradient(to right, rgba(139, 92, 246, 0.05) 1px, transparent 1px),
-                    linear-gradient(to bottom, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
-  mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
-  transform: perspective(1000px) rotateX(20deg) scale(1.5);
-  transform-origin: center top;
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-/* Text Glow */
-.text-glow {
-  text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
-}
-
-/* Button Primary Glow */
-.btn-primary-glow {
-  box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
-  transition: all 0.3s ease;
-}
-
-.btn-primary-glow:hover {
-  box-shadow: 0 0 25px rgba(139, 92, 246, 0.7);
-  transform: translateY(-2px);
-}
-
 /* Monokai IFM Syntax Theme */
 .monokai-ifm {
-  /* Keywords (RENAME, VALUE LABELS, etc.) */
-  --syntax-keyword: #EF5B21; /* IFM Orange */
-  /* Strings */
-  --syntax-string: #98c379; /* Green */
-  /* Variables */
-  --syntax-variable: #e06c75; /* Red */
-  /* Numbers */
-  --syntax-number: #d19a66; /* Orange/Brown */
-  /* Comments */
-  --syntax-comment: #5c6370; /* Gray */
-  /* Background */
-  --syntax-bg: #0d0b16; /* Dark */
-  /* Default text color - white */
+  --syntax-keyword: #EF5B21;
+  --syntax-string: #98c379;
+  --syntax-variable: #e06c75;
+  --syntax-number: #d19a66;
+  --syntax-comment: #5c6370;
+  --syntax-bg: #0d0b16;
   color: #ffffff;
 }
 
@@ -214,10 +164,7 @@ body {
   font-style: italic;
 }
 
-/* Ensure input and textarea text color - dark mode white, light mode black */
-/* Include all states: normal, focus, active, hover */
-/* Use higher specificity to override Tailwind */
-/* Also target inputs in dark backgrounds regardless of theme class */
+/* Ensure input and textarea text color */
 input[class*="bg-background-dark"],
 textarea[class*="bg-background-dark"],
 html.dark input,
@@ -286,7 +233,7 @@ html[class*="light"] input::placeholder,
   color: var(--muted-foreground) !important;
 }
 
-/* Override browser autofill styles in dark mode - keep white text */
+/* Override browser autofill styles */
 html.dark input:-webkit-autofill,
 html.dark input:-webkit-autofill:hover,
 html.dark input:-webkit-autofill:focus,
@@ -308,7 +255,6 @@ html[class*="dark"] textarea:-webkit-autofill:active {
   transition: background-color 5000s ease-in-out 0s;
 }
 
-/* Override browser autofill styles in light mode - keep black text */
 html.light input:-webkit-autofill,
 html.light input:-webkit-autofill:hover,
 html.light input:-webkit-autofill:focus,
@@ -330,15 +276,15 @@ html[class*="light"] textarea:-webkit-autofill:active {
   transition: background-color 5000s ease-in-out 0s;
 }
 
-/* Ensure caret (cursor) is visible in dark mode */
+/* Selection highlight */
 .dark input::selection,
 .dark textarea::selection {
-  background-color: rgba(139, 92, 246, 0.3) !important;
+  background-color: rgba(239, 91, 33, 0.3) !important;
   color: #ffffff !important;
 }
 
 .light input::selection,
 .light textarea::selection {
-  background-color: rgba(139, 92, 246, 0.3) !important;
+  background-color: rgba(239, 91, 33, 0.2) !important;
   color: #000000 !important;
 }

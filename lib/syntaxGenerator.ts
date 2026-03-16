@@ -1,5 +1,6 @@
-import { ParsedQuestion, QuestionOption } from './geminiParser'
-import { OldVariableMapping } from '@/store/surveyStore'
+import { ParsedQuestion, QuestionOption } from './types'
+import { OldVariableMapping } from '@/lib/types'
+import { hasOtherOption, getMainOptions } from './utils/mrHelpers'
 
 /**
  * Generate SPSS syntax for clean label based on question type
@@ -14,25 +15,9 @@ interface SyntaxOutput {
 }
 
 /**
- * Check if option has "(ghi rõ)" or "Other" pattern
+ * Other (Khác) is detected solely via codeType === 'Other' from parser (Othr suffix in variable name).
+ * No fuzzy label guessing.
  */
-function hasOtherSpecify(label: string): boolean {
-  const lower = label.toLowerCase()
-  // Only match if it has explicit "(ghi rõ)" pattern, not just the word "khác" or "other" alone
-  return lower.includes('(ghi rõ)') || lower.includes('(vui lòng ghi rõ)') || lower.includes('(specify)') || 
-         (lower.includes('other') && (lower.includes('(specify)') || lower.includes('ghi rõ'))) ||
-         (lower.includes('khác') && (lower.includes('(ghi rõ)') || lower.includes('ghi rõ')))
-}
-
-/**
- * Get code suffix for variable name (handles both number and string codes)
- */
-function getCodeSuffix(code: string | number): string {
-  if (typeof code === 'string' && code.includes('_')) {
-    return code // Already has format like "99_O"
-  }
-  return String(code)
-}
 
 /**
  * Generate syntax for SA/OE questions
@@ -45,20 +30,27 @@ function generateSAOESyntax(question: ParsedQuestion, oldVariables: string[] = [
     valLabStatements: [],
   }
 
-  // SA/OE: 1 variable (or 2 if has "Other (ghi rõ)")
-  const hasOther = question.options?.some(opt => hasOtherSpecify(opt.label)) || false
-
-  // Main variable
-  const oldVar1 = oldVariables[0] || 'varXXX'
-  output.renameStatements.push(`Rename Variables ${oldVar1} = ${question.id}.`)
+  const baseVar = oldVariables[0] || 'varXXX'
+  output.renameStatements.push(`Rename Variables ${baseVar} = ${question.id}.`)
   output.varLabStatements.push(`Var lab ${question.id}"${question.id}. ${question.label}".`)
 
-  // If has Other, add second variable with _O suffix
-  if (hasOther) {
-    const otherOption = question.options?.find(opt => hasOtherSpecify(opt.label))
-    if (otherOption) {
-      const oldVar2 = oldVariables[1] || `${oldVar1}Othr`
-      output.renameStatements.push(`Rename Variables ${oldVar2} = ${question.id}_O.`)
+  const uniqueCompanions = [...new Set(question.saTextCompanions || [])]
+  if (uniqueCompanions.length > 0) {
+    if (uniqueCompanions.length === 1) {
+      output.renameStatements.push(`Rename Variables ${uniqueCompanions[0]} = ${question.id}_O.`)
+      output.varLabStatements.push(`Var lab ${question.id}_O"${question.id}_O. ${question.label}".`)
+    } else {
+      uniqueCompanions.forEach((companion, idx) => {
+        const suffix = `_${idx + 1}_O`
+        output.renameStatements.push(`Rename Variables ${companion} = ${question.id}${suffix}.`)
+        output.varLabStatements.push(`Var lab ${question.id}${suffix}"${question.id}_${idx + 1}O. ${question.label}".`)
+      })
+    }
+  } else {
+    const otherOpt = question.options?.find(opt => opt.codeType === 'Other')
+    const companion = question.textCompanions?.[baseVar] || otherOpt?.openEndedRawVariable || undefined
+    if (companion) {
+      output.renameStatements.push(`Rename Variables ${companion} = ${question.id}_O.`)
       output.varLabStatements.push(`Var lab ${question.id}_O"${question.id}_O. ${question.label}".`)
     }
   }
@@ -96,41 +88,44 @@ function generateMASyntax(question: ParsedQuestion, oldVariables: string[] = [])
   if (!question.options || question.options.length === 0) return output
 
   const options = question.options
-  const hasOther = options.some(opt => hasOtherSpecify(opt.label))
+  const mainOptions = options.filter(opt => opt.codeType !== 'Other')
+  const otherOption = options.find(opt => opt.codeType === 'Other')
 
-  // MA: One variable per code (Q1R1, Q1R2, etc.)
-  // Exclude _O options (they are handled separately)
-  const mainOptions = options.filter(opt => !String(opt.code).endsWith('_O'))
-  
-  mainOptions.forEach((option, index) => {
-    const newVarName = `${question.id}R${option.code}`
-    const oldVar = oldVariables[index] || `varXXXO${1000 + index}`
-    output.renameStatements.push(`Rename Variables ${oldVar} = ${newVarName}.`)
-    output.varLabStatements.push(`Var lab ${newVarName}"${question.id}. ${option.label}".`)
-    
-    // Recode: (0=sysmis)(1=code) into newVarName
-    output.recodeStatements.push(`Recode ${newVarName}(0=sysmis)(1=${option.code}) into ${newVarName}.`)
-    
-    // If this option has "Khác (ghi rõ)", add _O variable right after this code
-    // Format: {oldVar}Othr → {questionId}R{code}_O
-    // Only VAR LAB, no VAL LAB and RECODE
-    if (hasOtherSpecify(option.label)) {
-      const otherVarName = `${question.id}R${option.code}_O`
-      const oldVarOther = `${oldVar}Othr`
-      output.renameStatements.push(`Rename Variables ${oldVarOther} = ${otherVarName}.`)
-      output.varLabStatements.push(`Var lab ${otherVarName}"${question.id}. ${option.label}".`)
-      // Note: No RECODE and VAL LAB for Other variable
+  let varIndex = 0
+  options.forEach((option) => {
+    const baseVar = oldVariables[varIndex] || `varXXXO${1000 + varIndex}`
+    const baseVarName = `${question.id}R${option.code}`
+    const otherVarName = `${baseVarName}_O`
+
+    output.renameStatements.push(`Rename Variables ${baseVar} = ${baseVarName}.`)
+    // CRITICAL: ONLY output _O rename if textCompanions or openEndedRawVariable explicitly exists. NO fallback to oldVariables[varIndex+1].
+    const companion = question.textCompanions?.[baseVar] || (option.codeType === 'Other' && option.openEndedRawVariable) || undefined
+    if (companion) {
+      output.renameStatements.push(`Rename Variables ${companion} = ${otherVarName}.`)
     }
+
+    output.varLabStatements.push(`Var lab ${baseVarName}"${question.id}. ${option.label}".`)
+    if (companion) {
+      output.varLabStatements.push(`Var lab ${otherVarName}"${question.id}. ${option.label} (Other text)".`)
+    }
+    output.recodeStatements.push(`Recode ${baseVarName}(0=sysmis)(1=${option.code}) into ${baseVarName}.`)
+
+    varIndex++
   })
 
-  // Value labels for all codes (Q1R1 to Q1R99)
-  if (mainOptions.length > 0) {
-    const firstVar = `${question.id}R${mainOptions[0].code}`
-    const lastVar = `${question.id}R${mainOptions[mainOptions.length - 1].code}`
+  if (mainOptions.length > 0 || otherOption) {
+    // CRITICAL: SPSS 'to' is positional - first and last variable in dataset order, NOT min/max code
+    const firstCode = options[0].code
+    const lastCode = options[options.length - 1].code
+    const firstVar = `${question.id}R${firstCode}`
+    const lastVar = `${question.id}R${lastCode}`
     output.valLabStatements.push(`Val lab ${firstVar} to ${lastVar}`)
     mainOptions.forEach(option => {
       output.valLabStatements.push(`${option.code}"${option.label}"`)
     })
+    if (otherOption) {
+      output.valLabStatements.push(`${otherOption.code}"${otherOption.label}"`)
+    }
     output.valLabStatements[output.valLabStatements.length - 1] += '.'
   }
 
@@ -151,26 +146,25 @@ function generateSAGridSyntax(question: ParsedQuestion, oldVariables: string[] =
 
   if (!question.options || question.options.length === 0) return output
 
-  // SA_Grid: One variable per code (Q5_1, Q5_2, etc.)
-  // Exclude _O options
-  const mainOptions = question.options.filter(opt => !String(opt.code).endsWith('_O'))
-  
-  mainOptions.forEach((option, index) => {
-    const newVarName = `${question.id}_${option.code}`
-    const oldVar = oldVariables[index] || `varXXXO${1000 + index}`
-    output.renameStatements.push(`Rename Variables ${oldVar} = ${newVarName}.`)
-    output.varLabStatements.push(`Var lab ${newVarName}"${question.id}. ${option.label}".`)
-    
-    // If this option has "Khác (ghi rõ)", add _O variable right after this code
-    // Format: {oldVar}Othr → {questionId}_{code}_O
-    // Only VAR LAB, no VAL LAB and RECODE
-    if (hasOtherSpecify(option.label)) {
-      const otherVarName = `${question.id}_${option.code}_O`
-      const oldVarOther = `${oldVar}Othr`
-      output.renameStatements.push(`Rename Variables ${oldVarOther} = ${otherVarName}.`)
-      output.varLabStatements.push(`Var lab ${otherVarName}"${question.id}. ${option.label}".`)
-      // Note: No RECODE and VAL LAB for Other variable
+  let varIndex = 0
+  question.options.forEach((option) => {
+    const baseVar = oldVariables[varIndex] || `varXXXO${1000 + varIndex}`
+    const baseVarName = `${question.id}_${option.code}`
+    const otherVarName = `${baseVarName}_O`
+
+    output.renameStatements.push(`Rename Variables ${baseVar} = ${baseVarName}.`)
+    // CRITICAL: ONLY output _O rename if textCompanions or openEndedRawVariable explicitly exists. NO fallback to oldVariables[varIndex+1].
+    const companion = question.textCompanions?.[baseVar] || (option.codeType === 'Other' && option.openEndedRawVariable) || undefined
+    if (companion) {
+      output.renameStatements.push(`Rename Variables ${companion} = ${otherVarName}.`)
     }
+
+    output.varLabStatements.push(`Var lab ${baseVarName}"${question.id}. ${option.label}".`)
+    if (companion) {
+      output.varLabStatements.push(`Var lab ${otherVarName}"${question.id}. ${option.label} (Other text)".`)
+    }
+
+    varIndex++
   })
 
   return output
@@ -195,52 +189,66 @@ function generateMAGridSyntax(question: ParsedQuestion, oldVariables: string[] =
 
   if (columns.length === 0 || rows.length === 0) return output
 
-  // Filter out _O rows
-  const mainRows = rows.filter(r => !String(r.code).endsWith('_O'))
-  const hasOtherRow = mainRows.some(r => hasOtherSpecify(r.label))
-  const otherRow = mainRows.find(r => hasOtherSpecify(r.label))
-
   let varIndex = 0
   columns.forEach((col) => {
-    mainRows.forEach((row) => {
-      const newVarName = `${question.id}_${col.code}R${row.code}`
-      const oldVar = oldVariables[varIndex] || `varXXXO${1000 + varIndex}`
-      output.renameStatements.push(`Rename Variables ${oldVar} = ${newVarName}.`)
-      output.varLabStatements.push(`Var lab ${newVarName}"${question.id}. ${col.label} - ${row.label}".`)
-      
-      // Recode: (0=sysmis)(1=row.code) into newVarName
-      output.recodeStatements.push(`Recode ${newVarName}(0=sysmis)(1=${row.code}) into ${newVarName}.`)
-      
-      // If this row has "Khác (ghi rõ)", add _O variable right after this row
-      // Format: {oldVar}Othr → {questionId}_{colCode}R{rowCode}_O
-      // Only VAR LAB, no VAL LAB and RECODE
-      if (hasOtherSpecify(row.label)) {
-        const otherVarName = `${question.id}_${col.code}R${row.code}_O`
-        const oldVarOther = `${oldVar}Othr`
-        output.renameStatements.push(`Rename Variables ${oldVarOther} = ${otherVarName}.`)
-        output.varLabStatements.push(`Var lab ${otherVarName}"${question.id}. ${col.label} - ${row.label}".`)
-        // Note: No RECODE and VAL LAB for Other variable
-        varIndex++ // Increment index for Other variable
+    rows.forEach((row) => {
+      const baseVar = oldVariables[varIndex] || `varXXXO${1000 + varIndex}`
+      const baseVarName = `${question.id}_${col.code}R${row.code}`
+      const otherVarName = `${baseVarName}_O`
+
+      output.renameStatements.push(`Rename Variables ${baseVar} = ${baseVarName}.`)
+      // CRITICAL: Check textCompanions for base variable - if companion exists, output _O rename immediately
+      const companion = question.textCompanions?.[baseVar] || (row.codeType === 'Other' && row.openEndedRawVariable) || undefined
+      if (companion) {
+        output.renameStatements.push(`Rename Variables ${companion} = ${otherVarName}.`)
       }
-      
+
+      output.varLabStatements.push(`Var lab ${baseVarName}"${question.id}. ${col.label} - ${row.label}".`)
+      if (companion) {
+        output.varLabStatements.push(`Var lab ${otherVarName}"${question.id}. ${col.label} - ${row.label} (Other text)".`)
+      }
+      output.recodeStatements.push(`Recode ${baseVarName}(0=sysmis)(1=${row.code}) into ${baseVarName}.`)
+
       varIndex++
     })
   })
 
   // Value labels per column (same row labels for each column)
-  // Format: Val lab Q8_1R1 to Q8_1R99 1"Row label 1" 2"Row label 2" ...
   columns.forEach(col => {
-    if (mainRows.length > 0) {
-      const firstVar = `${question.id}_${col.code}R${mainRows[0].code}`
-      const lastVar = `${question.id}_${col.code}R${mainRows[mainRows.length - 1].code}`
+    if (rows.length > 0) {
+      const firstVar = `${question.id}_${col.code}R${rows[0].code}`
+      const lastVar = `${question.id}_${col.code}R${rows[rows.length - 1].code}`
       output.valLabStatements.push(`Val lab ${firstVar} to ${lastVar}`)
-      mainRows.forEach(row => {
+      rows.forEach(row => {
         output.valLabStatements.push(`${row.code}"${row.label}"`)
       })
       output.valLabStatements[output.valLabStatements.length - 1] += '.'
     }
   })
 
+  return output
+}
+
+/**
+ * Generate syntax for Numeric ([SUM]) questions
+ * Output: Q5_1, Q5_2, ... with Var lab from option labels
+ */
+function generateNumericSyntax(question: ParsedQuestion, oldVariables: string[] = []): SyntaxOutput {
+  const output: SyntaxOutput = {
+    renameStatements: [],
+    varLabStatements: [],
+    recodeStatements: [],
+    valLabStatements: [],
+  }
+  const options = question.options || question.rows || []
+  if (options.length === 0) return output
+  options.forEach((opt, idx) => {
+    const baseVar = oldVariables[idx] || `varXXXO${1000 + idx}`
+    const newName = `${question.id}_${idx + 1}`
+    const subLabel = typeof opt === 'object' && opt !== null && 'label' in opt ? (opt as QuestionOption).label : String(opt)
+    output.renameStatements.push(`Rename Variables ${baseVar} = ${newName}.`)
+    output.varLabStatements.push(`Var lab ${newName}"${question.id}. ${subLabel}".`)
+  })
   return output
 }
 
@@ -259,7 +267,7 @@ function generateRankSyntax(question: ParsedQuestion, oldVariables: string[] = [
   if (!question.options || question.options.length === 0) return output
 
   // Rank: Format like SA_Grid (Q15_1, Q15_2, etc.), with value labels "Rank 1", "Rank 2", etc.
-  const mainOptions = question.options.filter(opt => !String(opt.code).endsWith('_O'))
+  const mainOptions = getMainOptions(question.options)
   
   mainOptions.forEach((option, index) => {
     const newVarName = `${question.id}_${option.code}`
@@ -316,8 +324,10 @@ export function generateQuestionSyntax(
       return generateRankSyntax(question, oldVariables)
     
     case 'OE_Grid':
-      // OE_Grid: Only rows, similar to SA_Grid but for open-ended
       return generateSAGridSyntax(question, oldVariables)
+
+    case 'Numeric':
+      return generateNumericSyntax(question, oldVariables)
     
     default:
       return {

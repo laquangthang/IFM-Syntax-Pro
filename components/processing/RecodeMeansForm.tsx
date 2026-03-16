@@ -1,41 +1,24 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { Loader2, ChevronDown } from 'lucide-react'
-import { ParsedQuestion } from '@/lib/geminiParser'
+import { useState, useEffect } from 'react'
+import { Loader2, Search } from 'lucide-react'
+import { ParsedQuestion } from '@/lib/types'
+import QuestionSelectorModal from './QuestionSelectorModal'
 import { useSurveyStore } from '@/store/surveyStore'
 import { getChildVariables } from '@/lib/processingHelpers'
 
 interface RecodeMeansFormProps {
   mode: 'manual' | 'auto'
   questions?: ParsedQuestion[]
-  onSyntaxGenerated: (syntax: string) => void
+  setGlobalSyntax: (syntax: string) => void
   onError: (error: string) => void
 }
 
-export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerated, onError }: RecodeMeansFormProps) {
+export default function RecodeMeansForm({ mode, questions = [], setGlobalSyntax, onError }: RecodeMeansFormProps) {
   const { oldVariableMapping } = useSurveyStore()
   const [loading, setLoading] = useState(false)
   const [selectedQuestion, setSelectedQuestion] = useState<string>('')
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false)
-      }
-    }
-
-    if (dropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [dropdownOpen])
+  const [modalOpen, setModalOpen] = useState(false)
   const [formData, setFormData] = useState({
     ranges: '',
     means: '',
@@ -198,7 +181,7 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
 
       const result = await response.json()
       if (result.success) {
-        onSyntaxGenerated(result.syntax)
+        setGlobalSyntax(result.syntax)
       } else {
         onError(result.error || 'Failed to generate syntax')
       }
@@ -213,126 +196,90 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             1. Chọn câu hỏi:
           </label>
-          <div className="relative" ref={dropdownRef}>
-            <button
-              type="button"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
-            >
-              <span className="text-sm font-medium text-white">
-                {selectedQuestion 
-                  ? questions.find(q => q.id === selectedQuestion) 
-                    ? `${questions.find(q => q.id === selectedQuestion)?.id} [${questions.find(q => q.id === selectedQuestion)?.type}]`
-                    : 'Chọn câu hỏi'
-                  : 'Chọn câu hỏi'}
-              </span>
-              <ChevronDown className={`size-5 transition-transform text-white ${dropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-            
-            {dropdownOpen && (
-              <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-xl max-h-72 overflow-y-auto custom-scrollbar">
-                {questions.length === 0 ? (
-                  <p className="p-3 text-sm text-gray-500 dark:text-gray-400">
-                    Không có câu hỏi nào. Vui lòng import dữ liệu trước.
-                  </p>
-                ) : (
-                  questions.map((q) => {
-                    const isSelected = selectedQuestion === q.id
-                    return (
-                      <button
-                        key={q.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedQuestion(q.id)
-                          setDropdownOpen(false)
-                        }}
-                        className={`w-full text-left p-4 cursor-pointer transition-all ${
-                          isSelected 
-                            ? 'bg-primary/20 border-l-4 border-primary' 
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-700 border-l-4 border-transparent'
-                        } border-b border-gray-200 dark:border-gray-700 last:border-b-0`}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`text-sm font-medium ${
-                            isSelected ? 'text-primary' : 'text-black dark:text-white'
-                          }`}>
-                            {q.id}
-                          </span>
-                          <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded">
-                            {q.type}
-                          </span>
-                        </div>
-                        <span className="text-xs text-gray-600 dark:text-gray-300 block truncate">
-                          {q.label.substring(0, 60)}{q.label.length > 60 ? '...' : ''}
-                        </span>
-                      </button>
-                    )
-                  })
-                )}
-              </div>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="w-full px-4 py-3 bg-surface-light dark:bg-surface-dark border-2 border-border-light dark:border-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
+          >
+            <span className="text-sm font-medium text-white flex items-center gap-2">
+              <Search className="size-4 text-gray-400" />
+              {selectedQuestion && questions.find(q => q.id === selectedQuestion) ? (
+                <>[{questions.find(q => q.id === selectedQuestion)?.id}] {questions.find(q => q.id === selectedQuestion)?.label?.substring(0, 40)}{(questions.find(q => q.id === selectedQuestion)?.label?.length || 0) > 40 ? '...' : ''}</>
+              ) : (
+                'Select Question...'
+              )}
+            </span>
+          </button>
+          <QuestionSelectorModal
+            isOpen={modalOpen}
+            onClose={() => setModalOpen(false)}
+            onSelect={(id) => setSelectedQuestion(typeof id === 'string' ? id : Array.isArray(id) ? id[0] || '' : '')}
+            parsedQuestions={questions}
+            multiSelect={false}
+            title="Select Question (Recode Means)"
+            initialSelection={selectedQuestion || undefined}
+          />
         </div>
 
         {selectedQuestion && (
           <>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-white">
+                <label className="block text-white font-semibold text-sm mb-2">
                   2. Khoảng giá trị (tự động điền, có thể chỉnh sửa):
                 </label>
                 <textarea
                   value={formData.ranges}
                   onChange={handleRangesChange}
                   rows={6}
-                  placeholder="5,000,001 - 15,000,000 VND&#10;15,000,001 - 25,000,000 VND&#10;25,000,001 and above VND"
+                  placeholder={"5,000,001 - 15,000,000 VND\n15,000,001 - 25,000,000 VND\n25,000,001 and above VND"}
                   required
-                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
+                  className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg font-mono text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-white">
+                <label className="block text-white font-semibold text-sm mb-2">
                   3. Means tự động tính (có thể chỉnh sửa):
                 </label>
                 <textarea
                   value={formData.means}
                   onChange={(e) => setFormData({ ...formData, means: e.target.value })}
                   rows={6}
-                  placeholder="Means sẽ hiển thị ở đây..."
+                  placeholder={"10.00\n20.00\n27.50"}
                   required
-                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
+                  className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg font-mono text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-white">
+                <label className="block text-white font-semibold text-sm mb-2">
                   4. Codes tương ứng (tự động điền):
                 </label>
                 <textarea
                   value={formData.codes}
                   onChange={(e) => setFormData({ ...formData, codes: e.target.value })}
                   rows={4}
-                  placeholder="1&#10;2&#10;3"
+                  placeholder={"1\n2\n3"}
                   required
-                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
+                  className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg font-mono text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-white">
+                <label className="block text-white font-semibold text-sm mb-2">
                   5. Biến cần recode (tự động điền):
                 </label>
                 <textarea
                   value={formData.variables}
                   onChange={(e) => setFormData({ ...formData, variables: e.target.value })}
                   rows={4}
-                  placeholder="Q1&#10;Q2&#10;Q3"
+                  placeholder={"Q1\nQ2\nQ3"}
                   required
-                  className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
+                  className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
                 />
               </div>
             </div>
@@ -361,58 +308,58 @@ export default function RecodeMeansForm({ mode, questions = [], onSyntaxGenerate
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             1. Khoảng giá trị (mỗi khoảng 1 dòng):
           </label>
           <textarea
             value={formData.ranges}
             onChange={handleRangesChange}
             rows={6}
-            placeholder="5,000,001 - 15,000,000 VND&#10;15,000,001 - 25,000,000 VND&#10;25,000,001 and above VND"
+            placeholder={"5,000,001 - 15,000,000 VND\n15,000,001 - 25,000,000 VND\n25,000,001 and above VND"}
             required
-              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
+            className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg font-mono text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             2. Means tự động tính (có thể chỉnh sửa):
           </label>
           <textarea
             value={formData.means}
             onChange={(e) => setFormData({ ...formData, means: e.target.value })}
             rows={6}
-            placeholder="Means sẽ hiển thị ở đây..."
+            placeholder={"10.00\n20.00\n27.50"}
             required
-              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
+            className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg font-mono text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             3. Codes tương ứng (mỗi code 1 dòng):
           </label>
           <textarea
             value={formData.codes}
             onChange={(e) => setFormData({ ...formData, codes: e.target.value })}
             rows={4}
-            placeholder="1&#10;2&#10;3"
+            placeholder={"1\n2\n3"}
             required
-              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
+            className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg font-mono text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             4. Biến cần recode (mỗi biến 1 dòng):
           </label>
           <textarea
             value={formData.variables}
             onChange={(e) => setFormData({ ...formData, variables: e.target.value })}
             rows={4}
-            placeholder="Q1&#10;Q2&#10;Q3"
+            placeholder={"Q1\nQ2\nQ3"}
             required
-              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
+            className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg font-mono text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
           />
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { ParsedQuestion } from './geminiParser'
+import { ParsedQuestion } from './types'
 
 export interface SurveyJSON {
   questions: ParsedQuestion[]

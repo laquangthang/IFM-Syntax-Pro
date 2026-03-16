@@ -1,15 +1,16 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { ChevronDown } from 'lucide-react'
-import { ParsedQuestion } from '@/lib/geminiParser'
+import { ChevronDown, Search } from 'lucide-react'
+import { ParsedQuestion } from '@/lib/types'
+import QuestionSelectorModal from './QuestionSelectorModal'
 import { useSurveyStore } from '@/store/surveyStore'
 import { getChildVariables } from '@/lib/processingHelpers'
 
 interface CTablesV2FormProps {
   mode: 'manual' | 'auto'
   questions?: ParsedQuestion[]
-  onSyntaxGenerated: (syntax: string) => void
+  setGlobalSyntax: (syntax: string) => void
   onError: (error: string) => void
 }
 
@@ -24,7 +25,7 @@ const formulas = [
   { value: '[count f40.0, colpct.count pct40.1]', text: 'count, colpct.count' },
 ]
 
-export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated, onError }: CTablesV2FormProps) {
+export default function CTablesV2Form({ mode, questions = [], setGlobalSyntax, onError }: CTablesV2FormProps) {
   const { oldVariableMapping } = useSurveyStore()
   const [byVars, setByVars] = useState('')
   const [selectedFormulas, setSelectedFormulas] = useState<string[]>([])
@@ -32,7 +33,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [formulaQuestions, setFormulaQuestions] = useState<Record<string, string[]>>({})
-  const [openQuestionDropdowns, setOpenQuestionDropdowns] = useState<Record<string, boolean>>({})
+  const [openQuestionModalFor, setOpenQuestionModalFor] = useState<string | null>(null)
 
   // Auto-populate variables when questions are selected for a formula
   useEffect(() => {
@@ -58,28 +59,22 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
     }
   }, [formulaQuestions, mode, questions, oldVariableMapping])
 
-  // Close dropdown when clicking outside
+  // Close formula dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setDropdownOpen(false)
       }
-      
-      // Close question dropdowns when clicking outside
-      const target = event.target as HTMLElement
-      if (!target.closest('[data-question-dropdown]')) {
-        setOpenQuestionDropdowns({})
-      }
     }
 
-    if (dropdownOpen || Object.values(openQuestionDropdowns).some(v => v)) {
+    if (dropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside)
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [dropdownOpen, openQuestionDropdowns])
+  }, [dropdownOpen])
 
   const handleFormulaToggle = (formulaValue: string) => {
     if (selectedFormulas.includes(formulaValue)) {
@@ -192,21 +187,21 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
       catLine2
     ].filter(line => line.trim() !== '').join('\n')
 
-    onSyntaxGenerated(finalString)
+    setGlobalSyntax(finalString)
   }
 
   if (mode === 'auto') {
     return (
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             1. Chọn công thức:
           </label>
-          <div className="relative" ref={dropdownRef}>
+          <div className="relative overflow-visible" ref={dropdownRef}>
             <button
               type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
+              className="w-full px-4 py-3 bg-surface-light dark:bg-surface-dark border-2 border-border-light dark:border-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
             >
               <span className="text-sm font-medium text-white">
                 {selectedFormulas.length > 0 
@@ -217,7 +212,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
             </button>
             
             {dropdownOpen && (
-              <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-xl max-h-72 overflow-y-auto custom-scrollbar">
+              <div className="absolute z-[100] w-full mt-2 bg-gray-800 shadow-2xl border border-gray-600 rounded-lg max-h-96 overflow-y-auto custom-scrollbar">
                 {formulas.map((formula) => {
                   const isSelected = selectedFormulas.includes(formula.value)
                   return (
@@ -226,8 +221,8 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
                       className={`flex items-center gap-3 p-4 cursor-pointer transition-all ${
                         isSelected 
                           ? 'bg-primary/20 border-l-4 border-primary' 
-                          : 'hover:bg-gray-100 dark:hover:bg-gray-700 border-l-4 border-transparent'
-                      } border-b border-gray-200 dark:border-gray-700 last:border-b-0`}
+: 'hover:bg-gray-700 border-l-4 border-transparent'
+                          } border-b border-gray-700 last:border-b-0`}
                     >
                       <input
                         type="checkbox"
@@ -238,7 +233,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
                       <span className={`text-sm font-medium flex-1 ${
                         isSelected 
                           ? 'text-primary' 
-                          : 'text-black dark:text-white'
+                          : 'text-white'
                       }`}>
                         {formula.text}
                       </span>
@@ -258,13 +253,13 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
               const vars = (formulaVars[formulaValue] || '').split('\n').filter(v => v.trim())
               
               return (
-                <div key={formulaValue} className="p-4 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
+                <div key={formulaValue} className="p-4 bg-surface-light dark:bg-surface-dark rounded-lg border border-border-light dark:border-border-dark">
                   <div className="mb-3">
                     <h3 className="text-sm font-semibold text-white mb-1">
                       Công thức: {formula?.text}
                     </h3>
                     {vars.length > 0 && (
-                      <div className="mt-2 p-2 bg-background-light dark:bg-background-dark rounded border border-glass-border-light dark:border-glass-border-dark">
+                      <div className="mt-2 p-2 bg-background-light dark:bg-background-dark rounded border border-border-light dark:border-border-dark">
                         <p className="text-xs text-gray-400 dark:text-gray-600 mb-1">
                           Các biến đã chọn ({vars.length} biến):
                         </p>
@@ -276,84 +271,53 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
                   </div>
                   
                   <div className="mb-3">
-                    <label className="block text-xs font-medium mb-2 text-white">
+                    <label className="block text-white font-semibold text-sm mb-2">
                       Chọn câu hỏi cho công thức này:
                     </label>
-                    <div className="relative" data-question-dropdown>
-                      <button
-                        type="button"
-                        onClick={() => setOpenQuestionDropdowns({
-                          ...openQuestionDropdowns,
-                          [formulaValue]: !openQuestionDropdowns[formulaValue]
-                        })}
-                        className="w-full px-3 py-2 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
-                      >
-                        <span className="text-sm font-medium text-white">
-                          {selectedQs.length > 0 
-                            ? `Đã chọn ${selectedQs.length} câu hỏi` 
-                            : 'Chọn câu hỏi'}
-                        </span>
-                        <ChevronDown className={`size-4 transition-transform text-white ${openQuestionDropdowns[formulaValue] ? 'rotate-180' : ''}`} />
-                      </button>
-                      
-                      {openQuestionDropdowns[formulaValue] && (
-                        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-xl max-h-60 overflow-y-auto custom-scrollbar">
-                          {questions.length === 0 ? (
-                            <p className="p-3 text-sm text-gray-500 dark:text-gray-400">
-                              Không có câu hỏi nào. Vui lòng import dữ liệu trước.
-                            </p>
+                    <button
+                      type="button"
+                      onClick={() => setOpenQuestionModalFor(formulaValue)}
+                      className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border-2 border-border-light dark:border-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
+                    >
+                      <span className="text-sm font-medium text-white flex items-center gap-2">
+                        <Search className="size-4 text-gray-400" />
+                        {selectedQs.length > 0 ? (
+                          selectedQs.length === 1 && questions.find(q => q.id === selectedQs[0]) ? (
+                            <>[{selectedQs[0]}] {questions.find(q => q.id === selectedQs[0])?.label?.substring(0, 35)}{(questions.find(q => q.id === selectedQs[0])?.label?.length || 0) > 35 ? '...' : ''}</>
                           ) : (
-                            questions.map((q) => {
-                              const isSelected = selectedQs.includes(q.id)
-                              return (
-                                <label
-                                  key={q.id}
-                                  className={`flex items-center gap-3 p-3 cursor-pointer transition-all ${
-                                    isSelected 
-                                      ? 'bg-primary/20 border-l-4 border-primary' 
-                                      : 'hover:bg-gray-100 dark:hover:bg-gray-700 border-l-4 border-transparent'
-                                  } border-b border-gray-200 dark:border-gray-700 last:border-b-0`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={(e) => handleQuestionToggle(formulaValue, q.id, e.target.checked)}
-                                    className="w-4 h-4 rounded border-2 border-gray-400 dark:border-gray-500 checked:bg-primary checked:border-primary focus:ring-2 focus:ring-primary/50"
-                                  />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className={`text-sm font-medium ${
-                                        isSelected ? 'text-primary' : 'text-black dark:text-white'
-                                      }`}>
-                                        {q.id}
-                                      </span>
-                                      <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded">
-                                        {q.type}
-                                      </span>
-                                    </div>
-                                    <span className="text-xs text-gray-600 dark:text-gray-300 block truncate">
-                                      {q.label.substring(0, 60)}{q.label.length > 60 ? '...' : ''}
-                                    </span>
-                                  </div>
-                                </label>
-                              )
-                            })
-                          )}
-                        </div>
-                      )}
-                    </div>
+                            `Đã chọn ${selectedQs.length} câu hỏi`
+                          )
+                        ) : (
+                          'Select Question...'
+                        )}
+                      </span>
+                    </button>
+                    <QuestionSelectorModal
+                      isOpen={openQuestionModalFor === formulaValue}
+                      onClose={() => setOpenQuestionModalFor(null)}
+                      onSelect={(ids) => {
+                        setFormulaQuestions(prev => ({
+                          ...prev,
+                          [formulaValue]: Array.isArray(ids) ? ids : ids ? [ids] : []
+                        }))
+                      }}
+                      parsedQuestions={questions}
+                      multiSelect={true}
+                      title={`Select Questions for: ${formula?.text}`}
+                      initialSelection={selectedQs}
+                    />
                   </div>
                   
                   <div>
-                    <label className="block text-xs font-medium mb-2 text-white">
+                    <label className="block text-white font-semibold text-sm mb-2">
                       Biến cho công thức này (tự động điền, có thể chỉnh sửa):
                     </label>
                     <textarea
                       value={formulaVars[formulaValue] || ''}
                       onChange={(e) => setFormulaVars({ ...formulaVars, [formulaValue]: e.target.value })}
                       rows={4}
-                      placeholder="Var1&#10;Var2&#10;..."
-                      className="w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
+                      placeholder={"Var1\nVar2\nVar3"}
+                      className="w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg font-mono text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
                     />
                   </div>
                 </div>
@@ -363,15 +327,15 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
         )}
 
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             {selectedFormulas.length > 0 ? '2. Nhập các biến cho dòng BY (mỗi biến 1 dòng):' : '2. Nhập các biến cho dòng BY (mỗi biến 1 dòng):'}
           </label>
           <textarea
             value={byVars}
             onChange={(e) => setByVars(e.target.value)}
             rows={6}
-            placeholder="Gender&#10;Age_Group"
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
+            placeholder={"Gender\nAge_Group"}
+            className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg font-mono text-sm text-gray-900 dark:text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
           />
         </div>
 
@@ -389,14 +353,14 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-2 text-white">
+        <label className="block text-white font-semibold text-sm mb-2">
           1. Chọn công thức:
         </label>
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative overflow-visible" ref={dropdownRef}>
           <button
             type="button"
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
+            className="w-full px-4 py-3 bg-surface-light dark:bg-surface-dark border-2 border-border-light dark:border-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
           >
             <span className="text-sm font-medium text-white">
               {selectedFormulas.length > 0 
@@ -407,7 +371,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
           </button>
           
           {dropdownOpen && (
-            <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-xl max-h-72 overflow-y-auto custom-scrollbar">
+            <div className="absolute z-[100] w-full mt-2 bg-gray-800 shadow-2xl border border-gray-600 rounded-lg max-h-96 overflow-y-auto custom-scrollbar">
               {formulas.map((formula) => {
                 const isSelected = selectedFormulas.includes(formula.value)
                 return (
@@ -416,8 +380,8 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
                     className={`flex items-center gap-3 p-4 cursor-pointer transition-all ${
                       isSelected 
                         ? 'bg-primary/20 border-l-4 border-primary' 
-                        : 'hover:bg-gray-100 dark:hover:bg-gray-700 border-l-4 border-transparent'
-                    } border-b border-gray-200 dark:border-gray-700 last:border-b-0`}
+: 'hover:bg-gray-700 border-l-4 border-transparent'
+                          } border-b border-gray-700 last:border-b-0`}
                   >
                     <input
                       type="checkbox"
@@ -428,7 +392,7 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
                     <span className={`text-sm font-medium flex-1 ${
                       isSelected 
                         ? 'text-primary' 
-                        : 'text-black dark:text-white'
+                        : 'text-white'
                     }`}>
                       {formula.text}
                     </span>
@@ -442,19 +406,19 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             2. Nhập các biến cho dòng BY (mỗi biến 1 dòng):
           </label>
           <textarea
             value={byVars}
             onChange={(e) => setByVars(e.target.value)}
             rows={6}
-            placeholder="Gender&#10;Age_Group"
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
+            placeholder={"Gender\nAge_Group"}
+            className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg font-mono text-sm text-gray-900 dark:text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             3. Biến cho từng công thức (mỗi biến 1 dòng):
           </label>
           <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -466,16 +430,16 @@ export default function CTablesV2Form({ mode, questions = [], onSyntaxGenerated,
               selectedFormulas.map((formulaValue) => {
                 const formula = formulas.find(f => f.value === formulaValue)
                 return (
-                  <div key={formulaValue} className="p-3 bg-glass-panel rounded-lg border border-glass-border-light dark:border-glass-border-dark">
-                    <label className="block text-xs font-medium mb-2 text-white">
+                  <div key={formulaValue} className="p-3 bg-surface-light dark:bg-surface-dark rounded-lg border border-border-light dark:border-border-dark">
+                    <label className="block text-white font-semibold text-sm mb-2">
                       Biến áp dụng cho công thức: {formula?.text}
                     </label>
                     <textarea
                       value={formulaVars[formulaValue] || ''}
                       onChange={(e) => setFormulaVars({ ...formulaVars, [formulaValue]: e.target.value })}
                       rows={4}
-                      placeholder="Var1&#10;Var2&#10;..."
-                      className="w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
+                      placeholder={"Var1\nVar2\nVar3"}
+                      className="w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg font-mono text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
                     />
                   </div>
                 )

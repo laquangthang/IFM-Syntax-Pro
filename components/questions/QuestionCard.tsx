@@ -1,8 +1,9 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ParsedQuestion, QuestionOption } from '@/lib/geminiParser'
+import { ParsedQuestion, QuestionOption } from '@/lib/types'
 import { useSurveyStore } from '@/store/surveyStore'
+import { getOtherOutputVariableNames } from '@/lib/utils/mrHelpers'
 import { 
   ChevronDown, 
   ChevronUp,
@@ -20,7 +21,6 @@ import {
   Link2,
 } from 'lucide-react'
 import { useState, forwardRef } from 'react'
-import EditQuestionModal from './EditQuestionModal'
 
 // Component for displaying SA_Grid rows with expandable options
 function SAGridRowsDisplay({ 
@@ -58,9 +58,9 @@ function SAGridRowsDisplay({
   
   return (
     <div className="space-y-2 mb-4">
-      <div className="rounded-lg border border-surface-border overflow-hidden bg-[#131118]">
-        <div className="bg-[#252030] border-b border-surface-border px-3 py-2">
-          <span className="text-xs font-mono text-gray-400 dark:text-gray-400">SUB-QUESTIONS (Click to view codes)</span>
+      <div className="rounded-lg border border-border-light dark:border-border-dark overflow-hidden bg-surface-light dark:bg-surface-dark">
+        <div className="bg-background-light dark:bg-background-dark border-b border-border-light dark:border-border-dark px-3 py-2">
+          <span className="text-xs font-mono text-muted-foreground">SUB-QUESTIONS (Click to view codes)</span>
         </div>
         {question.rows && question.rows.map((row, idx) => {
           const rowIndex = String(row.code)
@@ -68,17 +68,17 @@ function SAGridRowsDisplay({
           const rowOptions = getRowOptions(row.code)
           
           return (
-            <div key={idx} className="border-b border-surface-border/50 last:border-b-0">
+            <div key={idx} className="border-b border-border-light dark:border-border-dark last:border-b-0">
               {/* Row Header - Clickable */}
               <div
                 onClick={() => toggleRow(rowIndex)}
-                className="grid grid-cols-[40px_60px_1fr] gap-0 items-center px-3 py-2 group hover:bg-surface-border/30 transition-colors cursor-pointer"
+                className="grid grid-cols-[40px_60px_1fr] gap-0 items-center px-3 py-2 group hover:bg-surface-light dark:hover:bg-surface-dark transition-colors cursor-pointer"
               >
                 <div className="flex items-center justify-center">
                   {isExpanded ? (
-                    <ChevronUp className="w-4 h-4 text-gray-400" />
+                    <ChevronUp className="w-4 h-4 text-muted-foreground" />
                   ) : (
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
                   )}
                 </div>
                 <span className="text-primary font-bold font-mono text-sm">{row.code}</span>
@@ -98,7 +98,7 @@ function SAGridRowsDisplay({
                   className="w-full bg-transparent text-sm text-white border-none focus:ring-0 p-0"
                 />
                 {rowOptions.length > 0 && (
-                  <span className="text-xs text-gray-400 ml-2">
+                  <span className="text-xs text-muted-foreground ml-2">
                     ({rowOptions.length} codes)
                   </span>
                 )}
@@ -106,18 +106,18 @@ function SAGridRowsDisplay({
               
               {/* Expanded Options for this Row */}
               {isExpanded && rowOptions.length > 0 && (
-                <div className="bg-[#0d0b16] border-t border-surface-border/50">
+                <div className="bg-surface-light dark:bg-surface-dark border-t border-border-light dark:border-border-dark">
                   {/* Table Header */}
-                  <div className="grid grid-cols-[60px_1fr] gap-0 bg-[#252030]/50 border-b border-surface-border px-3 py-2">
-                    <span className="text-xs font-mono text-gray-400 dark:text-gray-400">CODE</span>
-                    <span className="text-xs font-mono text-gray-400 dark:text-gray-400">LABEL</span>
+                  <div className="grid grid-cols-[60px_1fr] gap-0 bg-background-light dark:bg-background-dark border-b border-border-light dark:border-border-dark px-3 py-2">
+                    <span className="text-xs font-mono text-muted-foreground">CODE</span>
+                    <span className="text-xs font-mono text-muted-foreground">LABEL</span>
                   </div>
                   
                   {/* Table Rows */}
                   {rowOptions.map((option, optIdx) => (
                     <div
                       key={optIdx}
-                      className="grid grid-cols-[60px_1fr] gap-0 border-b border-surface-border/30 items-center px-3 py-1.5 hover:bg-surface-border/20 transition-colors"
+                      className="grid grid-cols-[60px_1fr] gap-0 border-b border-border-light dark:border-border-dark items-center px-3 py-1.5 hover:bg-surface-light dark:hover:bg-surface-dark transition-colors"
                     >
                       <input
                         type="text"
@@ -152,7 +152,7 @@ function SAGridRowsDisplay({
                 </div>
               )}
               {isExpanded && rowOptions.length === 0 && (
-                <div className="bg-[#0d0b16] border-t border-surface-border/50 px-3 py-2 text-xs text-gray-400">
+                <div className="bg-surface-light dark:bg-surface-dark border-t border-border-light dark:border-border-dark px-3 py-2 text-xs text-muted-foreground">
                   No codes found for this sub-question
                 </div>
               )}
@@ -174,12 +174,10 @@ interface QuestionCardProps {
 
 const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
   function QuestionCard({ question, isExpanded, onToggle, index, onUpdate }, ref) {
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const { parsedQuestions, setEditingQuestionId } = useSurveyStore()
   const [isEditingLabel, setIsEditingLabel] = useState(false)
   const [editedLabel, setEditedLabel] = useState(question.label)
   
-  // Get parsedQuestions from store for piping sync
-  const { parsedQuestions } = useSurveyStore()
   
   // Sync columns from piping source for display
   const displayColumns = (() => {
@@ -289,16 +287,16 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
 
   const getTypeColor = (type: string) => {
     const colors: Record<string, string> = {
-      SA: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-      MA: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
-      SA_Grid: 'bg-green-500/10 text-green-400 border-green-500/30',
-      MA_Grid: 'bg-teal-500/10 text-teal-400 border-teal-500/30',
-      Rank_Fixed: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
-      Rank_Upto: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
-      OE: 'bg-pink-500/10 text-pink-400 border-pink-500/30',
-      Numeric: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30',
+      SA: 'bg-primary/10 text-primary border-primary/30',
+      MA: 'bg-primary/10 text-primary border-primary/30',
+      SA_Grid: 'bg-primary/10 text-primary border-primary/30',
+      MA_Grid: 'bg-primary/10 text-primary border-primary/30',
+      Rank_Fixed: 'bg-primary/10 text-primary border-primary/30',
+      Rank_Upto: 'bg-primary/10 text-primary border-primary/30',
+      OE: 'bg-primary/10 text-primary border-primary/30',
+      Numeric: 'bg-primary/10 text-primary border-primary/30',
     }
-    return colors[type] || 'bg-gray-500/10 text-gray-400 border-gray-500/30'
+    return colors[type] || 'bg-surface-light dark:bg-surface-dark text-muted-foreground border-border-light dark:border-border-dark'
   }
 
   const getTypeIcon = (type: string) => {
@@ -321,7 +319,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
       badges.push({
         key: 'type',
         label: `Type: ${logic.type}`,
-        className: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30',
+        className: 'bg-primary/10 text-primary border-primary/30',
       })
     }
 
@@ -330,7 +328,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
       badges.push({
         key: 'piping',
         label: logic?.piping_source ? `Piping: ${logic.piping_source}` : 'Piping',
-        className: 'bg-blue-500/10 text-blue-300 border-blue-500/30',
+        className: 'bg-primary/10 text-primary border-primary/30',
       })
     }
 
@@ -340,7 +338,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
       badges.push({
         key: 'ask_if',
         label: src ? `Ask If: ${src.toUpperCase()}` : 'Ask If',
-        className: 'bg-orange-500/10 text-orange-300 border-orange-500/30',
+        className: 'bg-primary/10 text-primary border-primary/30',
       })
     }
 
@@ -348,7 +346,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
       badges.push({
         key: 'terminate',
         label: 'Terminate If',
-        className: 'bg-red-500/10 text-red-300 border-red-500/30',
+        className: 'bg-red-500/10 text-red-500 border-red-500/30',
       })
     }
 
@@ -394,10 +392,14 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
       })
     }
     if (counts.other > 0) {
+      const otherOutputNames = getOtherOutputVariableNames(question)
+      const suffixText = otherOutputNames.length > 0
+        ? ` (${otherOutputNames.join(', ')})`
+        : ''
       badges.push({
         key: 'other_opt',
-        label: `Other: ${counts.other}`,
-        className: 'bg-pink-500/10 text-pink-300 border-pink-500/30',
+        label: `Other: ${counts.other}${suffixText}`,
+        className: 'bg-primary/10 text-primary border-primary/30',
       })
     }
 
@@ -485,7 +487,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
               console.error(`[QuestionCard] Error calling onToggle:`, error)
             }
           }}
-          className="relative z-20 p-5 cursor-pointer hover:bg-surface-border/30 transition-colors"
+          className="relative z-20 p-5 cursor-pointer hover:bg-surface-light dark:hover:bg-surface-dark transition-colors"
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
@@ -503,12 +505,12 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
               </div>
               <div>
                 <h3 className="text-white font-semibold">{question.label}</h3>
-                <p className="text-xs text-gray-400 dark:text-gray-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {getQuestionTypeLabel(question.type)} • {question.options?.length || 0} Options
                 </p>
               </div>
             </div>
-            <ChevronDown className="w-5 h-5 text-gray-400 dark:text-gray-400" />
+            <ChevronDown className="w-5 h-5 text-muted-foreground" />
           </div>
         </div>
       )}
@@ -527,7 +529,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
                 e.stopPropagation()
                 onToggle()
               }}
-              className="p-2 hover:bg-surface-border rounded-lg text-gray-400 dark:text-gray-400 hover:text-white transition"
+              className="p-2 hover:bg-surface-light dark:hover:bg-surface-dark rounded-lg text-muted-foreground hover:text-foreground transition"
               aria-label="Collapse question"
             >
               <ChevronUp className="w-5 h-5" />
@@ -536,7 +538,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
 
           {/* Question Label - Editable */}
           <div className="mb-6">
-            <label className="block text-xs text-gray-400 dark:text-gray-400 font-medium mb-1 uppercase tracking-wider">
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               Question Label
             </label>
             {isEditingLabel ? (
@@ -553,7 +555,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
                       setIsEditingLabel(false)
                     }
                   }}
-                  className="flex-1 bg-transparent border-b border-surface-border focus:border-primary px-0 py-1 text-lg font-semibold text-white focus:outline-none transition-colors"
+                  className="flex-1 bg-transparent border-b border-border-light dark:border-border-dark focus:border-primary px-0 py-1 text-lg font-semibold text-foreground focus:outline-none transition-colors"
                   autoFocus
                 />
               </div>
@@ -570,14 +572,14 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
           {/* Question Type and Logic Settings */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="block text-xs text-gray-400 dark:text-gray-400 font-medium mb-1.5">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                 Question Type
               </label>
               <div className="relative">
                 <select
                   value={question.type}
                   onChange={(e) => handleTypeChange(e.target.value as ParsedQuestion['type'])}
-                  className="block w-full pl-3 pr-10 py-2 text-sm bg-[#131118] border border-surface-border text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer"
+                  className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors appearance-none cursor-pointer"
                 >
                   <option value="SA">Single Answer (SA)</option>
                   <option value="MA">Multiple Answer (MA)</option>
@@ -589,13 +591,13 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
                   <option value="OE_Grid">Open Ended Grid</option>
                   <option value="Numeric">Numeric</option>
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400 dark:text-gray-400">
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-muted-foreground">
                   <ChevronDown className="w-4 h-4" />
                 </div>
               </div>
             </div>
             <div>
-              <label className="block text-xs text-gray-400 dark:text-gray-400 font-medium mb-1.5">
+              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                 Logic Settings
               </label>
               <div className="flex flex-wrap items-center gap-2 min-h-[38px]">
@@ -610,7 +612,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
                     </span>
                   ))
                 ) : (
-                  <span className="text-sm text-gray-400">None</span>
+                  <span className="text-sm text-muted-foreground">None</span>
                 )}
               </div>
             </div>
@@ -618,20 +620,20 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
 
           {/* Matrix Table for MA_Grid questions with rows and columns */}
           {(question.type === 'MA_Grid' && question.rows && question.rows.length > 0 && displayColumns && displayColumns.length > 0) ? (
-            <div className="rounded-lg border border-surface-border overflow-hidden bg-[#131118] mb-4">
+            <div className="rounded-lg border border-primary/20 overflow-hidden bg-surface-light dark:bg-surface-dark mb-4">
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                   {/* Table Header */}
                   <thead>
-                    <tr className="bg-[#252030] border-b border-surface-border">
-                      <th className="px-3 py-2 text-left text-xs font-mono text-gray-400 dark:text-gray-400 border-r border-surface-border">
+                    <tr className="bg-background-light dark:bg-background-dark border-b border-border-light dark:border-border-dark">
+                      <th className="px-3 py-2 text-left text-xs font-mono text-muted-foreground border-r border-border-light dark:border-border-dark">
                         <div className="flex flex-col">
                           <span>CODE</span>
                           <span className="text-[10px] opacity-70">VN</span>
                         </div>
                       </th>
                       {displayColumns.map((column, colIdx) => (
-                        <th key={colIdx} className="px-3 py-2 text-center text-xs font-mono text-gray-400 dark:text-gray-400 border-r border-surface-border last:border-r-0">
+                        <th key={colIdx} className="px-3 py-2 text-center text-xs font-mono text-muted-foreground border-r border-border-light dark:border-border-dark last:border-r-0">
                           <div className="flex flex-col items-center">
                             <span className="text-primary font-bold">{column.code}</span>
                             <span className="text-[10px] opacity-70 mt-1">{column.label}</span>
@@ -647,7 +649,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
                         key={rowIdx}
                         className="border-b border-surface-border/50 hover:bg-surface-border/30 transition-colors"
                       >
-                        <td className="px-3 py-2 border-r border-surface-border">
+                        <td className="px-3 py-2 border-r border-border-light dark:border-border-dark">
                           <div className="flex flex-col">
                             <span className="text-primary font-bold font-mono text-sm">{row.code}</span>
                             <span className="text-xs text-white mt-0.5">{row.label}</span>
@@ -656,7 +658,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
                         {displayColumns.map((column, colIdx) => (
                           <td
                             key={colIdx}
-                            className="px-3 py-2 text-center border-r border-surface-border last:border-r-0"
+                            className="px-3 py-2 text-center border-r border-border-light dark:border-border-dark last:border-r-0"
                           >
                             <div className="flex items-center justify-center">
                               <span className="text-primary font-bold font-mono text-sm">
@@ -671,7 +673,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
                 </table>
               </div>
               {/* Matrix Info */}
-              <div className="px-3 py-2 bg-[#252030]/50 border-t border-surface-border text-xs text-gray-400 dark:text-gray-400">
+              <div className="px-3 py-2 bg-background-light dark:bg-background-dark border-t border-border-light dark:border-border-dark text-xs text-muted-foreground">
                 <span>Matrix: {question.rows.length} rows × {displayColumns.length} columns = {question.rows.length * displayColumns.length} variables</span>
               </div>
             </div>
@@ -682,19 +684,19 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
               onUpdate={onUpdate}
             />
           ) : question.options && question.options.length > 0 ? (
-            <div className="rounded-lg border border-surface-border overflow-hidden bg-[#131118] mb-4">
+            <div className="rounded-lg border border-primary/20 overflow-hidden bg-surface-light dark:bg-surface-dark mb-4">
               {/* Table Header */}
-              <div className="grid grid-cols-[60px_1fr_120px] gap-0 bg-[#252030] border-b border-surface-border px-3 py-2">
-                <span className="text-xs font-mono text-gray-400 dark:text-gray-400">CODE</span>
-                <span className="text-xs font-mono text-gray-400 dark:text-gray-400">OPTION LABEL</span>
-                <span className="text-xs font-mono text-gray-400 dark:text-gray-400 text-right pr-2">EXCLUSIVE / TRAP / TERMINATE</span>
+              <div className="grid grid-cols-[60px_1fr_120px] gap-0 bg-background-light dark:bg-background-dark border-b border-border-light dark:border-border-dark px-3 py-2">
+                <span className="text-xs font-mono text-muted-foreground">CODE</span>
+                <span className="text-xs font-mono text-muted-foreground">OPTION LABEL</span>
+                <span className="text-xs font-mono text-muted-foreground text-right pr-2">EXCLUSIVE / TRAP / TERMINATE</span>
               </div>
               
               {/* Table Rows */}
               {question.options.map((option, idx) => (
                 <div
                   key={idx}
-                  className={`grid grid-cols-[60px_1fr_160px] gap-0 border-b border-surface-border/50 items-center px-3 py-1.5 group hover:bg-surface-border/30 transition-colors ${
+                  className={`grid grid-cols-[60px_1fr_160px] gap-0 border-b border-border-light dark:border-border-dark items-center px-3 py-1.5 group hover:bg-surface-light dark:hover:bg-surface-dark transition-colors ${
                     option.codeType === 'Exclusive' ? 'bg-primary/5' 
                       : option.codeType === 'Trap' ? 'bg-red-500/10' 
                       : option.codeType === 'Terminate' ? 'bg-amber-500/10' 
@@ -745,7 +747,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
                       className={`transition ${
                         option.codeType === 'Exclusive'
                           ? 'text-primary hover:text-primary/80'
-                          : 'text-surface-border hover:text-gray-400 dark:hover:text-gray-400'
+                          : 'text-muted-foreground hover:text-foreground'
                       }`}
                       title={option.codeType === 'Exclusive' ? 'Exclusive Option Active' : 'Toggle Exclusive'}
                     >
@@ -774,7 +776,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
                       className={`transition ${
                         option.codeType === 'Trap'
                           ? 'text-red-500 hover:text-red-400'
-                          : 'text-surface-border hover:text-gray-400 dark:hover:text-gray-400'
+                          : 'text-muted-foreground hover:text-foreground'
                       }`}
                       title={option.codeType === 'Trap' ? 'Trap Option Active' : 'Toggle Trap'}
                     >
@@ -803,7 +805,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
                       className={`transition ${
                         option.codeType === 'Terminate'
                           ? 'text-amber-500 hover:text-amber-400'
-                          : 'text-surface-border hover:text-gray-400 dark:hover:text-gray-400'
+                          : 'text-muted-foreground hover:text-foreground'
                       }`}
                       title={option.codeType === 'Terminate' ? 'Terminate Option Active' : 'Toggle Terminate'}
                     >
@@ -822,7 +824,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
               ))}
             </div>
           ) : (question.type === 'MA' || question.type === 'MA_Grid') ? (
-            <div className="p-6 text-center text-gray-400 dark:text-gray-400 text-sm mb-4">
+            <div className="p-6 text-center text-muted-foreground text-sm mb-4">
               <div className="mb-2">No matrix structure detected (missing rows or columns)</div>
               {question.rows && question.rows.length > 0 && (
                 <div className="text-xs opacity-70">Rows: {question.rows.length} found</div>
@@ -835,7 +837,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
               )}
             </div>
           ) : (
-            <div className="p-6 text-center text-gray-400 dark:text-gray-400 text-sm mb-4">
+            <div className="p-6 text-center text-muted-foreground text-sm mb-4">
               No options available for this question type
             </div>
           )}
@@ -854,7 +856,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
           )}
 
           {/* Footer with Logic Summary and Link Logic */}
-          <div className="px-5 py-3 bg-[#131118]/50 border-t border-surface-border rounded-b-xl flex justify-between items-center relative z-10">
+          <div className="px-5 py-3 bg-surface-light dark:bg-surface-dark border-t border-border-light dark:border-border-dark rounded-b-xl flex justify-between items-center relative z-10">
             <div className="flex items-center gap-2 min-w-0">
               <Zap className="w-4 h-4 text-primary shrink-0" />
               <div className="flex flex-wrap items-center gap-2">
@@ -869,12 +871,12 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
                     </span>
                   ))
                 ) : (
-                  <span className="text-xs text-gray-400">No logic set</span>
+                  <span className="text-xs text-muted-foreground">No logic set</span>
                 )}
               </div>
             </div>
             <button
-              onClick={() => setIsEditModalOpen(true)}
+              onClick={() => setEditingQuestionId(question.id)}
               className="px-4 py-2 bg-primary hover:bg-primary/80 text-white rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
             >
               <Link2 className="w-4 h-4" />
@@ -885,18 +887,7 @@ const QuestionCard = forwardRef<HTMLDivElement, QuestionCardProps>(
       )}
 
 
-      {/* Edit Modal */}
-      {onUpdate && (
-        <EditQuestionModal
-          question={question}
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          onSave={(updatedQuestion) => {
-            onUpdate(updatedQuestion)
-            setIsEditModalOpen(false)
-          }}
-        />
-      )}
+      {/* Edit Modal is global (MainLayout) - opened via setEditingQuestionId(question.id) */}
     </motion.div>
   )
 })

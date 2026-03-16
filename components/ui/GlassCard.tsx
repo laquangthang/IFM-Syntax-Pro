@@ -2,7 +2,6 @@
 
 import { ReactNode } from 'react'
 import { motion } from 'framer-motion'
-import TiltCard from './TiltCard'
 
 interface GlassCardProps {
   children: ReactNode
@@ -11,33 +10,25 @@ interface GlassCardProps {
   glowColor?: 'purple' | 'cyan' | 'primary'
 }
 
-export default function GlassCard({ 
-  children, 
-  className = '', 
-  tilt = true,
+export default function GlassCard({
+  children,
+  className = '',
+  tilt = false,
   glowColor = 'primary'
 }: GlassCardProps) {
-  const glowClasses = {
-    purple: 'shadow-glow-purple',
-    cyan: 'shadow-glow-cyan',
-    primary: 'shadow-glow-orange dark:shadow-glow-orange',
-  }
-
   const content = (
     <div
       className={`
-        glass-card rounded-xl
-        ${glowClasses[glowColor]}
+        flat-card
+        bg-surface-light dark:bg-surface-dark
+        border border-border-light dark:border-border-dark
+        rounded-xl shadow-card dark:shadow-card-dark
         ${className}
       `}
     >
       {children}
     </div>
   )
-
-  if (tilt) {
-    return <TiltCard intensity={8}>{content}</TiltCard>
-  }
 
   return (
     <motion.div
@@ -49,5 +40,3 @@ export default function GlassCard({
     </motion.div>
   )
 }
-
-

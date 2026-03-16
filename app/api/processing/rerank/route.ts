@@ -6,8 +6,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { baseVar, numRanks, labels } = body
     
-    const safeLabels = String(labels || '').split(/\r?\n/).filter(line => line.trim() !== '').join('|||')
-    const syntax = generateRerankSyntax(baseVar, parseInt(String(numRanks)), safeLabels)
+    const syntax = generateRerankSyntax(baseVar, parseInt(String(numRanks)), labels || '')
     
     return NextResponse.json({ success: true, syntax })
   } catch (error: any) {

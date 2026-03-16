@@ -1,7 +1,16 @@
 /**
  * SPSS Processing Syntax Generators
- * Converted from the original Node.js server.js
+ * All list inputs use newline-separated format (\n or \r\n).
  */
+
+function splitNewlines(s: string): string[] {
+  return String(s || '').split(/\r?\n/).map(v => v.trim()).filter(v => v)
+}
+
+/** Split by newline or comma (for keepVars, code lists that may use either) */
+function splitNewlinesOrComma(s: string): string[] {
+  return String(s || '').split(/[\r\n,]+/).map(v => v.trim()).filter(v => v)
+}
 
 export function generateTopboxSyntax(
   varNames: string,
@@ -12,13 +21,13 @@ export function generateTopboxSyntax(
   nonB2b: string
 ): string {
   let syntax = ''
-  const varNamesArray = varNames.split(',').map(v => v.trim())
-  const varLabelsArray = varLabels.split('|||')
+  const varNamesArray = splitNewlines(varNames)
+  const varLabelsArray = splitNewlines(varLabels)
 
-  const t2bValues = String(t2b || '').split(',').map(v => v.trim()).filter(v => v)
-  const nonT2bValues = String(nonT2b || '').split(',').map(v => v.trim()).filter(v => v)
-  const b2bValues = String(b2b || '').split(',').map(v => v.trim()).filter(v => v)
-  const nonB2bValues = String(nonB2b || '').split(',').map(v => v.trim()).filter(v => v)
+  const t2bValues = splitNewlinesOrComma(t2b)
+  const nonT2bValues = splitNewlinesOrComma(nonT2b)
+  const b2bValues = splitNewlinesOrComma(b2b)
+  const nonB2bValues = splitNewlinesOrComma(nonB2b)
 
   const tBoxCount = t2bValues.length
   const bBoxCount = b2bValues.length
@@ -53,7 +62,7 @@ export function generateRerankSyntax(
   labels: string
 ): string {
   let syntax = ''
-  const labelsArray = labels.split('|||')
+  const labelsArray = splitNewlines(labels)
   const numOptions = labelsArray.length
   
   for (let rankNum = 1; rankNum <= numRanks; rankNum++) {
@@ -94,8 +103,8 @@ export function generateReloopSyntax(
   attributeTexts: string
 ): string {
   let syntax = ''
-  const brandNamesArray = brandNames.split('|||')
-  const attributeTextsArray = attributeTexts.split('|||')
+  const brandNamesArray = splitNewlines(brandNames)
+  const attributeTextsArray = splitNewlines(attributeTexts)
 
   syntax += `/* Reloop ${questionName} */\n\n`
   for (let brand_i = 1; brand_i <= numBrands; brand_i++) {
@@ -144,7 +153,7 @@ export function generateRestructSyntax(
 ): string {
   // New format: if variablesByCode is provided, use Grid question format
   if (variablesByCode && Object.keys(variablesByCode).length > 0 && questionIds && questionIds.length > 0) {
-    const brandList = (brandNames || '').split('\n').map(b => b.trim()).filter(b => b)
+    const brandList = splitNewlines(brandNames)
     return generateGridRestructSyntax(
       variablesByCode,
       numBrands,
@@ -156,9 +165,9 @@ export function generateRestructSyntax(
   }
 
   // Old format: manual input
-  const variableList = variables.split('\n').map(v => v.trim()).filter(v => v)
-  const outputVarList = (outputVars || '').split('\n').map(v => v.trim()).filter(v => v)
-  const brandList = (brandNames || '').split('\n').map(b => b.trim()).filter(b => b)
+  const variableList = splitNewlines(variables)
+  const outputVarList = splitNewlines(outputVars)
+  const brandList = splitNewlines(brandNames)
 
   if (!Number.isFinite(numBrands) || numBrands <= 0) {
     throw new Error('Số lượng brand không hợp lệ')
@@ -189,7 +198,7 @@ export function generateRestructSyntax(
 
   syntax += ` /INDEX = ${indexVarName || 'BRAND'}(${numBrands})\n`
   if (keepVars && keepVars.trim()) {
-    const keepList = keepVars.split(',').map(v => v.trim()).filter(Boolean).join(' ')
+    const keepList = splitNewlinesOrComma(keepVars).join(' ')
     syntax += ` /KEEP = ${keepList}\n`
   }
   syntax += `.\n\n`
@@ -254,7 +263,7 @@ function generateGridRestructSyntax(
 
   syntax += ` /INDEX=${indexVarName}(${numBrands})\n`
   if (keepVars && keepVars.trim()) {
-    const keepList = keepVars.split(',').map(v => v.trim()).filter(Boolean).join(' ')
+    const keepList = splitNewlinesOrComma(keepVars).join(' ')
     syntax += ` /KEEP=${keepList}\n`
   }
   syntax += `.\n\n`
@@ -290,10 +299,10 @@ export function generateRecodeMeansSyntax(
 ): string {
   let syntax = ''
   
-  const rangeLines = ranges.split('\n').map(line => line.trim()).filter(line => line)
-  const variableLines = variables.split('\n').map(line => line.trim()).filter(line => line)
-  const meanLines = means.split('\n').map(line => line.trim()).filter(line => line)
-  const codeLines = codes.split('\n').map(line => line.trim()).filter(line => line)
+  const rangeLines = splitNewlines(ranges)
+  const variableLines = splitNewlines(variables)
+  const meanLines = splitNewlines(means)
+  const codeLines = splitNewlines(codes)
   
   if (rangeLines.length !== meanLines.length || rangeLines.length !== codeLines.length) {
     throw new Error('Số lượng ranges, means và codes phải bằng nhau')
@@ -325,8 +334,8 @@ export function generateNetcodeSyntax(
 ): string {
   let syntax = ''
   
-  const codeLines = codes.split('\n').map(line => line.trim()).filter(line => line)
-  const labelLines = labels.split('\n').map(line => line.trim()).filter(line => line)
+  const codeLines = splitNewlines(codes)
+  const labelLines = splitNewlines(labels)
   
   if (codeLines.length !== labelLines.length) {
     throw new Error('Số lượng codes và labels phải bằng nhau')

@@ -6,40 +6,93 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import Image from 'next/image'
-import { 
-  LayoutDashboard, 
-  Upload, 
-  Network, 
-  Package2, 
-  Download, 
+import {
+  Upload,
+  Network,
   Settings,
   FileText,
   Cog,
-  FolderOpen
+  FolderOpen,
+  BookOpen
 } from 'lucide-react'
 
-const menuItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/' },
+const workspaceItems = [
   { id: 'projects', label: 'Projects', icon: FolderOpen, path: '/projects' },
+]
+
+const pipelineItems = [
   { id: 'import', label: 'Data Import', icon: Upload, path: '/import' },
   { id: 'questions', label: 'Questions', icon: FileText, path: '/questions' },
-  { id: 'refinery', label: 'Label Refinery', icon: Network, path: '/refinery' },
-  { id: 'models', label: 'Logic Models', icon: Package2, path: '/models' },
-  { id: 'processing', label: 'Processing Hub', icon: Cog, path: '/processing' },
-  { id: 'exports', label: 'Exports', icon: Download, path: '/exports' },
+  { id: 'dictionary', label: 'Data Dictionary', icon: BookOpen, path: '/dictionary' },
+  { id: 'qc-logic', label: 'QC Logic', icon: Network, path: '/qc-logic' },
 ]
+
+const outputItems = [
+  { id: 'processing', label: 'Processing Hub', icon: Cog, path: '/processing' },
+]
+
+function NavSection({ title, items, pathname, isFirst }: { title: string; items: typeof workspaceItems; pathname: string; isFirst?: boolean }) {
+  return (
+    <>
+      <p className={`text-xs text-muted-foreground font-semibold mb-2 uppercase tracking-wider ${isFirst ? 'mt-2' : 'mt-6'}`}>
+        {title}
+      </p>
+      {items.map((item, index) => {
+        const Icon = item.icon
+        const isActive = pathname === item.path
+
+        return (
+          <motion.div
+            key={item.id}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.05 }}
+            whileHover={{ x: 4 }}
+            className="relative"
+          >
+            <Link
+              href={item.path}
+              className={`
+                flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all relative overflow-hidden
+                ${isActive
+                  ? 'bg-primary/10 border border-primary/30 text-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-white/5 dark:hover:bg-white/5'
+                }
+              `}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="activeIndicator"
+                  className="absolute inset-0 bg-primary/5"
+                  transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <Icon className="size-5 relative z-10" />
+              <p className="text-sm font-medium relative z-10">{item.label}</p>
+              {isActive && (
+                <motion.div
+                  className="absolute right-2 size-1.5 rounded-full bg-primary"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                />
+              )}
+            </Link>
+          </motion.div>
+        )
+      })}
+    </>
+  )
+}
 
 export default function Sidebar() {
   const pathname = usePathname()
   const { theme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
 
-  // Avoid hydration mismatch by only rendering theme-dependent content after mount
   React.useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Use resolvedTheme for more reliable theme detection
   const isDark = mounted ? (resolvedTheme === 'dark') : false
 
   return (
@@ -47,88 +100,49 @@ export default function Sidebar() {
       initial={{ x: -280 }}
       animate={{ x: 0 }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="w-[280px] h-full flex flex-col glass-panel border-r border-glass-border-light dark:border-glass-border-dark shrink-0 z-50 relative bg-background-light dark:bg-background-dark"
+      className="w-[280px] h-full flex flex-col flat-panel border-r border-border-light dark:border-border-dark shrink-0 z-50 relative bg-background-light dark:bg-background-dark"
     >
       {/* Logo */}
       <div className="p-6">
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          className="flex gap-3 items-center mb-8"
-        >
-          {!mounted ? (
-            // Render a placeholder during SSR to avoid hydration mismatch
-            <div className="h-8 w-[120px] bg-transparent" />
-          ) : isDark ? (
-            <Image
-              src="/logo-ifm-dark.svg"
-              alt="IFM Research Logo"
-              width={120}
-              height={40}
-              className="h-8 w-auto"
-              priority
-            />
-          ) : (
-            <Image
-              src="/logo-ifm-light.svg"
-              alt="IFM Research Logo"
-              width={120}
-              height={40}
-              className="h-8 w-auto"
-              priority
-            />
-          )}
-        </motion.div>
+        <Link href="/">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            className="flex gap-3 items-center mb-8"
+          >
+            {!mounted ? (
+              <div className="h-8 w-[120px] bg-transparent" />
+            ) : isDark ? (
+              <Image
+                src="/logo-ifm-dark.svg"
+                alt="IFM Research Logo"
+                width={120}
+                height={40}
+                className="h-8 w-auto"
+                priority
+              />
+            ) : (
+              <Image
+                src="/logo-ifm-light.svg"
+                alt="IFM Research Logo"
+                width={120}
+                height={40}
+                className="h-8 w-auto"
+                priority
+              />
+            )}
+          </motion.div>
+        </Link>
 
         {/* Navigation */}
         <nav className="flex flex-col gap-2">
-          {menuItems.map((item, index) => {
-            const Icon = item.icon
-            const isActive = pathname === item.path
-
-            return (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ x: 4 }}
-                className="relative"
-              >
-                <Link
-                  href={item.path}
-                  className={`
-                    flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all relative overflow-hidden
-                    ${isActive
-                      ? 'bg-primary/10 border border-primary/30 text-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-white/5 dark:hover:bg-white/5'
-                    }
-                  `}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeIndicator"
-                      className="absolute inset-0 bg-primary/5"
-                      transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
-                  <Icon className="size-5 relative z-10" />
-                  <p className="text-sm font-medium relative z-10">{item.label}</p>
-                  {isActive && (
-                    <motion.div
-                      className="absolute right-2 size-1.5 rounded-full bg-primary"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                    />
-                  )}
-                </Link>
-              </motion.div>
-            )
-          })}
+          <NavSection title="Workspace" items={workspaceItems} pathname={pathname} isFirst />
+          <NavSection title="Pipeline" items={pipelineItems} pathname={pathname} />
+          <NavSection title="Output" items={outputItems} pathname={pathname} />
         </nav>
       </div>
 
       {/* Settings at bottom */}
-      <div className="mt-auto p-6 border-t border-glass-border-light dark:border-glass-border-dark">
+      <div className="mt-auto p-6 border-t border-border-light dark:border-border-dark">
         <motion.div
           whileHover={{ x: 4 }}
           className="flex items-center gap-3 px-3 py-2 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
@@ -140,4 +154,3 @@ export default function Sidebar() {
     </motion.aside>
   )
 }
-

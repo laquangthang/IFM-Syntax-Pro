@@ -6,15 +6,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { questionName, numAttributes, numBrands, rebaseQuestion, brandNames, attributeTexts } = body
     
-    const safeBrandNames = String(brandNames || '').split(/\r?\n/).filter(line => line.trim() !== '').join('|||')
-    const safeAttributeTexts = String(attributeTexts || '').split(/\r?\n/).filter(line => line.trim() !== '').join('|||')
     const syntax = generateReloopSyntax(
       questionName, 
       parseInt(String(numAttributes)), 
       parseInt(String(numBrands)), 
       rebaseQuestion, 
-      safeBrandNames, 
-      safeAttributeTexts
+      brandNames || '', 
+      attributeTexts || ''
     )
     
     return NextResponse.json({ success: true, syntax })

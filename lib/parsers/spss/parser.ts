@@ -1,153 +1,29 @@
 /**
- * SPSS Excel Parser - Parse SPSS variable labels from Excel
+ * SPSS Excel Parser - Main parsing logic
  * Input: Excel file with 2 columns (variable name, label)
- * Output: ParsedQuestion[] + generated SPSS syntax
+ * Output: { questions, variables, oldVariableMapping } - no syntax
  */
 
 import * as XLSX from 'xlsx'
-import { ParsedQuestion, QuestionOption } from './types'
+import { ParsedQuestion, QuestionOption } from '@/lib/types'
+import type { SPSSVariable, SPSSParseResult } from './types'
+import {
+  splitByColonSegments,
+  extractLastNumber,
+  removeTrailingNumberGroup,
+  parseVariableName,
+  classifyVariable,
+  compareQuestionIds,
+  isTextCompanion,
+  getBaseVarFromTextCompanion,
+  getSABaseVarFromTextCompanion,
+} from './utils'
 
-export interface SPSSVariable {
-  originalVar: string       // e.g., var1, var2O1, var3PN1
-  label: string             // e.g., "Tên sản phẩm:ProductName" or "Option 1:Q1"
-  questionId: string        // Extracted question ID (e.g., Q1, ProductName)
-  variableType: 'SA' | 'MA' | 'Grid' | 'Loop' | 'Rank' | 'Sum' | 'Unknown'
-  optionCode?: number       // For MA: option number (O1 -> 1)
-  subIndex?: number         // For Loop/Grid: PN1 -> 1, QN1 -> 1
-  optionLabel?: string      // Text before the colon (option description)
-}
+const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-export interface SPSSParseResult {
-  questions: ParsedQuestion[]
-  variables: SPSSVariable[]
-  oldVariableMapping: Record<string, string[]> // questionId -> original variable names
-  syntax: {
-    rename: string[]
-    varLab: string[]
-    valLab: string[]
-    recode: string[]
-  }
-}
-
-/**
- * Split text by colon segments where colon is followed by non-space character
- * Port from Python: split_by_colon_segments
- */
-function splitByColonSegments(text: string): string[] {
-  const positions: number[] = []
-  
-  // Find all colons followed by non-space character
-  for (let i = 0; i < text.length; i++) {
-    if (text[i] === ':') {
-      if (i + 1 < text.length && !/\s/.test(text[i + 1])) {
-        positions.push(i)
-      }
-    }
-  }
-  
-  const segments: string[] = []
-  
-  if (positions.length === 0) {
-    return [text.trim()]
-  }
-  
-  // First segment (before first colon)
-  segments.push(text.substring(0, positions[0]).trim())
-  
-  for (let i = 0; i < positions.length; i++) {
-    const start = positions[i] + 1 // Skip colon
-    const end = i + 1 < positions.length ? positions[i + 1] : text.length
-    let segment = text.substring(start, end).trim()
-    
-    // If last segment, only take first word before space
-    if (i === positions.length - 1) {
-      const spaceIndex = segment.indexOf(' ')
-      if (spaceIndex > 0) {
-        segment = segment.substring(0, spaceIndex)
-      }
-    }
-    
-    segments.push(segment)
-  }
-  
-  return segments
-}
-
-/**
- * Extract last number from path like "text/123"
- */
-function extractLastNumber(text: string): string | null {
-  const match = text.trim().match(/\/(\d+)$/)
-  return match ? match[1] : null
-}
-
-/**
- * Remove trailing /number from text
- */
-function removeTrailingNumberGroup(text: string): string {
-  return text.replace(/\/\d+$/, '')
-}
-
-/**
- * Determine variable type from variable name and label
- */
-function classifyVariable(varName: string, label: string): SPSSVariable['variableType'] {
-  const upperLabel = label.toUpperCase()
-  
-  // Check for Rank
-  if (upperLabel.includes('[RANK]')) return 'Rank'
-  
-  // Check for Sum
-  if (upperLabel.includes('[SUM]')) return 'Sum'
-  
-  // Check patterns in variable name
-  // varXOY = MA (Multiple Answer option)
-  // varXOYPN/QN = Grid/Loop with MA
-  // varXPN/QN = Loop/Grid
-  
-  if (/var\d+O\d+(?:Othr)?(?:PN|QN)\d+/i.test(varName)) {
-    return 'Loop' // MA in Loop
-  }
-  
-  if (/var\d+(?:PN|QN)\d+/i.test(varName)) {
-    return 'Loop' // SA in Loop
-  }
-  
-  if (/var\d+O\d+/i.test(varName)) {
-    return 'MA' // Multiple Answer
-  }
-  
-  if (/var\d+$/i.test(varName)) {
-    return 'SA' // Single Answer
-  }
-  
-  return 'Unknown'
-}
-
-/**
- * Parse variable name to extract components
- */
-function parseVariableName(varName: string): {
-  varId: string
-  optionId?: string
-  isOther?: boolean
-  loopId?: string
-  loopType?: 'PN' | 'QN'
-} {
-  // Pattern: var{id}O{optionId}Othr?{PN|QN}{loopId}
-  const match = varName.match(/^(var\d+)(O\d+)?(Othr)?((PN|QN)([\d_]+))?$/i)
-  
-  if (!match) {
-    return { varId: varName }
-  }
-  
-  return {
-    varId: match[1],
-    optionId: match[2] || undefined,
-    isOther: !!match[3],
-    loopId: match[6] || undefined,
-    loopType: (match[5] as 'PN' | 'QN') || undefined,
-  }
+const stripIdFromLabel = (id: string, label: string) => {
+  const regex = new RegExp('^' + escapeRegExp(id) + '\\s*[:.-]?\\s*', 'i')
+  return label.replace(regex, '')
 }
 
 /**
@@ -163,28 +39,22 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     rows?: QuestionOption[]
     columns?: QuestionOption[]
     rowOptionsMap?: Record<string, QuestionOption[]>
+    textCompanionVar?: string
+    saTextCompanions?: string[]
   }>()
   
-  // Counters for generating syntax
+  // Counters for variable structure (optionCode, subIndex, etc.)
   const groupCounts: Record<string, number> = {}
   const qrMapping: Record<string, number> = {}
   const subgroupItemCounts: Record<string, Record<number, number>> = {}
   const rValueMapping: Record<string, Record<string, number>> = {}
+  const gridRowLabelToCode: Record<string, Record<string, number>> = {} // questionId -> rowLabel -> rowCode (global, consistent across columns)
   const rankMapping: Record<string, number> = {}
   const sumMapping: Record<string, number> = {}
   const answerOrderMap: Record<string, number> = {}
+  const lastMAQuestionIdByVarId: Record<string, string> = {}
   const pnMapping: Record<string, number> = {}
-  
-  // Syntax arrays
-  const renameSyntax: string[] = []
-  const varLabSyntax: string[] = []
-  const valLabSyntax: string[] = []
-  const recodeSyntax: string[] = []
-  
-  // Temporary val lab collection for grouping
-  let recodeMA: string[] = []
-  let recodeMAVal: string[] = []
-  let previousQuestion: string | null = null
+  let lastPnQuestionId: string | null = null
   
   // Map to store codes from sheet 2: oldVarName -> [{code, label}, ...]
   const codeLookupMap = new Map<string, Array<{ code: string | number; label: string }>>()
@@ -252,41 +122,24 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     }
   }
   
-  /**
-   * Transform val lab lines to grouped syntax
-   */
-  function transformTextGeneral(lines: string[]): string[] {
-    if (lines.length === 0) return ['']
-    
-    // Extract first and last question from val lab lines
-    const firstMatch = lines[0].match(/Val lab (\S+)/)
-    const lastMatch = lines[lines.length - 1].match(/Val lab (\S+)/)
-    
-    if (!firstMatch || !lastMatch) return lines
-    
-    const firstQ = firstMatch[1]
-    const lastQ = lastMatch[1]
-    
-    const result = [`Val lab ${firstQ} to ${lastQ}`]
-    
-    for (const line of lines) {
-      const match = line.match(/Val lab \S+ (\d+)"(.+)"/)
-      if (match) {
-        result.push(`${match[1]}"${match[2]}"`)
-      }
-    }
-    
-    if (result.length > 1) {
-      result[result.length - 1] += '.'
-    }
-    
-    return result
-  }
-  
   // Process first sheet
   const sheetName = workbook.SheetNames[0]
   const worksheet = workbook.Sheets[sheetName]
   const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][]
+  
+  // Build known variables set for prefix-based Other pairing (Sheet 1 col1 + Sheet 2 keys)
+  const knownVarSet = new Set<string>()
+  for (const row of data) {
+    if (row && row.length >= 1) {
+      const col1 = String(row[0] || '').trim()
+      if (col1 && col1.toLowerCase() !== 'variable' && col1.toLowerCase() !== 'var') {
+        knownVarSet.add(col1)
+      }
+    }
+  }
+  for (const key of codeLookupMap.keys()) {
+    knownVarSet.add(key)
+  }
   
   // Process each row
   for (let index = 0; index < data.length; index++) {
@@ -305,6 +158,55 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     const parsed = parseVariableName(col1)
     const varType = classifyVariable(col1, col2)
     
+    // Handle text companions (Othr, _OTHER, _TEXT, _O): pair with base using exact or SA prefix matching
+    if (isTextCompanion(col1)) {
+      let baseVar = getBaseVarFromTextCompanion(col1, knownVarSet)
+      if (!baseVar) baseVar = getSABaseVarFromTextCompanion(col1, knownVarSet)
+      if (baseVar) {
+        const baseVariable = variables.find(v => v.originalVar === baseVar)
+        const colonParts = col2.split(/:(?=\S)/)
+        const text = colonParts[0] || ''
+        const matchFirst = colonParts[1]?.match(/^(\S+)/)
+        const firstWord = matchFirst ? matchFirst[1].replace(/:$/, '') : 'Unknown'
+
+        if (baseVariable && baseVariable.questionId) {
+          const questionId = baseVariable.questionId
+          const q = questionMap.get(questionId)
+          // MA/Grid: base has optionCode, update that option
+          if (baseVariable.optionCode != null) {
+            const opt = q?.options?.find(o => o.code === baseVariable.optionCode) ?? q?.rows?.find(r => r.code === baseVariable.optionCode)
+            if (opt) {
+              opt.codeType = 'Other'
+              opt.openEndedRawVariable = col1
+            }
+            variables.push({
+              originalVar: col1,
+              label: col2,
+              questionId,
+              variableType: (baseVariable.variableType === 'Grid' || (baseVariable.variableType === 'Loop' && baseVariable.subIndex != null)) ? 'Grid' : 'MA',
+              optionCode: baseVariable.optionCode,
+              optionLabel: baseVariable.optionLabel ?? '',
+            })
+          } else {
+            if (q) {
+              if (!q.saTextCompanions) q.saTextCompanions = []
+              if (!q.saTextCompanions.includes(col1)) q.saTextCompanions.push(col1)
+            }
+            variables.push({
+              originalVar: col1,
+              label: col2,
+              questionId,
+              variableType: 'SA',
+              optionLabel: text,
+            })
+          }
+          continue
+        }
+        // STRICT: Do NOT fallback to firstWord/options[0] if base not found. Skip; second pass will pair when base exists.
+        continue
+      }
+    }
+    
     // Check for Rank pattern
     const matchRank = /\[Rank\]/i.test(col2) ? col2.match(/:(\S+)/) : null
     const matchSum = /\[Sum\]/i.test(col2) ? col2.match(/:(\S+)/) : null
@@ -318,9 +220,6 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
       } else {
         groupCounts[questionId]++
       }
-      
-      const result = `${questionId}_${groupCounts[questionId]}`
-      renameSyntax.push(`Rename Variables ${col1} = ${result}.`)
       
       // Track question
       if (!questionMap.has(questionId)) {
@@ -349,25 +248,6 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
         rankMapping[firstWord] = 1
       } else {
         rankMapping[firstWord]++
-      }
-      
-      const result = `${firstWord}_${rankMapping[firstWord]}`
-      renameSyntax.push(`Rename Variables ${col1} = ${result}.`)
-      varLabSyntax.push(`Var lab ${result}"${firstWord}. ${text}".`)
-      
-      // Val lab for ranking
-      recodeMAVal.push(`Val lab ${result} ${rankMapping[firstWord]}"Rank ${rankMapping[firstWord]}".`)
-      
-      const stayQuestion = firstWord
-      if (previousQuestion !== stayQuestion) {
-        if (recodeMAVal.length > 1) {
-          recodeMAVal.pop()
-          const transformed = transformTextGeneral(recodeMAVal)
-          recodeSyntax.push(...transformed)
-        }
-        recodeMAVal = []
-        previousQuestion = stayQuestion
-        recodeMAVal.push(`Val lab ${result} ${rankMapping[firstWord]}"Rank ${rankMapping[firstWord]}".`)
       }
       
       // Track question
@@ -406,19 +286,17 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
         sumMapping[firstWord]++
       }
       
-      const result = `${firstWord}_${sumMapping[firstWord]}`
-      renameSyntax.push(`Rename Variables ${col1} = ${result}.`)
-      varLabSyntax.push(`Var lab ${result}"${firstWord}. ${text}".`)
-      
       // Track question
       if (!questionMap.has(firstWord)) {
         questionMap.set(firstWord, {
           id: firstWord,
-          type: 'Numeric',
+          type: 'Sum',
           label: firstWord,
           options: [],
         })
       }
+      const q = questionMap.get(firstWord)!
+      q.options.push({ code: sumMapping[firstWord], label: text })
       
       variables.push({
         originalVar: col1,
@@ -433,8 +311,6 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     else if (/^var\d+$/.test(col1) && segments.length === 1) {
       const firstWordMatch = col2.match(/\S+/)
       const firstWord = firstWordMatch ? firstWordMatch[0] : 'Unknown'
-      
-      renameSyntax.push(`Rename Variables ${col1} = ${firstWord}.`)
       
       // Track question
       if (!questionMap.has(firstWord)) {
@@ -477,31 +353,9 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
       }
       
       const itemCount = subgroupItemCounts[questionId][rValue]
-      const result = `${questionId}_${rValue}R${itemCount}`
-      
-      renameSyntax.push(`Rename Variables ${col1} = ${result}.`)
       
       const colonParts = col2.split(/:(?=\S)/)
       const text = colonParts[0] || ''
-      const text2 = colonParts[1]?.split(':')[0] || subgroup
-      
-      varLabSyntax.push(`Var lab ${result}"${questionId}_${rValue}. ${text2}_${text}".`)
-      recodeSyntax.push(`Recode ${result}(0=sysmis)(1=${itemCount}) into ${result}.`)
-      recodeMAVal.push(`Val lab ${result} ${itemCount}"${text2}_${text}".`)
-      
-      const stayQuestion = `${questionId}_${rValue}`
-      if (previousQuestion !== stayQuestion) {
-        if (recodeSyntax.length > 1 && recodeMAVal.length > 1) {
-          recodeSyntax.pop()
-          recodeMAVal.pop()
-          const transformed = transformTextGeneral(recodeMAVal)
-          recodeSyntax.push(...transformed)
-        }
-        recodeMAVal = []
-        previousQuestion = stayQuestion
-        recodeSyntax.push(`Recode ${result}(0=sysmis)(1=${itemCount}) into ${result}.`)
-        recodeMAVal.push(`Val lab ${result} ${itemCount}"${text2}_${text}".`)
-      }
       
       // Track question as MA_Grid
       if (!questionMap.has(questionId)) {
@@ -516,17 +370,23 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
       }
       
       const q = questionMap.get(questionId)!
-      // Add column if not exists
+      // Add column if not exists (columns = brands/categories)
       if (!q.columns?.some(c => c.code === rValue)) {
         q.columns?.push({
           code: rValue,
           label: subgroup,
         })
       }
-      // Add row
-      if (!q.rows?.some(r => r.label === text)) {
+      // Add row with globally consistent code (rows = attributes). Same row label must get same code across all columns.
+      if (!gridRowLabelToCode[questionId]) {
+        gridRowLabelToCode[questionId] = {}
+      }
+      let rowCode = gridRowLabelToCode[questionId][text]
+      if (rowCode === undefined) {
+        rowCode = Object.keys(gridRowLabelToCode[questionId]).length + 1
+        gridRowLabelToCode[questionId][text] = rowCode
         q.rows?.push({
-          code: itemCount,
+          code: rowCode,
           label: text,
         })
       }
@@ -537,45 +397,33 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
         questionId,
         variableType: 'Grid',
         subIndex: rValue,
-        optionCode: itemCount,
+        optionCode: rowCode,
         optionLabel: text,
       })
     }
-    // Case 6: var{id}O{n} with 2 segments (MA)
-    else if (/^var\d+O\d+$/.test(col1) && segments.length === 2 && !matchSum && !matchRank) {
-      const questionId = segments[1]
-      
+    // Case 6: var{id}O{n} (MA) - 2 segments (Label: QuestionID) or 1 segment (label only, use last questionId)
+    else if (/^var\d+O\d+$/.test(col1) && !matchSum && !matchRank) {
+      const varIdMatch = col1.match(/^(var\d+)/)
+      const varId = varIdMatch ? varIdMatch[1] : ''
+      let questionId: string
+      if (segments.length >= 2) {
+        const rawId = segments[1]
+        const idMatch = rawId.match(/^([A-Za-z]+\d+[a-zA-Z0-9_]*)/)
+        questionId = idMatch ? idMatch[1] : rawId
+      } else {
+        questionId = lastMAQuestionIdByVarId[varId] || 'Unknown'
+      }
+      const text = segments[0] || col2.trim()
+
       if (!qrMapping[questionId]) {
         qrMapping[questionId] = 1
       } else {
         qrMapping[questionId]++
       }
-      
+
       const optionNum = qrMapping[questionId]
-      const result = `${questionId}R${optionNum}`
-      
-      renameSyntax.push(`Rename Variables ${col1} = ${result}.`)
-      
-      const text = segments[0]
-      varLabSyntax.push(`Var lab ${result}"${questionId}. ${text}".`)
-      
-      recodeSyntax.push(`Recode ${result}(0=sysmis)(1=${optionNum}) into ${result}.`)
-      recodeMAVal.push(`Val lab ${result} ${optionNum}"${text}".`)
-      
-      const stayQuestion = questionId
-      if (previousQuestion !== stayQuestion) {
-        if (recodeSyntax.length > 1 && recodeMAVal.length > 1) {
-          recodeSyntax.pop()
-          recodeMAVal.pop()
-          const transformed = transformTextGeneral(recodeMAVal)
-          recodeSyntax.push(...transformed)
-        }
-        recodeMAVal = []
-        previousQuestion = stayQuestion
-        recodeSyntax.push(`Recode ${result}(0=sysmis)(1=${optionNum}) into ${result}.`)
-        recodeMAVal.push(`Val lab ${result} ${optionNum}"${text}".`)
-      }
-      
+      lastMAQuestionIdByVarId[varId] = questionId
+
       // Track question as MA
       if (!questionMap.has(questionId)) {
         questionMap.set(questionId, {
@@ -585,13 +433,13 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
           options: [],
         })
       }
-      
+
       const q = questionMap.get(questionId)!
       q.options.push({
         code: optionNum,
         label: text,
       })
-      
+
       variables.push({
         originalVar: col1,
         label: col2,
@@ -631,33 +479,6 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
       const colonParts = col2.split(/:(?=\S)/)
       const text = colonParts[0] || ''
       
-      let result: string
-      if (othrFlag) {
-        result = `${questionId}${subQuestion}R${answerOrder}_99`
-        varLabSyntax.push(`Var lab ${result}"${questionId}. ??_${text}".`)
-      } else {
-        result = `${questionId}${subQuestion}R${answerOrder}`
-        varLabSyntax.push(`Var lab ${result}"${questionId}. ??_${text}".`)
-        recodeSyntax.push(`Recode ${result}(0=sysmis)(1=${answerOrder}) into ${result}.`)
-        recodeMAVal.push(`Val lab ${result} ${answerOrder}"${text}".`)
-      }
-      
-      renameSyntax.push(`Rename Variables ${col1} = ${result}.`)
-      
-      const stayQuestion = `${questionId}${subQuestion}`
-      if (previousQuestion !== stayQuestion && !othrFlag) {
-        if (recodeSyntax.length > 1 && recodeMAVal.length > 1) {
-          recodeSyntax.pop()
-          recodeMAVal.pop()
-          const transformed = transformTextGeneral(recodeMAVal)
-          recodeSyntax.push(...transformed)
-        }
-        recodeMAVal = []
-        previousQuestion = stayQuestion
-        recodeSyntax.push(`Recode ${result}(0=sysmis)(1=${answerOrder}) into ${result}.`)
-        recodeMAVal.push(`Val lab ${result} ${answerOrder}"${text}".`)
-      }
-      
       // Track question as MA_Grid (Loop)
       if (!questionMap.has(questionId)) {
         questionMap.set(questionId, {
@@ -668,6 +489,16 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
           rows: [],
           columns: [],
         })
+      }
+      if (othrFlag) {
+        const q = questionMap.get(questionId)!
+        if (q.rows && q.rows.length > 0) {
+          q.rows = q.rows || []
+          q.rows.push({ code: answerOrder, label: text, codeType: 'Other', openEndedRawVariable: col1 })
+        } else {
+          q.options = q.options || []
+          q.options.push({ code: answerOrder, label: text, codeType: 'Other', openEndedRawVariable: col1 })
+        }
       }
       
       variables.push({
@@ -691,9 +522,6 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
         const [, varId, pnId] = matchPN
         const matchQuestion = col2.match(/^(\S+)/)
         const questionId = matchQuestion ? matchQuestion[1] : 'Unknown'
-        
-        const result = `${questionId}_${pnId}`
-        renameSyntax.push(`Rename Variables ${col1} = ${result}.`)
         
         // Track question
         if (!questionMap.has(questionId)) {
@@ -722,10 +550,8 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
         const subQuestion = removeTrailingNumberGroup(temp[0])
         const pnNow = extractLastNumber(temp[0])
         
-        const stayQuestion = questionId
-        if (previousQuestion !== stayQuestion) {
-          previousQuestion = questionId
-          // Reset mappings for new question - clear all entries
+        if (lastPnQuestionId !== questionId) {
+          lastPnQuestionId = questionId
           Object.keys(pnMapping).forEach(k => delete pnMapping[k])
           Object.keys(qrMapping).forEach(k => delete qrMapping[k])
         }
@@ -741,10 +567,6 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
         
         const answerOrder = qrMapping[subQuestion]
         const answerOrder2 = pnMapping[subQuestion]
-        
-        const result = `${questionId}_${answerOrder2}_${answerOrder}`
-        renameSyntax.push(`Rename Variables ${col1} = ${result}.`)
-        varLabSyntax.push(`Var lab ${result}"${questionId}. ??_${temp[0]}".`)
         
         // Track question
         if (!questionMap.has(questionId)) {
@@ -776,10 +598,6 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
       if (temp.length === 2) {
         const recordId = temp[0]
         const questionId = temp[1]
-        const result = `${questionId}_${recordId}`
-        
-        renameSyntax.push(`Rename Variables ${col1} = ${result}.`)
-        varLabSyntax.push(`Var lab ${result}"${col2}".`)
         
         // Track question
         if (!questionMap.has(questionId)) {
@@ -803,10 +621,6 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
       } else if (temp.length === 3) {
         const recordId = temp[0]
         const questionId = temp[2]
-        const result = `${questionId}_${recordId}`
-        
-        renameSyntax.push(`Rename Variables ${col1} = ${result}.`)
-        varLabSyntax.push(`Var lab ${result}"${col2}".`)
         
         // Track question
         if (!questionMap.has(questionId)) {
@@ -857,33 +671,6 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
       const colonParts = col2.split(/:(?=\S)/)
       const text = colonParts[0] || ''
       
-      let result: string
-      if (othrFlag) {
-        result = `${questionId}${subQuestion}R${answerOrder}_99`
-        varLabSyntax.push(`Var lab ${result}"${questionId}. ??_${text}".`)
-      } else {
-        result = `${questionId}${subQuestion}R${answerOrder}`
-        varLabSyntax.push(`Var lab ${result}"${questionId}. ??_${text}".`)
-        recodeSyntax.push(`Recode ${result}(0=sysmis)(1=${answerOrder}) into ${result}.`)
-        recodeMAVal.push(`Val lab ${result} ${answerOrder}"${text}".`)
-      }
-      
-      renameSyntax.push(`Rename Variables ${col1} = ${result}.`)
-      
-      const stayQuestion = `${questionId}${subQuestion}`
-      if (previousQuestion !== stayQuestion && !othrFlag) {
-        if (recodeSyntax.length > 1 && recodeMAVal.length > 1) {
-          recodeSyntax.pop()
-          recodeMAVal.pop()
-          const transformed = transformTextGeneral(recodeMAVal)
-          recodeSyntax.push(...transformed)
-        }
-        recodeMAVal = []
-        previousQuestion = stayQuestion
-        recodeSyntax.push(`Recode ${result}(0=sysmis)(1=${answerOrder}) into ${result}.`)
-        recodeMAVal.push(`Val lab ${result} ${answerOrder}"${text}".`)
-      }
-      
       // Track question as MA_Grid (Loop)
       if (!questionMap.has(questionId)) {
         questionMap.set(questionId, {
@@ -894,6 +681,16 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
           rows: [],
           columns: [],
         })
+      }
+      if (othrFlag) {
+        const q = questionMap.get(questionId)!
+        if (q.rows && q.rows.length > 0) {
+          q.rows = q.rows || []
+          q.rows.push({ code: answerOrder, label: text, codeType: 'Other', openEndedRawVariable: col1 })
+        } else {
+          q.options = q.options || []
+          q.options.push({ code: answerOrder, label: text, codeType: 'Other', openEndedRawVariable: col1 })
+        }
       }
       
       variables.push({
@@ -908,59 +705,60 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     }
   }
   
-  // Final transform for remaining val lab
-  if (recodeMAVal.length > 0) {
-    const transformed = transformTextGeneral(recodeMAVal)
-    recodeSyntax.push(...transformed)
-  }
-  
-  // Process Other (Othr) variables in second pass
+  // Process Other (Othr, _OTHER, _TEXT, _O) variables in second pass - pair with base using exact or SA prefix matching
   for (let index = 0; index < data.length; index++) {
     const row = data[index]
     if (!row || row.length < 2) continue
-    
+
     const varName = String(row[0] || '').trim()
     const label = String(row[1] || '').trim()
-    
-    // Check for Othr pattern: var{id}O{n}Othr
-    const othrMatch = varName.match(/^(var\d+O\d+)Othr$/)
-    if (!othrMatch) continue
-    
-    const baseVar = othrMatch[1]
+
+    if (!isTextCompanion(varName)) continue
+
+    let baseVar = getBaseVarFromTextCompanion(varName, knownVarSet)
+    if (!baseVar) {
+      baseVar = getSABaseVarFromTextCompanion(varName, knownVarSet) ?? null
+    }
+    if (!baseVar) continue
+
     const colonParts = label.split(/:(?=\S)/)
     const text = colonParts[0] || ''
     const matchFirst = colonParts[1]?.match(/^(\S+)/)
     const firstWord = matchFirst ? matchFirst[1].replace(/:$/, '') : 'Unknown'
-    
-    // Find the base variable in rename syntax
-    const baseIndex = renameSyntax.findIndex(line => line.includes(baseVar + ' ='))
-    if (baseIndex >= 0) {
-      // Extract the renamed base variable name
-      const baseMatch = renameSyntax[baseIndex].match(/= (\S+)\./)
-      if (baseMatch) {
-        const baseResult = baseMatch[1]
-        const othrResult = `${baseResult}_99`
-        
-        // Insert after base variable
-        renameSyntax.splice(baseIndex + 1, 0, `Rename Variables ${varName} = ${othrResult}.`)
-        varLabSyntax.push(`Var lab ${othrResult}"${firstWord}. ${text}".`)
+
+    const baseVariable = variables.find(v => v.originalVar === baseVar)
+    if (baseVariable && baseVariable.questionId) {
+      const questionId = baseVariable.questionId
+      const q = questionMap.get(questionId)
+      if (baseVariable.optionCode != null) {
+        const opt = q?.options?.find(o => o.code === baseVariable.optionCode) ?? q?.rows?.find(r => r.code === baseVariable.optionCode)
+        if (opt) {
+          opt.codeType = 'Other'
+          opt.openEndedRawVariable = varName
+        }
+        variables.push({
+          originalVar: varName,
+          label,
+          questionId,
+          variableType: (baseVariable.variableType === 'Grid' || (baseVariable.variableType === 'Loop' && baseVariable.subIndex != null)) ? 'Grid' : 'MA',
+          optionCode: baseVariable.optionCode,
+          optionLabel: text,
+        })
+      } else {
+        if (q) {
+          if (!q.saTextCompanions) q.saTextCompanions = []
+          if (!q.saTextCompanions.includes(varName)) q.saTextCompanions.push(varName)
+        }
+        variables.push({
+          originalVar: varName,
+          label,
+          questionId,
+          variableType: 'SA',
+          optionLabel: text,
+        })
       }
     } else {
-      // Fallback: find any matching rename for this var prefix
-      const varPrefix = varName.match(/^var\d+/)?.[0]
-      if (varPrefix) {
-        const indices = renameSyntax
-          .map((line, i) => (line.includes(varPrefix) ? i : -1))
-          .filter(i => i >= 0)
-        
-        if (indices.length > 0) {
-          const lastIndex = indices[indices.length - 1]
-          const othrResult = `${firstWord}_99_${indices.length}`
-          
-          renameSyntax.splice(lastIndex + 1, 0, `Rename Variables ${varName} = ${othrResult}.`)
-          varLabSyntax.push(`Var lab ${othrResult}"${firstWord}. ${text}".`)
-        }
-      }
+      // STRICT: Do NOT fallback to firstWord/options[0] if base not found. Skip to avoid wrong attachment.
     }
   }
   
@@ -1006,14 +804,20 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
   
   // Merge MA_Grid candidates
   for (const [baseQId, candidate] of maGridCandidates.entries()) {
+    // CRITICAL: Do NOT merge if baseQId already exists as Rank/Sum/Numeric - would destroy standalone question
+    const existingBase = questionMap.get(baseQId)
+    if (existingBase && ['Rank_Fixed', 'Rank_Upto', 'Sum', 'Numeric'].includes(existingBase.type)) {
+      continue
+    }
+
     // Only merge if we have multiple columns (otherwise it's just MA)
     if (candidate.columns.size >= 2) {
-      // Remove individual sub-questions
+      // Remove individual sub-questions (Q15_1, Q15_2) - never touch baseQId if it exists as different type
       for (const colCode of candidate.columns) {
         const subQId = `${baseQId}_${colCode}`
         questionMap.delete(subQId)
       }
-      
+
       // Create merged MA_Grid question
       const sortedColumns = Array.from(candidate.columns).sort((a, b) => {
         // Sort: 1, 1a, 1b, 2, 2a, 2b...
@@ -1098,6 +902,21 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     }
   }
   
+  // Pair SA text companions: mark option with Khác/Other label and attach openEndedRawVariable
+  const OTHER_KEYWORDS = /\b(khác|other|ghi rõ|ghi ro)\b/i
+  for (const [, qData] of questionMap.entries()) {
+    if (qData.type === 'SA' && qData.options?.length) {
+      const companionVar = qData.textCompanionVar || qData.saTextCompanions?.[0]
+      if (companionVar) {
+        const opt = qData.options.find(o => OTHER_KEYWORDS.test(String(o.label).trim()))
+        if (opt) {
+          opt.codeType = 'Other'
+          opt.openEndedRawVariable = companionVar
+        }
+      }
+    }
+  }
+  
   // Post-process: Merge SA variables with _X pattern into SA_Grid
   // Pattern: Q24_1, Q24_2, Q24_3, ..., Q24_8 → Q24 (SA_Grid) with rows [1, 2, 3, ..., 8]
   // Each row (sub-question) has its own options from sheet 2
@@ -1136,14 +955,15 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
   
   // Merge SA_Grid candidates (only if we have multiple rows)
   for (const [baseQId, candidate] of saGridCandidates.entries()) {
-    // Only merge if we have multiple rows (at least 2)
+    const existingBase = questionMap.get(baseQId)
+    if (existingBase) {
+      continue
+    }
     if (candidate.rows.size >= 2) {
-      // Remove individual sub-questions
       for (const rowIndex of candidate.rows.keys()) {
         const subQId = `${baseQId}_${rowIndex}`
         questionMap.delete(subQId)
       }
-      
       // Sort rows by index (numeric)
       const sortedRows = Array.from(candidate.rows.entries()).sort((a, b) => {
         const aNum = parseInt(a[0]) || 0
@@ -1173,22 +993,26 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
   }
   
   // Convert questionMap to ParsedQuestion[]
-  const questions: ParsedQuestion[] = Array.from(questionMap.values()).map(q => ({
+  // textCompanions will be attached after we build textCompanionsMap (see below)
+  const questions: ParsedQuestion[] = Array.from(questionMap.values()).map(q => {
+    const label = (q.type === 'SA' || q.type === 'OE') ? stripIdFromLabel(q.id, q.label) : q.label
+    return {
     id: q.id,
     type: q.type,
-    label: q.label,
+    label,
     options: q.options.length > 0 ? q.options : undefined,
     rows: q.rows && q.rows.length > 0 ? q.rows : undefined,
     columns: q.columns && q.columns.length > 0 ? q.columns : undefined,
     rowOptionsMap: q.rowOptionsMap,
-    // Initialize logic object to ensure it exists for editing
+    saTextCompanions: q.saTextCompanions && q.saTextCompanions.length > 0 ? Array.from(new Set(q.saTextCompanions)) : undefined,
     logic: {
       type: 'Normal',
       piping_source: null,
       terminate_if: null,
       ask_if_condition: null,
     },
-  }))
+  }
+  })
   
   // Sort questions by ID with proper handling of sub-questions
   // Q1, Q2, Q8, Q8_1, Q8_1a, Q8_1b, Q8_2, Q9, H1, H2...
@@ -1196,16 +1020,19 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     return compareQuestionIds(a.id, b.id)
   })
   
-  // Build oldVariableMapping from variables
-  // This maps questionId -> array of original variable names
-  // Also handle merged MA_Grid questions (H8_1, H8_2 → H8)
+  // Build oldVariableMapping from variables (BASE VARIABLES ONLY - no text companions)
+  // Text companions go into textCompanionsMap to prevent grid index shifting
   const oldVariableMapping: Record<string, string[]> = {}
+  const textCompanionsMap: Record<string, Record<string, string>> = {}
   
   // Build a map of sub-question IDs to base question IDs (for merged MA_Grid and SA_Grid)
   const subToBaseMap = new Map<string, string>()
   for (const [baseQId, candidate] of maGridCandidates.entries()) {
     if (candidate.columns.size >= 2) {
-      // This was merged
+      const existingBase = questionMap.get(baseQId)
+      if (existingBase && ['Rank_Fixed', 'Rank_Upto', 'Sum', 'Numeric'].includes(existingBase.type)) {
+        continue
+      }
       for (const colCode of candidate.columns) {
         const subQId = `${baseQId}_${colCode}`
         subToBaseMap.set(subQId, baseQId)
@@ -1213,10 +1040,10 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     }
   }
   
-  // Also map SA_Grid sub-questions to base question
   for (const [baseQId, candidate] of saGridCandidates.entries()) {
     if (candidate.rows.size >= 2) {
-      // This was merged
+      const existingBase = questionMap.get(baseQId)
+      if (existingBase) continue
       for (const rowIndex of candidate.rows.keys()) {
         const subQId = `${baseQId}_${rowIndex}`
         subToBaseMap.set(subQId, baseQId)
@@ -1225,15 +1052,30 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
   }
   
   for (const v of variables) {
-    // Check if this variable's questionId was merged into a base question
     const effectiveQId = subToBaseMap.get(v.questionId) || v.questionId
     
+    // CRITICAL: ONLY filter out companions (Othr suffix). Base variables MUST remain in oldVariableMapping.
+    if (isTextCompanion(v.originalVar)) {
+      const baseVar = getBaseVarFromTextCompanion(v.originalVar, knownVarSet)
+      if (baseVar) {
+        if (!textCompanionsMap[effectiveQId]) textCompanionsMap[effectiveQId] = {}
+        textCompanionsMap[effectiveQId][baseVar] = v.originalVar
+      }
+      continue
+    }
+
     if (!oldVariableMapping[effectiveQId]) {
       oldVariableMapping[effectiveQId] = []
     }
-    // Only add if not already present
     if (!oldVariableMapping[effectiveQId].includes(v.originalVar)) {
       oldVariableMapping[effectiveQId].push(v.originalVar)
+    }
+  }
+  
+  // Attach textCompanions to each question
+  for (const q of questions) {
+    if (textCompanionsMap[q.id] && Object.keys(textCompanionsMap[q.id]).length > 0) {
+      q.textCompanions = textCompanionsMap[q.id]
     }
   }
   
@@ -1241,284 +1083,5 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     questions,
     variables,
     oldVariableMapping,
-    syntax: {
-      rename: renameSyntax,
-      varLab: varLabSyntax,
-      valLab: valLabSyntax,
-      recode: recodeSyntax,
-    },
   }
-}
-
-/**
- * Compare two question IDs for sorting
- * Handles: Q1, Q2, Q8, Q8_1, Q8_1a, Q8_1b, Q8_2, Q9, H1, H2...
- */
-function compareQuestionIds(a: string, b: string): number {
-  // Parse question ID into parts: prefix, main number, sub-parts
-  const parseQId = (id: string) => {
-    // Match: (prefix)(number)(_sub1)(_sub2)?
-    // Examples: Q1, Q8, Q8_1, Q8_1a, Q8_1_2, H1
-    const match = id.match(/^([A-Za-z]+)(\d+)(?:_(\d+[a-z]?))?(?:_(\d+[a-z]?))?/i)
-    if (!match) return { prefix: id, num: 0, sub1: '', sub2: '' }
-    
-    return {
-      prefix: match[1].toUpperCase(),
-      num: parseInt(match[2]) || 0,
-      sub1: match[3] || '',
-      sub2: match[4] || '',
-    }
-  }
-  
-  const aParts = parseQId(a)
-  const bParts = parseQId(b)
-  
-  // Sort by prefix first (A-Z)
-  if (aParts.prefix !== bParts.prefix) {
-    return aParts.prefix.localeCompare(bParts.prefix)
-  }
-  
-  // Then by main number
-  if (aParts.num !== bParts.num) {
-    return aParts.num - bParts.num
-  }
-  
-  // Then by sub1 (if both have sub1)
-  if (aParts.sub1 || bParts.sub1) {
-    // No sub1 comes before having sub1
-    if (!aParts.sub1) return -1
-    if (!bParts.sub1) return 1
-    
-    // Compare sub1 numerically first, then alphabetically
-    const aSub1Num = parseInt(aParts.sub1) || 0
-    const bSub1Num = parseInt(bParts.sub1) || 0
-    if (aSub1Num !== bSub1Num) return aSub1Num - bSub1Num
-    
-    // Same number, compare full string (for 1a, 1b)
-    if (aParts.sub1 !== bParts.sub1) {
-      return aParts.sub1.localeCompare(bParts.sub1)
-    }
-  }
-  
-  // Then by sub2
-  if (aParts.sub2 || bParts.sub2) {
-    if (!aParts.sub2) return -1
-    if (!bParts.sub2) return 1
-    
-    const aSub2Num = parseInt(aParts.sub2) || 0
-    const bSub2Num = parseInt(bParts.sub2) || 0
-    if (aSub2Num !== bSub2Num) return aSub2Num - bSub2Num
-    
-    return aParts.sub2.localeCompare(bParts.sub2)
-  }
-  
-  return 0
-}
-
-/**
- * Extract base question ID from variable name
- * Examples:
- * - "Q1_1" -> "Q1"
- * - "Q1_1R2" -> "Q1"  (MA_Grid: Q1 with column _1 and row R2)
- * - "Q1R1" -> "Q1"    (MA: Q1 with row R1)
- * - "Q8_1a" -> "Q8"   (sub-question)
- * - "H1_2R3" -> "H1"
- */
-function extractBaseQuestionId(varName: string): string | null {
-  // Pattern: (prefix)(number) optionally followed by _X, _XRY, RY, etc.
-  // We want to extract just the base: prefix + first number
-  const match = varName.match(/^([A-Za-z]+\d+)/)
-  return match ? match[1] : null
-}
-
-/**
- * Extract question ID from a syntax line
- * Examples:
- * - "Rename Variables var1 = Q1_1." -> "Q1"
- * - "Rename Variables var1 = Q8_1R2." -> "Q8"
- * - "Var lab Q1R1..." -> "Q1"
- * - "Recode Q1R1..." -> "Q1"
- * - "Val lab Q1R1..." -> "Q1"
- */
-function extractQuestionIdFromSyntax(line: string): string | null {
-  // Skip comment lines and empty lines
-  if (!line || line.startsWith('*') || line.trim() === '') return null
-  
-  // Pattern: extract the first question-like identifier after = or after command keyword
-  // For rename: "Rename Variables var1 = Q1_1." -> Q1
-  const renameMatch = line.match(/Rename Variables \S+ = ([A-Za-z]+[\dA-Za-z_]+)/i)
-  if (renameMatch) {
-    return extractBaseQuestionId(renameMatch[1])
-  }
-  
-  // For Var lab: "Var lab Q1R1..." -> Q1
-  const varLabMatch = line.match(/Var lab ([A-Za-z]+[\dA-Za-z_]+)/i)
-  if (varLabMatch) {
-    return extractBaseQuestionId(varLabMatch[1])
-  }
-  
-  // For Recode: "Recode Q1R1..." -> Q1
-  const recodeMatch = line.match(/Recode ([A-Za-z]+[\dA-Za-z_]+)/i)
-  if (recodeMatch) {
-    return extractBaseQuestionId(recodeMatch[1])
-  }
-  
-  // For Val lab: "Val lab Q1R1..." or "Val lab Q1R1 to Q1R5" -> Q1
-  const valLabMatch = line.match(/Val lab ([A-Za-z]+[\dA-Za-z_]+)/i)
-  if (valLabMatch) {
-    return extractBaseQuestionId(valLabMatch[1])
-  }
-  
-  // For value labels continuation (1"text".) - associate with previous question
-  if (line.match(/^\d+["']/) || line.match(/^\d+\s*["']/)) {
-    return null // Will be associated with previous question
-  }
-  
-  return null
-}
-
-/**
- * Sort question IDs with proper handling of sub-questions
- * Q1, Q2, Q8, Q8_1, Q8_1a, Q8_1b, Q8_2, Q9, H1, H2...
- */
-function sortQuestionIds(ids: string[]): string[] {
-  return ids.sort((a, b) => compareQuestionIds(a, b))
-}
-
-/**
- * Group syntax lines by question ID
- */
-function groupSyntaxByQuestion(
-  rename: string[],
-  varLab: string[],
-  recode: string[]
-): Map<string, { rename: string[]; varLab: string[]; recode: string[] }> {
-  const groups = new Map<string, { rename: string[]; varLab: string[]; recode: string[] }>()
-  
-  // Helper to ensure group exists
-  const ensureGroup = (qId: string) => {
-    if (!groups.has(qId)) {
-      groups.set(qId, { rename: [], varLab: [], recode: [] })
-    }
-    return groups.get(qId)!
-  }
-  
-  // Process rename syntax
-  for (const line of rename) {
-    const qId = extractQuestionIdFromSyntax(line)
-    if (qId) {
-      ensureGroup(qId).rename.push(line)
-    }
-  }
-  
-  // Process var lab syntax
-  for (const line of varLab) {
-    const qId = extractQuestionIdFromSyntax(line)
-    if (qId) {
-      ensureGroup(qId).varLab.push(line)
-    }
-  }
-  
-  // Process recode syntax (includes val lab)
-  let lastQuestionId: string | null = null
-  for (const line of recode) {
-    const qId = extractQuestionIdFromSyntax(line)
-    if (qId) {
-      lastQuestionId = qId
-      ensureGroup(qId).recode.push(line)
-    } else if (lastQuestionId && line.trim()) {
-      // Continuation line (like value labels: 1"text".)
-      ensureGroup(lastQuestionId).recode.push(line)
-    }
-  }
-  
-  return groups
-}
-
-/**
- * Generate combined SPSS syntax from parse result - organized by question
- */
-export function generateSPSSSyntaxFromResult(result: SPSSParseResult): string {
-  const lines: string[] = []
-  
-  // Group syntax by question
-  const groups = groupSyntaxByQuestion(
-    result.syntax.rename,
-    result.syntax.varLab,
-    result.syntax.recode
-  )
-  
-  // Get sorted question IDs
-  const questionIds = sortQuestionIds(Array.from(groups.keys()))
-  
-  lines.push('* ====================================.')
-  lines.push('* SPSS SYNTAX - Organized by Question.')
-  lines.push('* ====================================.')
-  lines.push('')
-  
-  // Generate syntax for each question
-  for (const qId of questionIds) {
-    const group = groups.get(qId)!
-    
-    // Skip if no syntax for this question
-    if (group.rename.length === 0 && group.varLab.length === 0 && group.recode.length === 0) {
-      continue
-    }
-    
-    // Question header comment
-    lines.push(`*${qId}.`)
-    
-    // Rename syntax
-    if (group.rename.length > 0) {
-      lines.push(...group.rename)
-    }
-    
-    // Var lab syntax
-    if (group.varLab.length > 0) {
-      lines.push(...group.varLab)
-    }
-    
-    // Recode & Val lab syntax
-    if (group.recode.length > 0) {
-      lines.push(...group.recode)
-    }
-    
-    // Empty line between questions
-    lines.push('')
-  }
-  
-  return lines.join('\n')
-}
-
-/**
- * Generate SPSS syntax in traditional format (grouped by type)
- */
-export function generateSPSSSyntaxByType(result: SPSSParseResult): string {
-  const lines: string[] = []
-  
-  lines.push('* ====================================.')
-  lines.push('* RENAME VARIABLES.')
-  lines.push('* ====================================.')
-  lines.push('')
-  lines.push(...result.syntax.rename)
-  
-  if (result.syntax.varLab.length > 0) {
-    lines.push('')
-    lines.push('* ====================================.')
-    lines.push('* VARIABLE LABELS.')
-    lines.push('* ====================================.')
-    lines.push('')
-    lines.push(...result.syntax.varLab)
-  }
-  
-  if (result.syntax.recode.length > 0) {
-    lines.push('')
-    lines.push('* ====================================.')
-    lines.push('* RECODE & VALUE LABELS.')
-    lines.push('* ====================================.')
-    lines.push('')
-    lines.push(...result.syntax.recode)
-  }
-  
-  return lines.join('\n')
 }

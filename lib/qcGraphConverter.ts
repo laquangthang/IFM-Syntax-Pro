@@ -3,7 +3,7 @@
  * Automatically creates nodes and edges based on question logic
  */
 
-import { ParsedQuestion, QuestionLogic } from './geminiParser'
+import { ParsedQuestion, QuestionLogic } from './types'
 import { QCNode, QCEdge, QCLogicGraph, VariableType, EdgeType } from './qcLogicTypes'
 
 /**

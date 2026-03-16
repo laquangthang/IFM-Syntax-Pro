@@ -1,19 +1,20 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
-import { Loader2, ChevronDown } from 'lucide-react'
-import { ParsedQuestion } from '@/lib/geminiParser'
+import { useState, useEffect, useMemo } from 'react'
+import { Loader2, Search } from 'lucide-react'
+import { ParsedQuestion } from '@/lib/types'
+import QuestionSelectorModal from './QuestionSelectorModal'
 import { useSurveyStore } from '@/store/surveyStore'
 import { getChildVariables } from '@/lib/processingHelpers'
 
 interface TopboxFormProps {
   mode: 'manual' | 'auto'
   questions?: ParsedQuestion[]
-  onSyntaxGenerated: (syntax: string) => void
+  setGlobalSyntax: (syntax: string) => void
   onError: (error: string) => void
 }
 
-export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, onError }: TopboxFormProps) {
+export default function TopboxForm({ mode, questions = [], setGlobalSyntax, onError }: TopboxFormProps) {
   const { oldVariableMapping } = useSurveyStore()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -26,25 +27,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
   })
 
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>([])
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false)
-      }
-    }
-
-    if (dropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [dropdownOpen])
+  const [modalOpen, setModalOpen] = useState(false)
   const [selectedCodes, setSelectedCodes] = useState<{
     t2b: string[]
     nonT2b: string[]
@@ -104,10 +87,10 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
     if (mode === 'auto') {
       setFormData(prev => ({
         ...prev,
-        t2b: selectedCodes.t2b.join(','),
-        nonT2b: selectedCodes.nonT2b.join(','),
-        b2b: selectedCodes.b2b.join(','),
-        nonB2b: selectedCodes.nonB2b.join(','),
+        t2b: selectedCodes.t2b.join('\n'),
+        nonT2b: selectedCodes.nonT2b.join('\n'),
+        b2b: selectedCodes.b2b.join('\n'),
+        nonB2b: selectedCodes.nonB2b.join('\n'),
       }))
     }
   }, [selectedCodes, mode])
@@ -151,14 +134,11 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
         finalVarLabels = allVarLabels.join('\n')
       }
       
-      // Convert newline-separated varNames to comma-separated for API
-      const varNamesForAPI = finalVarNames.split('\n').map(v => v.trim()).filter(v => v).join(',')
-
       const response = await fetch('/api/processing/topbox', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          varNames: varNamesForAPI,
+          varNames: finalVarNames,
           varLabels: finalVarLabels,
           t2b: formData.t2b,
           nonT2b: formData.nonT2b,
@@ -169,7 +149,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
 
       const result = await response.json()
       if (result.success) {
-        onSyntaxGenerated(result.syntax)
+        setGlobalSyntax(result.syntax)
       } else {
         onError(result.error || 'Failed to generate syntax')
       }
@@ -184,81 +164,44 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             1. Chọn câu hỏi (có thể chọn nhiều):
           </label>
-          <div className="relative" ref={dropdownRef}>
-            <button
-              type="button"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
-            >
-              <span className="text-sm font-medium text-white">
-                {selectedQuestions.length > 0 
-                  ? `Đã chọn ${selectedQuestions.length} câu hỏi` 
-                  : 'Chọn câu hỏi'}
-              </span>
-              <ChevronDown className={`size-5 transition-transform text-white ${dropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-            
-            {dropdownOpen && (
-              <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-xl max-h-72 overflow-y-auto custom-scrollbar">
-                {questions.length === 0 ? (
-                  <p className="p-3 text-sm text-gray-500 dark:text-gray-400">
-                    Không có câu hỏi nào. Vui lòng import dữ liệu trước.
-                  </p>
-                ) : (
-                  questions.map((q) => {
-                    const isSelected = selectedQuestions.includes(q.id)
-                    return (
-                      <label
-                        key={q.id}
-                        className={`flex items-center gap-3 p-4 cursor-pointer transition-all ${
-                          isSelected 
-                            ? 'bg-primary/20 border-l-4 border-primary' 
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-700 border-l-4 border-transparent'
-                        } border-b border-gray-200 dark:border-gray-700 last:border-b-0`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedQuestions([...selectedQuestions, q.id])
-                            } else {
-                              setSelectedQuestions(selectedQuestions.filter(id => id !== q.id))
-                            }
-                          }}
-                          className="w-4 h-4 rounded border-2 border-gray-400 dark:border-gray-500 checked:bg-primary checked:border-primary focus:ring-2 focus:ring-primary/50"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className={`text-sm font-medium ${
-                              isSelected ? 'text-primary' : 'text-white'
-                            }`}>
-                              {q.id}
-                            </span>
-                            <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded">
-                              {q.type}
-                            </span>
-                          </div>
-                          <span className="text-xs text-gray-600 dark:text-gray-300 block truncate">
-                            {q.label.substring(0, 60)}{q.label.length > 60 ? '...' : ''}
-                          </span>
-                        </div>
-                      </label>
-                    )
-                  })
-                )}
-              </div>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
+          >
+            <span className="text-sm font-medium text-white flex items-center gap-2">
+              <Search className="size-4 text-gray-400" />
+              {selectedQuestions.length > 0 ? (
+                <>
+                  {selectedQuestions.length === 1 ? (
+                    <>[{questions.find(q => q.id === selectedQuestions[0])?.id}] {questions.find(q => q.id === selectedQuestions[0])?.label?.substring(0, 40)}{(questions.find(q => q.id === selectedQuestions[0])?.label?.length || 0) > 40 ? '...' : ''}</>
+                  ) : (
+                    `Đã chọn ${selectedQuestions.length} câu hỏi`
+                  )}
+                </>
+              ) : (
+                'Select Question...'
+              )}
+            </span>
+          </button>
+          <QuestionSelectorModal
+            isOpen={modalOpen}
+            onClose={() => setModalOpen(false)}
+            onSelect={(ids) => setSelectedQuestions(Array.isArray(ids) ? ids : ids ? [ids] : [])}
+            parsedQuestions={questions}
+            multiSelect={true}
+            title="Select Questions (Top Box)"
+            initialSelection={selectedQuestions}
+          />
         </div>
 
         {selectedQuestions.length > 0 && availableCodes.length > 0 && (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-3 text-white">
+              <label className="block text-white font-semibold text-sm mb-2">
                 2. Chọn codes cho Top-Box và Bottom-Box:
               </label>
               <div className="grid grid-cols-2 gap-4">
@@ -359,7 +302,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
             {/* Display current values (read-only) */}
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <label className="block text-xs font-medium mb-1 text-gray-400 dark:text-gray-600">
+                <label className="block text-white font-semibold text-sm mb-1">
                   Top-Box (tự động điền):
                 </label>
                 <div className="px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-white">
@@ -367,7 +310,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1 text-gray-400 dark:text-gray-600">
+                <label className="block text-white font-semibold text-sm mb-1">
                   Non Top-Box (tự động điền):
                 </label>
                 <div className="px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-white">
@@ -375,7 +318,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1 text-gray-400 dark:text-gray-600">
+                <label className="block text-white font-semibold text-sm mb-1">
                   Bottom-Box (tự động điền):
                 </label>
                 <div className="px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-white">
@@ -383,7 +326,7 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1 text-gray-400 dark:text-gray-600">
+                <label className="block text-white font-semibold text-sm mb-1">
                   Non Bottom-Box (tự động điền):
                 </label>
                 <div className="px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-white">
@@ -424,80 +367,80 @@ export default function TopboxForm({ mode, questions = [], onSyntaxGenerated, on
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-2 text-white">
+        <label className="block text-white font-semibold text-sm mb-2">
           1. Tên biến (mỗi biến 1 dòng):
         </label>
         <textarea
           value={formData.varNames}
           onChange={(e) => setFormData({ ...formData, varNames: e.target.value })}
           rows={3}
-          placeholder="Q1_1&#10;Q1_2&#10;Q1_3"
+          placeholder={"Q1_1\nQ1_2\nQ1_3"}
           required
-          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
+          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2 text-white">
+        <label className="block text-white font-semibold text-sm mb-2">
           2. Nhãn biến (mỗi nhãn 1 dòng, theo thứ tự):
         </label>
         <textarea
           value={formData.varLabels}
           onChange={(e) => setFormData({ ...formData, varLabels: e.target.value })}
           rows={3}
-          placeholder="Label for Q1_1&#10;Label for Q1_2&#10;Label for Q1_3"
+          placeholder={"Label for Q1_1\nLabel for Q1_2\nLabel for Q1_3"}
           required
-          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
+          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             3. Giá trị Top-Box (vd: 4,5):
           </label>
             <input
               type="text"
               value={formData.t2b}
               onChange={(e) => setFormData({ ...formData, t2b: e.target.value })}
-              placeholder="4,5"
-              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+              placeholder={"4, 5"}
+              className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
             />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             4. Giá trị còn lại cho Top-Box (vd: 1,2,3):
           </label>
           <input
             type="text"
             value={formData.nonT2b}
             onChange={(e) => setFormData({ ...formData, nonT2b: e.target.value })}
-            placeholder="1,2,3"
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+            placeholder={"1, 2, 3"}
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             5. Giá trị Bottom-Box (vd: 1,2):
           </label>
           <input
             type="text"
             value={formData.b2b}
             onChange={(e) => setFormData({ ...formData, b2b: e.target.value })}
-            placeholder="1,2"
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+            placeholder={"1, 2"}
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             6. Giá trị còn lại cho Bottom-Box (vd: 3,4,5):
           </label>
           <input
             type="text"
             value={formData.nonB2b}
             onChange={(e) => setFormData({ ...formData, nonB2b: e.target.value })}
-            placeholder="3,4,5"
-            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+            placeholder={"3, 4, 5"}
+            className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
           />
         </div>
       </div>

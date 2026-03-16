@@ -3,33 +3,32 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSurveyStore } from '@/store/surveyStore'
-import { loadExcelFromFile } from '@/lib/excelLoader'
-import { parseSPSSExcel, generateSPSSSyntaxFromResult } from '@/lib/spssExcelParser'
-import { ParsedQuestion } from '@/lib/geminiParser'
+import { parseSPSSExcel } from '@/lib/parsers/excelParser'
+import { ParsedQuestion } from '@/lib/types'
 import * as XLSX from 'xlsx'
 import MainLayout from '@/components/Layout/MainLayout'
 import { 
   Upload, 
   Search, 
   Filter, 
-  ChevronDown, 
-  ChevronUp,
-  Edit,
   Trash2,
-  Eye,
-  EyeOff,
   FileText,
   AlertCircle,
-  CheckCircle2,
   X,
   Download,
   Plus,
   Copy,
   Code,
   Check,
-  GripVertical
+  GripVertical,
+  List,
+  Table2,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-react'
 import QuestionCard from '@/components/questions/QuestionCard'
+import QuestionsTablePDFView from '@/components/questions/QuestionsTablePDFView'
+import ThemeToggle from '@/components/ThemeToggle'
 import { generateCompleteSyntax, sortQuestionsByIdWithPrefix } from '@/lib/syntaxGenerator'
 import {
   DndContext,
@@ -117,7 +116,7 @@ function SortableQuestionItem({
       {/* Delete Button */}
       <button
         onClick={onDelete}
-        className="p-2 mt-2 text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+        className="p-2 mt-2 text-muted-foreground hover:text-red-500 rounded-lg transition-colors"
         title="Delete question"
       >
         <Trash2 className="w-4 h-4" />
@@ -136,7 +135,7 @@ function QuestionDragOverlay({ question, index }: { question: ParsedQuestion; in
           {index + 1}
         </div>
       </div>
-      <div className="flex-1 bg-white dark:bg-surface-dark-lighter rounded-lg border-2 border-primary shadow-xl p-4">
+      <div className="flex-1 bg-white dark:bg-surface-dark rounded-lg border-2 border-primary shadow-xl p-4">
         <div className="flex items-center gap-3">
           <span className="px-2 py-1 bg-primary/10 text-primary text-sm font-mono rounded">
             {question.id}
@@ -168,6 +167,8 @@ export default function QuestionManager() {
   const [filterType, setFilterType] = useState<string>('all')
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set())
   const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'list' | 'table'>('list')
+  const [pdfZoom, setPdfZoom] = useState(100)
   const [showImportModal, setShowImportModal] = useState(false)
   const [showSyntaxModal, setShowSyntaxModal] = useState(false)
   const [showAddQuestionModal, setShowAddQuestionModal] = useState(false)
@@ -222,79 +223,24 @@ export default function QuestionManager() {
     })
   }
 
-  // Handle Excel file import
+  // Handle Excel file import (SPSS format: 2 columns - variable name, label)
   const handleFileImport = async (file: File) => {
     try {
       setLoading(true)
       setError(null)
-      
-      // Try to detect Excel format: SPSS (2 columns) vs Structured format
       const arrayBuffer = await file.arrayBuffer()
       const workbook = XLSX.read(arrayBuffer, { type: 'array' })
-      
-      // Check if it's SPSS format (2 columns: variable name, label)
-      const sheetName = workbook.SheetNames[0]
-      const worksheet = workbook.Sheets[sheetName]
-      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][]
-      
-      // SPSS format detection: Check if first few rows have exactly 2 columns with variable names
-      let isSPSSFormat = false
-      if (data.length > 0) {
-        const firstFewRows = data.slice(0, Math.min(5, data.length))
-        const hasTwoColumns = firstFewRows.every(row => {
-          const nonEmptyCells = row.filter(cell => String(cell || '').trim().length > 0)
-          return nonEmptyCells.length === 2
-        })
-        
-        // Check if first column looks like variable names (var1, var2, etc.)
-        const firstColPattern = /^var\d+/i
-        const hasVariableNames = firstFewRows.some(row => {
-          const firstCell = String(row[0] || '').trim()
-          return firstColPattern.test(firstCell)
-        })
-        
-        isSPSSFormat = hasTwoColumns && hasVariableNames
-      }
-      
-      let questions: ParsedQuestion[] = []
-      
-      if (isSPSSFormat) {
-        // Use SPSS parser
-        const result = parseSPSSExcel(workbook)
-        questions = result.questions
-        
-        // Set old variable mapping
-        if (result.oldVariableMapping) {
-          setOldVariableMapping(result.oldVariableMapping)
-        }
-      } else {
-        // Try structured format parser
-        try {
-          const excel = await loadExcelFromFile(file)
-          questions = excel.questions
-        } catch (structuredError) {
-          // If structured parser fails, try SPSS parser as fallback
-          console.warn('Structured parser failed, trying SPSS parser as fallback:', structuredError)
-          const result = parseSPSSExcel(workbook)
-          questions = result.questions
-          
-          if (result.oldVariableMapping) {
-            setOldVariableMapping(result.oldVariableMapping)
-          }
-        }
-      }
-      
+      const result = parseSPSSExcel(workbook)
+      const questions = result.questions
       if (questions.length === 0) {
-        throw new Error('No questions found in Excel file. Please check the file format.')
+        throw new Error('No questions found in Excel file. Please check the file format (2 columns: variable name, label).')
       }
-      
       setParsedQuestions(questions)
-      
-      // Auto-expand first question
-      if (questions.length > 0) {
-        setExpandedQuestions(new Set([questions[0].id]))
-        setSelectedQuestion(questions[0].id)
+      if (result.oldVariableMapping) {
+        setOldVariableMapping(result.oldVariableMapping)
       }
+      setExpandedQuestions(new Set([questions[0].id]))
+      setSelectedQuestion(questions[0].id)
     } catch (err) {
       console.error('❌ Error loading Excel:', err)
       setError(err instanceof Error ? err.message : 'Failed to load Excel file')
@@ -424,83 +370,132 @@ export default function QuestionManager() {
     setActiveId(event.active.id as string)
   }
 
-  // Handle drag end - reorder questions
+  // Handle drag end - reorder in the original unfiltered array to preserve absolute order
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     setActiveId(null)
 
     if (!over || active.id === over.id) return
 
-    const oldIndex = filteredQuestions.findIndex(q => q.id === active.id)
-    const newIndex = filteredQuestions.findIndex(q => q.id === over.id)
+    const oldIndex = questions.findIndex(q => q.id === active.id)
+    const newIndex = questions.findIndex(q => q.id === over.id)
 
     if (oldIndex === -1 || newIndex === -1) return
 
-    // Reorder in the full questions array
-    const newFilteredOrder = arrayMove(filteredQuestions, oldIndex, newIndex)
-    
-    // Rebuild full questions array maintaining the new order
-    const newQuestions = newFilteredOrder.map(q => 
-      parsedQuestions.find(pq => pq.id === q.id)!
-    ).filter(Boolean)
-    
-    // Add back any questions that weren't in filtered list (if filtering is active)
-    const filteredIds = new Set(newFilteredOrder.map(q => q.id))
-    const remainingQuestions = parsedQuestions.filter(q => !filteredIds.has(q.id))
-    
-    setParsedQuestions([...newQuestions, ...remainingQuestions])
+    const newQuestions = arrayMove(questions, oldIndex, newIndex)
+    setParsedQuestions(newQuestions)
   }
 
   return (
     <MainLayout>
-      {/* Header */}
-      <header className="h-16 flex items-center justify-between px-8 border-b border-glass-border-light dark:border-glass-border-dark glass-panel z-40 relative bg-background-light dark:bg-background-dark">
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2 dark:text-gray-400 text-gray-600 text-sm font-medium">
-            <FileText className="w-5 h-5 text-white" />
-            <span className="text-white font-semibold">Question Manager</span>
+      <div className="flex-1 flex flex-col min-h-0 px-6">
+        {/* Unified Sticky Header */}
+        <header className="sticky top-0 z-10 bg-background-light dark:bg-background-dark border-b border-border-light dark:border-border-dark pb-4 pt-4 -mx-6 mb-6 px-6">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              {/* Left: Title + Question Count */}
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-foreground" />
+                <span className="font-semibold text-foreground">Question Manager</span>
+                {questions.length > 0 && (
+                  <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs">
+                    {questions.length} questions
+                  </span>
+                )}
+              </div>
+
+              {/* Right: View Toggle + Action Buttons */}
+              <div className="flex items-center gap-2">
+                {questions.length > 0 && (
+                  <>
+                    <div className="flex rounded-lg border border-border-light dark:border-border-dark overflow-hidden">
+                      <button
+                        onClick={() => setViewMode('list')}
+                        className={`flex items-center gap-2 px-3 py-1.5 text-xs transition-all ${
+                          viewMode === 'list'
+                            ? 'bg-primary/20 text-primary border border-primary/30'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        <List className="w-4 h-4" />
+                        <span>List</span>
+                      </button>
+                      <button
+                        onClick={() => setViewMode('table')}
+                        className={`flex items-center gap-2 px-3 py-1.5 text-xs transition-all ${
+                          viewMode === 'table'
+                            ? 'bg-primary/20 text-primary border border-primary/30'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        <Table2 className="w-4 h-4" />
+                        <span>Table</span>
+                      </button>
+                    </div>
+                    <button
+                      onClick={handleGenerateSyntax}
+                      className="flex items-center gap-2 px-3 py-1.5 text-xs bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-lg transition-all"
+                    >
+                      <Code className="w-4 h-4" />
+                      <span>Generate Syntax</span>
+                    </button>
+                    <button
+                      onClick={handleExport}
+                      className="flex items-center gap-2 px-3 py-1.5 text-xs bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-lg transition-all"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Export JSON</span>
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => setShowAddQuestionModal(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/30 rounded-lg transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Question</span>
+                </button>
+                <button
+                  onClick={() => setShowImportModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg transition-all text-sm font-medium"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Import Excel</span>
+                </button>
+                <ThemeToggle />
+              </div>
+            </div>
+
+            {/* Middle: Search + Filter (when questions exist) */}
             {questions.length > 0 && (
-              <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs">
-                {questions.length} questions
-              </span>
+              <div className="flex gap-4 items-center">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search questions by ID, label, or instruction..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground placeholder:text-muted-foreground"
+                  />
+                </div>
+                <div className="relative">
+                  <select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                    className="appearance-none pl-4 pr-10 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground cursor-pointer"
+                  >
+                    <option value="all">All Types</option>
+                    {questionTypes.map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                  <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
             )}
           </div>
-        </div>
-        <div className="flex items-center gap-4">
-          {questions.length > 0 && (
-            <>
-              <button
-                onClick={handleGenerateSyntax}
-                className="flex items-center gap-2 px-3 py-1.5 text-xs bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-lg transition-all"
-              >
-                <Code className="w-4 h-4" />
-                <span>Generate Syntax</span>
-              </button>
-              <button
-                onClick={handleExport}
-                className="flex items-center gap-2 px-3 py-1.5 text-xs bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-lg transition-all"
-              >
-                <Download className="w-4 h-4" />
-                <span>Export JSON</span>
-              </button>
-            </>
-          )}
-          <button
-            onClick={() => setShowAddQuestionModal(true)}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs bg-green-500/10 hover:bg-green-500/20 text-green-500 border border-green-500/30 rounded-lg transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Question</span>
-          </button>
-          <button
-            onClick={() => setShowImportModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-all text-sm font-medium"
-          >
-            <Upload className="w-4 h-4" />
-            <span>Import Excel</span>
-          </button>
-        </div>
-      </header>
+        </header>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-h-0 relative">
@@ -530,49 +525,79 @@ export default function QuestionManager() {
               </button>
             </motion.div>
           </div>
-        ) : (
-          <div className="flex-1 flex flex-col min-h-0 p-8">
-            <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full h-full min-h-0">
-              {/* Search and Filter Bar */}
-              <div className="flex gap-4 items-center shrink-0">
-                {/* Search */}
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="Search questions by ID, label, or instruction..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
-                  />
-                </div>
-                
-                {/* Type Filter */}
-                <div className="relative">
-                  <select
-                    value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
-                    className="appearance-none pl-4 pr-10 py-2.5 bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-gray-900 dark:text-white cursor-pointer"
+        ) : viewMode === 'table' ? (
+          /* Table View */
+          <div className="flex-1 flex min-h-0 overflow-hidden">
+            <div className="flex-1 flex flex-col min-h-0 border-r border-border-light dark:border-border-dark">
+              <div className="h-12 shrink-0 flex items-center justify-end px-4 border-b border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPdfZoom(Math.max(50, pdfZoom - 10))}
+                    className="p-1.5 hover:bg-white/5 rounded disabled:opacity-50"
+                    disabled={pdfZoom <= 50}
                   >
-                    <option value="all">All Types</option>
-                    {questionTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                  <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                    <ZoomOut className="w-4 h-4" />
+                  </button>
+                  <span className="text-xs text-muted-foreground min-w-[48px] text-center">{pdfZoom}%</span>
+                  <button
+                    onClick={() => setPdfZoom(Math.min(200, pdfZoom + 10))}
+                    className="p-1.5 hover:bg-white/5 rounded disabled:opacity-50"
+                    disabled={pdfZoom >= 200}
+                  >
+                    <ZoomIn className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
-
-              {/* Results Count */}
+              <div className="flex-1 overflow-auto bg-surface-light dark:bg-surface-dark">
+                <QuestionsTablePDFView
+                  questions={filteredQuestions}
+                  questionsMap={questionsMap}
+                  pdfZoom={pdfZoom}
+                  selectedQuestionId={selectedQuestion}
+                  expandedQuestions={expandedQuestions}
+                  onSelectQuestion={setSelectedQuestion}
+                  onToggleExpand={toggleQuestion}
+                />
+              </div>
+            </div>
+            <div className="w-[400px] shrink-0 flex flex-col bg-background-light dark:bg-background-dark overflow-hidden">
+              <div className="p-4 border-b border-border-light dark:border-border-dark">
+                <h3 className="text-sm font-semibold text-foreground">Question Details</h3>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                {selectedQuestion ? (
+                  (() => {
+                    const q = questions.find(x => x.id === selectedQuestion)
+                    if (!q) return <p className="text-muted-foreground text-sm">Question not found</p>
+                    return (
+                      <QuestionCard
+                        question={q}
+                        isExpanded={expandedQuestions.has(q.id)}
+                        onToggle={() => toggleQuestion(q.id)}
+                        index={0}
+                        onUpdate={(upd) => {
+                          const { updateQuestion } = useSurveyStore.getState()
+                          updateQuestion(q.id, upd)
+                        }}
+                      />
+                    )
+                  })()
+                ) : (
+                  <p className="text-muted-foreground text-sm">Select a question from the table</p>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* List View */
+          <div className="flex-1 flex flex-col min-h-0 p-8">
+            <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full h-full min-h-0">
               {searchQuery || filterType !== 'all' ? (
                 <div className="text-sm text-gray-600 dark:text-gray-400 shrink-0">
                   Showing {filteredQuestions.length} of {questions.length} questions
                 </div>
               ) : null}
 
-              {/* Error Display */}
               {error && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
@@ -581,16 +606,12 @@ export default function QuestionManager() {
                 >
                   <AlertCircle className="size-5 text-red-500" />
                   <span className="text-red-400 text-sm">{error}</span>
-                  <button
-                    onClick={() => setError(null)}
-                    className="ml-auto"
-                  >
+                  <button onClick={() => setError(null)} className="ml-auto">
                     <X className="w-4 h-4 text-red-400" />
                   </button>
                 </motion.div>
               )}
 
-              {/* Questions List - Scrollable with Drag & Drop */}
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -644,6 +665,7 @@ export default function QuestionManager() {
           </div>
         )}
       </main>
+      </div>
 
       {/* Import Modal */}
       <AnimatePresence>
@@ -660,7 +682,7 @@ export default function QuestionManager() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="glass-card p-6 rounded-2xl max-w-md w-full"
+              className="flat-card p-6 rounded-2xl max-w-md w-full"
             >
               <h3 className="text-xl font-bold text-white mb-4">
                 Import Excel File
@@ -708,10 +730,10 @@ export default function QuestionManager() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-surface-dark-lighter rounded-xl shadow-2xl max-w-lg w-full border border-gray-200 dark:border-gray-700"
+              className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark max-w-lg w-full border border-border-light dark:border-border-dark"
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between p-6 border-b border-border-light dark:border-border-dark">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-500/10 rounded-lg">
                     <Plus className="w-5 h-5 text-green-500" />
@@ -738,7 +760,7 @@ export default function QuestionManager() {
                     value={newQuestion.id || ''}
                     onChange={(e) => setNewQuestion(prev => ({ ...prev, id: e.target.value.toUpperCase() }))}
                     placeholder="e.g., Q1, Q2, H1"
-                    className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-gray-900 dark:text-white"
+                    className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
                   />
                 </div>
 
@@ -750,7 +772,7 @@ export default function QuestionManager() {
                   <select
                     value={newQuestion.type || 'SA'}
                     onChange={(e) => setNewQuestion(prev => ({ ...prev, type: e.target.value as ParsedQuestion['type'] }))}
-                    className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-gray-900 dark:text-white"
+                    className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
                   >
                     <option value="SA">SA (Single Answer)</option>
                     <option value="MA">MA (Multiple Answer)</option>
@@ -839,10 +861,10 @@ export default function QuestionManager() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-surface-dark-lighter rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col border border-gray-200 dark:border-gray-700"
+              className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark max-w-5xl w-full max-h-[90vh] flex flex-col border border-border-light dark:border-border-dark"
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-surface-dark">
+              <div className="flex items-center justify-between p-6 border-b border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <Code className="w-5 h-5 text-primary" />
@@ -855,7 +877,7 @@ export default function QuestionManager() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleCopySyntax}
-                    className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-sm bg-surface-light dark:bg-surface-dark hover:bg-surface-light dark:hover:bg-surface-dark text-foreground rounded-lg transition-colors"
                   >
                     {copied ? (
                       <>
@@ -878,7 +900,7 @@ export default function QuestionManager() {
                   </button>
                   <button
                     onClick={() => setShowSyntaxModal(false)}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="p-2 hover:bg-surface-light dark:hover:bg-surface-dark rounded-lg transition-colors"
                   >
                     <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                   </button>

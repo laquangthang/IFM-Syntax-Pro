@@ -6,11 +6,11 @@ import { Loader2, Upload, CheckCircle2 } from 'lucide-react'
 interface CodingOAFormProps {
   mode: 'manual' | 'auto'
   questions?: any[]
-  onSyntaxGenerated: (syntax: string) => void
+  setGlobalSyntax: (syntax: string) => void
   onError: (error: string) => void
 }
 
-export default function CodingOAForm({ mode, questions = [], onSyntaxGenerated, onError }: CodingOAFormProps) {
+export default function CodingOAForm({ mode, questions = [], setGlobalSyntax, onError }: CodingOAFormProps) {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     excelFile: null as File | null,
@@ -46,7 +46,7 @@ export default function CodingOAForm({ mode, questions = [], onSyntaxGenerated, 
 
       const result = await response.json()
       if (result.success) {
-        onSyntaxGenerated(result.syntax)
+        setGlobalSyntax(result.syntax)
       } else {
         onError(result.error || 'Failed to generate syntax')
       }
@@ -61,7 +61,7 @@ export default function CodingOAForm({ mode, questions = [], onSyntaxGenerated, 
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             1. Upload file Excel (Vrid, Response, R1, R2, ...Rn):
           </label>
           <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-glass-border-light dark:border-glass-border-dark rounded-lg cursor-pointer hover:bg-glass-panel transition-colors">
@@ -90,7 +90,7 @@ export default function CodingOAForm({ mode, questions = [], onSyntaxGenerated, 
           </small>
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             2. Upload file TXT Codelist (cho Value Labels):
           </label>
           <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-glass-border-light dark:border-glass-border-dark rounded-lg cursor-pointer hover:bg-glass-panel transition-colors">
@@ -121,7 +121,7 @@ export default function CodingOAForm({ mode, questions = [], onSyntaxGenerated, 
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2 text-white">
+        <label className="block text-white font-semibold text-sm mb-2">
           3. Tên biến (VD: Q18D):
         </label>
         <input
@@ -130,7 +130,7 @@ export default function CodingOAForm({ mode, questions = [], onSyntaxGenerated, 
           onChange={(e) => setFormData({ ...formData, variableName: e.target.value })}
           placeholder="Q18D"
           required
-          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
         />
       </div>
 

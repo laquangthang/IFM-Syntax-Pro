@@ -4,8 +4,8 @@
  * Layout: Horizontal flow from left to right (Q1, Q2, Q3...)
  */
 
-import { ParsedQuestion } from './geminiParser'
-import { OldVariableMapping } from '@/store/surveyStore'
+import { ParsedQuestion, QuestionOption } from './types'
+import { OldVariableMapping } from '@/lib/types'
 
 /**
  * Parse condition to extract code values mentioned
@@ -27,6 +27,18 @@ export function extractCodesFromCondition(condition: string, questionId: string)
   let qrMatch: RegExpExecArray | null
   while ((qrMatch = qrPattern.exec(condition)) !== null) {
     const codeNum = parseInt(qrMatch[1], 10)
+    if (!isNaN(codeNum) && !codes.includes(codeNum)) {
+      codes.push(codeNum)
+    }
+  }
+
+  // Pattern 1b: Match SA direct equality Q2 = 2, Q2 = 3 (no R, extract value)
+  // Example: "Q2 = 2 OR Q2 = 3 OR Q2 = 4" → [2, 3, 4]. (?!R) avoids matching Q2 in Q2R2.
+  const escapedId = questionId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const saEqPattern = new RegExp(`\\b${escapedId}(?!R)\\s*=\\s*(\\d+)`, 'gi')
+  let saEqMatch: RegExpExecArray | null
+  while ((saEqMatch = saEqPattern.exec(condition)) !== null) {
+    const codeNum = parseInt(saEqMatch[1], 10)
     if (!isNaN(codeNum) && !codes.includes(codeNum)) {
       codes.push(codeNum)
     }
@@ -243,6 +255,8 @@ export interface LogicModelNode {
     terminateIf?: string // For question nodes: terminate condition
     conditionCodes?: (string | number)[] // For question nodes: codes mentioned in condition
     hasCondition?: boolean // For code nodes: if this code is part of a condition
+    codeType?: QuestionOption['codeType'] // For code nodes: Normal, Trap, Terminate, etc.
+    isTrapOrTerminate?: boolean // For code nodes: Trap/Terminate get red styling
     condition?: string // For terminate nodes: the condition text
     formattedCondition?: string // For terminate nodes: formatted condition for display
     optionLabel?: string // For code nodes: original option/row/column label for tooltip display
@@ -348,99 +362,34 @@ export function convertQuestionsToLogicModel(
     const parentNodeId = question.id
     const parentVariableName = getVariableName(question.id, null, question.type)
         
-    // Extract terminate_if condition and codes
-    let conditionCodes: (string | number)[] = []
-    if (question.logic?.terminate_if) {
-      conditionCodes = extractCodesFromCondition(question.logic.terminate_if, question.id)
-    }
-    
-    // Detect TRAP codes from options/rows labels and instruction field
-    const trapCodes: (string | number)[] = []
-    
-    // Method 1: Check instruction field for "TRAP for codes X, Y, Z" pattern
-    if (question.instruction) {
-      const trapMatch = question.instruction.match(/TRAP\s+for\s+codes?\s+([\d,\s]+)/i)
-      if (trapMatch) {
-        const codesStr = trapMatch[1]
-        const codes = codesStr.split(',').map(c => {
-          const trimmed = c.trim()
-          const num = parseInt(trimmed, 10)
-          return isNaN(num) ? trimmed : num
-        }).filter(c => c !== '')
-        trapCodes.push(...codes)
-      }
-    }
-    
-    // Method 2: Check individual option/row labels for TRAP
-    if (question.options) {
-      question.options.forEach(opt => {
-        if (opt.label && /TRAP/i.test(opt.label)) {
-          if (!trapCodes.includes(opt.code) && !trapCodes.includes(Number(opt.code))) {
-            trapCodes.push(opt.code)
-          }
-        }
-      })
-    }
-    if (question.rows) {
-      question.rows.forEach(row => {
-        if (row.label && /TRAP/i.test(row.label)) {
-          if (!trapCodes.includes(row.code) && !trapCodes.includes(Number(row.code))) {
-            trapCodes.push(row.code)
-          }
-        }
-      })
-    }
-    
-    // Build TRAP terminate condition if any TRAP codes found
-    let trapTerminateCondition: string | null = null
-    if (trapCodes.length > 0) {
-      // For MA questions: format as Q3AR11 = 11 or Q3AR12 = 12
-      // For other types: format accordingly
-      if (question.type === 'MA') {
-        const conditions = trapCodes.map(code => `${question.id}R${code} = ${code}`).join(' or ')
-        trapTerminateCondition = `IF (${conditions})`
-      } else if (question.type === 'MA_Grid') {
-        // For MA_Grid, format as Q3AR11 = 11 or Q3AR12 = 12 (rows are the codes)
-        const conditions = trapCodes.map(code => `${question.id}_${code} = ${code}`).join(' or ')
-        trapTerminateCondition = `IF (${conditions})`
-      } else {
-        // For other types, use simple format
-        const conditions = trapCodes.map(code => `${question.id}.code == ${code}`).join(' or ')
-        trapTerminateCondition = `IF (${conditions})`
-      }
-      
-      // Add TRAP codes to conditionCodes
-      trapCodes.forEach(code => {
-        if (!conditionCodes.includes(code)) {
-          conditionCodes.push(code)
-        }
-      })
-    }
-    
-    // Format conditions before merging (important for MA questions to get mis() format)
-    let formattedExistingCondition = question.logic?.terminate_if || null
-    if (formattedExistingCondition) {
-      const formatted = formatTerminateCondition(formattedExistingCondition, question.id, question.type)
-      // Use the formatted short version, but remove "IF" prefix for merging
-      formattedExistingCondition = formatted.short.replace(/^IF\s+/i, '').trim()
-    }
-    
-    let formattedTrapCondition = trapTerminateCondition
-    if (formattedTrapCondition) {
-      const formatted = formatTerminateCondition(formattedTrapCondition, question.id, question.type)
-      formattedTrapCondition = formatted.short.replace(/^IF\s+/i, '').trim()
-    }
-    
-    // Merge formatted conditions
+    // REBUILD terminate_if from scratch - no recursive merge to prevent A or (A or B) duplication
+    const trapAndTermOpts = (question.options || []).filter(o => o.codeType === 'Trap' || o.codeType === 'Terminate')
+    const trapAndTermRows = (question.rows || []).filter(r => r.codeType === 'Trap' || r.codeType === 'Terminate')
+    const opts = question.type === 'MA_Grid' || question.type === 'SA_Grid' || question.type === 'OE_Grid' ? trapAndTermRows : trapAndTermOpts
+
     let finalTerminateCondition: string | null = null
-    if (formattedTrapCondition && formattedExistingCondition) {
-      finalTerminateCondition = `IF (${formattedExistingCondition} or ${formattedTrapCondition})`
-    } else if (formattedTrapCondition) {
-      finalTerminateCondition = `IF (${formattedTrapCondition})`
-    } else if (formattedExistingCondition) {
-      finalTerminateCondition = `IF (${formattedExistingCondition})`
+    if (opts.length > 0) {
+      const isMA = question.type === 'MA' || question.type === 'MA_Grid'
+      const conds = opts.map(opt => isMA ? `${question.id}R${opt.code} = ${opt.code}` : `${question.id} = ${opt.code}`)
+      finalTerminateCondition = `IF (${conds.join(' OR ')})`
+    } else {
+      const existing = question.logic?.terminate_if?.trim()
+      if (existing) {
+        finalTerminateCondition = existing.startsWith('IF') ? existing : `IF (${existing})`
+      }
     }
+
+    const conditionCodes: (string | number)[] = opts.map(o => o.code).filter((c): c is string | number => c !== undefined && c !== null)
     
+    // For Grid questions: add dimensions for aggregated smart node (no child nodes rendered)
+    const isGridQuestion = question.type === 'MA_Grid' || question.type === 'SA_Grid' || question.type === 'OE_Grid'
+    const gridDimensions = isGridQuestion
+      ? {
+          rows: question.rows?.length || 0,
+          cols: question.columns?.length || question.options?.length || 0,
+        }
+      : undefined
+
     const parentNode: LogicModelNode = {
       id: parentNodeId,
       type: 'question',
@@ -449,6 +398,7 @@ export function convertQuestionsToLogicModel(
         questionType: question.type,
         terminateIf: finalTerminateCondition || undefined,
         conditionCodes: conditionCodes.length > 0 ? conditionCodes : undefined,
+        ...(gridDimensions && { gridDimensions }),
       },
       position: {
         x: startX + questionIndex * xSpacing,
@@ -494,8 +444,11 @@ export function convertQuestionsToLogicModel(
     }
     
     // Create child nodes (codes) based on question type
+    // AGGREGATED SMART NODE: Skip child nodes for Grid questions (MA_Grid, SA_Grid, OE_Grid)
+    // to prevent node explosion (e.g. 20x20 = 400 nodes). Only the parent QuestionNode is rendered.
     let childNodes: LogicModelNode[] = []
-    
+
+    if (!isGridQuestion) {
     // SA, MA, and OE questions create child nodes from options
     if (question.type === 'SA' || question.type === 'MA' || question.type === 'OE') {
       // Create child nodes from options (format: Q1R1, Q1R2, etc.)
@@ -513,8 +466,12 @@ export function convertQuestionsToLogicModel(
             const childNodeId = `${question.id}R${option.code}`
             const childVariableName = getVariableName(question.id, option.code, question.type)
             
-            // Check if this code is part of the condition
-            const hasCondition = conditionCodes.includes(option.code) || conditionCodes.includes(Number(option.code))
+            // Check if this code is part of the condition (terminate_if, trap) or has codeType Trap/Terminate
+            const hasCondition =
+              conditionCodes.includes(option.code) ||
+              conditionCodes.includes(Number(option.code)) ||
+              option.codeType === 'Trap' ||
+              option.codeType === 'Terminate'
             
             return {
               id: childNodeId,
@@ -524,6 +481,8 @@ export function convertQuestionsToLogicModel(
                 questionId: question.id,
                 code: option.code,
                 hasCondition: hasCondition,
+                codeType: option.codeType,
+                isTrapOrTerminate: option.codeType === 'Trap' || option.codeType === 'Terminate',
                 optionLabel: option.label, // Store original option label for tooltip
               },
               position: {
@@ -549,8 +508,11 @@ export function convertQuestionsToLogicModel(
           const childNodeId = `${question.id}_${row.code}`
           const childVariableName = getVariableName(question.id, row.code, question.type)
           
-          // Check if this code is part of the condition
-          const hasCondition = conditionCodes.includes(row.code) || conditionCodes.includes(Number(row.code))
+          const hasCondition =
+            conditionCodes.includes(row.code) ||
+            conditionCodes.includes(Number(row.code)) ||
+            row.codeType === 'Trap' ||
+            row.codeType === 'Terminate'
           
           return {
             id: childNodeId,
@@ -560,6 +522,8 @@ export function convertQuestionsToLogicModel(
               questionId: question.id,
               code: row.code,
               hasCondition: hasCondition,
+              codeType: row.codeType,
+              isTrapOrTerminate: row.codeType === 'Trap' || row.codeType === 'Terminate',
               optionLabel: row.label, // Store original row label for tooltip
             },
             position: {
@@ -636,7 +600,7 @@ export function convertQuestionsToLogicModel(
             const childNodeId = `${question.id}_${col.code}R${row.code}`
             // MA_Grid format: Q7_1R1 (column_row)
             const childVariableName = `${question.id}_${col.code}R${row.code}`
-            
+            const rowHasCondition = row.codeType === 'Trap' || row.codeType === 'Terminate' || conditionCodes.includes(row.code) || conditionCodes.includes(Number(row.code))
             childNodes.push({
               id: childNodeId,
               type: 'code' as const,
@@ -645,7 +609,10 @@ export function convertQuestionsToLogicModel(
                 questionId: question.id,
                 code: `${col.code}_${row.code}`,
                 parentId: intermediateNode.id,
-                  optionLabel: (row as any).label || String(row.code), // Store original row label for tooltip
+                hasCondition: rowHasCondition,
+                codeType: row.codeType,
+                isTrapOrTerminate: row.codeType === 'Trap' || row.codeType === 'Terminate',
+                optionLabel: (row as any).label || String(row.code), // Store original row label for tooltip
               },
               position: {
                 x: startX + questionIndex * xSpacing + childXOffset * 2, // Further right for children
@@ -684,8 +651,11 @@ export function convertQuestionsToLogicModel(
           const childNodeId = `${question.id}_${option.code}`
           const childVariableName = getVariableName(question.id, option.code, question.type)
           
-          // Check if this code is part of the condition
-          const hasCondition = conditionCodes.includes(option.code) || conditionCodes.includes(Number(option.code))
+          const hasCondition =
+            conditionCodes.includes(option.code) ||
+            conditionCodes.includes(Number(option.code)) ||
+            option.codeType === 'Trap' ||
+            option.codeType === 'Terminate'
           
           return {
             id: childNodeId,
@@ -695,6 +665,8 @@ export function convertQuestionsToLogicModel(
               questionId: question.id,
               code: option.code,
               hasCondition: hasCondition,
+              codeType: option.codeType,
+              isTrapOrTerminate: option.codeType === 'Trap' || option.codeType === 'Terminate',
               optionLabel: option.label, // Store original option label for tooltip
             },
             position: {
@@ -705,7 +677,8 @@ export function convertQuestionsToLogicModel(
         })
       }
     }
-    
+    } // end !isGridQuestion
+
     // Add child nodes to graph
     nodes.push(...childNodes)
     
@@ -728,158 +701,155 @@ export function convertQuestionsToLogicModel(
     }
   })
   
-  // Create flow edges between questions based on logic
-  // 1. F0 edges: Sequential flow between consecutive questions
-  // Always create edge from parent to next question (for collapsed state)
-  // If question has child nodes, also create edges from each child to next question (for expanded state)
-  // Note: Skip creating F0 edge if:
-  //   - nextQuestion has ask_if_condition (ASK_IF edge will be created from source question in section 2)
-  //   - currentQuestion has ask_if_condition (currentQuestion flow is controlled by ASK_IF, not sequential)
+  // 1. F0 edges: Sequential flow — Parent-to-Parent only (reduces visual clutter)
+  // Create exactly ONE F0 edge per question pair: currentQuestion.id → nextQuestion.id
+  // Logic edges (Piping, Ask If, Skip Logic) remain untouched and originate from Option Nodes
+  // Note: Skip F0 if nextQuestion or currentQuestion has ask_if_condition (ASK_IF controls flow)
   for (let i = 0; i < questions.length - 1; i++) {
     const currentQuestion = questions[i]
     const nextQuestion = questions[i + 1]
-    const childNodes = questionChildNodesMap.get(currentQuestion.id) || []
-    
-    // Check if nextQuestion has ask_if_condition
-    // If so, skip F0 edge from currentQuestion (ASK_IF edge will be created from source question in section 2)
     const nextHasAskIfCondition = !!nextQuestion.logic?.ask_if_condition
-    
-    // Check if currentQuestion has ask_if_condition
-    // If so, skip F0 edge from currentQuestion (currentQuestion flow is controlled by ASK_IF edge, not sequential flow)
     const currentHasAskIfCondition = !!currentQuestion.logic?.ask_if_condition
-    
-    // Skip F0 edge if either nextQuestion or currentQuestion has ask_if_condition
     const shouldSkipF0Edge = nextHasAskIfCondition || currentHasAskIfCondition
-    
-    // Track whether we create parent F0 edge
-    let parentEdgeCreated = false
-    
-    // Skip F0 edge if nextQuestion or currentQuestion has ask_if_condition
-    // This ensures we only have ASK_IF edge controlling the flow, not sequential F0 edges
+
     if (!shouldSkipF0Edge) {
-      const parentEdge: LogicModelEdge = {
+      edges.push({
         id: `flow_${currentQuestion.id}_${nextQuestion.id}`,
         source: currentQuestion.id,
         target: nextQuestion.id,
         type: 'F0',
         label: 'F0',
-      }
-      edges.push(parentEdge)
-      parentEdgeCreated = true
-    }
-    
-    // If question has child nodes, create F0 edges from each child to next question (shown when expanded)
-    // IMPORTANT: Only create child F0 edges if parent F0 edge was created
-    // If parent edge is missing (deleted or has ask_if_condition), child edges should also be missing
-    if (childNodes.length > 0 && parentEdgeCreated) {
-      childNodes.forEach((childNode) => {
-        const childEdge: LogicModelEdge = {
-          id: `flow_${childNode.id}_${nextQuestion.id}`,
-          source: childNode.id,
-          target: nextQuestion.id,
-          type: 'F0',
-          label: 'F0',
-        }
-        edges.push(childEdge)
       })
     }
   }
   
   // 2. ASK_IF edges: From source question (from piping_source or extracted from condition) to current question with ask_if_condition
-  // Create ASK_IF edges when question has ask_if_condition
-  // These edges replace the F0 edges from the source question to the question with ask_if_condition
+  // For SA/MA: create edges from option nodes (Q2R2, Q2R3, Q2R4) - NOT from parent
+  // For Grid/Numeric/Text: create single edge from parent with condition in edge.data
   questions.forEach((question) => {
     if (question.logic?.ask_if_condition) {
       const askIfCondition = question.logic.ask_if_condition
       // Get source from piping_source if available, otherwise extract from condition
       const sourceId = question.logic.piping_source || extractSourceFromAskIfCondition(askIfCondition)
+      const sourceQuestion = sourceId ? questions.find(q => q.id === sourceId) : null
       const sourceNode = sourceId ? nodes.find(n => n.id === sourceId) : null
-      
-      if (sourceNode && sourceId) {
-        // Create ASK_IF edge from source to target question
-        // Label is "Ask if" (condition is hidden, shown in tooltip on hover)
-        const askIfEdge: LogicModelEdge = {
+
+      if (!sourceId || !sourceNode) return
+
+      const childNodes = questionChildNodesMap.get(sourceId) || []
+      const isSAMaOrRank = sourceQuestion && ['SA', 'MA', 'OE', 'Rank_Fixed', 'Rank_Upto'].includes(sourceQuestion.type)
+      const extractedCodes = extractCodesFromCondition(askIfCondition, sourceId)
+
+      if (isSAMaOrRank && extractedCodes.length > 0) {
+        // SA/MA: create edges from each option node (Q2R2, Q2R3, Q2R4) - only for codes that exist
+        const validChildIds = new Set(childNodes.map(c => c.id))
+        for (const code of extractedCodes) {
+          const optionNodeId = sourceQuestion!.type === 'Rank_Fixed' || sourceQuestion!.type === 'Rank_Upto'
+            ? `${sourceId}_${code}`
+            : `${sourceId}R${code}`
+          if (validChildIds.has(optionNodeId)) {
+            edges.push({
+              id: `askif_${optionNodeId}_${question.id}`,
+              source: optionNodeId,
+              target: question.id,
+              type: 'ASK_IF',
+              label: 'Ask if',
+              condition: askIfCondition,
+            })
+          }
+        }
+      } else {
+        // Grid, Numeric, Text, or no extracted codes: single edge from parent
+        edges.push({
           id: `askif_${sourceId}_${question.id}`,
           source: sourceId,
           target: question.id,
           type: 'ASK_IF',
           label: 'Ask if',
           condition: askIfCondition,
-        }
-        edges.push(askIfEdge)
+        })
       }
     }
   })
   
-  // 3. PIPING edges: From piping_source to current question (for Grid questions without ask_if_condition)
-  // Similar to F0 edges: create from parent (shown when collapsed), and from intermediate/child nodes (shown when expanded)
-  questions.forEach((question) => {
-    // Skip if this question has ask_if_condition (already handled by ASK_IF edges above)
-    if (question.logic?.ask_if_condition) {
-      return
+  // Helper: extract code from piping source node ID (Q7R3 -> "3", Q7_1 -> "1")
+  const extractCodeFromPipingSource = (sourceNodeId: string): string | null => {
+    const rMatch = sourceNodeId.match(/R(\d+)$/)
+    if (rMatch) return rMatch[1]
+    const uMatch = sourceNodeId.match(/_(\d+)$/)
+    return uMatch ? uMatch[1] : null
+  }
+
+  // Helper: is this source code allowed for the target question? (1-to-1 binding)
+  const isPipingCodeAllowed = (sourceNodeId: string, targetQuestion: ParsedQuestion): boolean => {
+    const code = extractCodeFromPipingSource(sourceNodeId)
+    if (!code) return true
+    const excluded = new Set((targetQuestion.logic?.piping_excluded_codes || []).map(String))
+    if (excluded.has(code)) return false
+    if (targetQuestion.type === 'MA_Grid' && targetQuestion.columns) {
+      const validCodes = new Set(targetQuestion.columns.map((c) => String(c.code)))
+      return validCodes.has(code)
     }
-    
-    if (question.logic?.piping_source) {
-      const sourceId = question.logic.piping_source
-      const sourceNode = nodes.find(n => n.id === sourceId)
-      
-      if (sourceNode) {
-        // Always create parent → target question edge (shown when collapsed)
-        const parentPipingEdge: LogicModelEdge = {
-          id: `piping_${sourceId}_${question.id}`,
-          source: sourceId,
+    return true
+  }
+
+  // 3. PIPING edges: From piping_source to current question (for Grid questions without ask_if_condition)
+  // Bi-directional sync: filter by piping_excluded_codes (edge deletion) and target columns (column deletion)
+  questions.forEach((question) => {
+    if (question.logic?.ask_if_condition) return
+    if (!question.logic?.piping_source) return
+
+    const sourceId = question.logic.piping_source
+    const sourceNode = nodes.find((n) => n.id === sourceId)
+    if (!sourceNode) return
+
+    const intermediateNodes = questionIntermediateNodesMap.get(sourceId) || []
+    const childNodes = questionChildNodesMap.get(sourceId) || []
+
+    // Parent edge (shown when collapsed) - always create when piping_source exists
+    edges.push({
+      id: `piping_${sourceId}_${question.id}`,
+      source: sourceId,
+      target: question.id,
+      type: 'PIPING',
+      label: 'Piping',
+    })
+
+    if (intermediateNodes.length > 0) {
+      intermediateNodes.forEach((intermediateNode) => {
+        if (!isPipingCodeAllowed(intermediateNode.id, question)) return
+        edges.push({
+          id: `piping_${intermediateNode.id}_${question.id}`,
+          source: intermediateNode.id,
           target: question.id,
           type: 'PIPING',
           label: 'Piping',
-        }
-        edges.push(parentPipingEdge)
-        
-        // Get intermediate nodes and child nodes for the source question
-        const intermediateNodes = questionIntermediateNodesMap.get(sourceId) || []
-        const childNodes = questionChildNodesMap.get(sourceId) || []
-        
-        // For MA_Grid: create PIPING edges from intermediate nodes (shown when expanded to intermediate level)
-        if (intermediateNodes.length > 0) {
-          intermediateNodes.forEach((intermediateNode) => {
-            const pipingEdge: LogicModelEdge = {
-              id: `piping_${intermediateNode.id}_${question.id}`,
-              source: intermediateNode.id,
-              target: question.id,
-              type: 'PIPING',
-              label: 'Piping',
-            }
-            edges.push(pipingEdge)
-          })
-        }
-        
-        // For all question types with child nodes: create PIPING edges from child nodes (shown when expanded to child level)
-        // Note: For MA_Grid, child nodes are children of intermediate nodes, so they will be shown when expanded to child level
-        if (childNodes.length > 0 && intermediateNodes.length === 0) {
-          // Only create child PIPING edges if there are no intermediate nodes (non-MA_Grid questions)
-          childNodes.forEach((childNode) => {
-            const pipingEdge: LogicModelEdge = {
-              id: `piping_${childNode.id}_${question.id}`,
-              source: childNode.id,
-              target: question.id,
-              type: 'PIPING',
-              label: 'Piping',
-            }
-            edges.push(pipingEdge)
-          })
-        } else if (childNodes.length > 0 && intermediateNodes.length > 0) {
-          // For MA_Grid: create PIPING edges from child nodes (shown when expanded to child level)
-          childNodes.forEach((childNode) => {
-            const pipingEdge: LogicModelEdge = {
-              id: `piping_${childNode.id}_${question.id}`,
-              source: childNode.id,
-              target: question.id,
-              type: 'PIPING',
-              label: 'Piping',
-            }
-            edges.push(pipingEdge)
-          })
-        }
-      }
+        })
+      })
+    }
+
+    if (childNodes.length > 0 && intermediateNodes.length === 0) {
+      childNodes.forEach((childNode) => {
+        if (!isPipingCodeAllowed(childNode.id, question)) return
+        edges.push({
+          id: `piping_${childNode.id}_${question.id}`,
+          source: childNode.id,
+          target: question.id,
+          type: 'PIPING',
+          label: 'Piping',
+        })
+      })
+    } else if (childNodes.length > 0 && intermediateNodes.length > 0) {
+      childNodes.forEach((childNode) => {
+        if (!isPipingCodeAllowed(childNode.id, question)) return
+        edges.push({
+          id: `piping_${childNode.id}_${question.id}`,
+          source: childNode.id,
+          target: question.id,
+          type: 'PIPING',
+          label: 'Piping',
+        })
+      })
     }
   })
   

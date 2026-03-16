@@ -3,15 +3,16 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ParsedQuestion, QuestionOption, QuestionLogic } from '@/lib/geminiParser'
+import { ParsedQuestion, QuestionOption, QuestionLogic } from '@/lib/types'
 import { X, Plus, Trash2, Save, Type, FileText, List, Grid, Zap, Code2 } from 'lucide-react'
 import { useSurveyStore } from '@/store/surveyStore'
 import { getVariableCountForQuestion } from '@/lib/variableCountHelper'
-import { convertTerminateCondition } from '@/lib/qcSyntaxGeneratorFromJSON'
+import { convertTerminateCondition } from '@/lib/generators/qcSyntaxGenerator'
 
 interface EditQuestionModalProps {
   question: ParsedQuestion
   isOpen: boolean
+  editingContext?: 'default' | 'terminate' | 'trap'
   onClose: () => void
   onSave: (updatedQuestion: ParsedQuestion) => void
 }
@@ -29,7 +30,7 @@ const LOGIC_OPERATORS = [
   { value: 'is_not_answered', label: 'is not answered' },
 ] as const
 
-export default function EditQuestionModal({ question, isOpen, onClose, onSave }: EditQuestionModalProps) {
+export default function EditQuestionModal({ question, isOpen, editingContext = 'default', onClose, onSave }: EditQuestionModalProps) {
   const { oldVariableMapping, setQuestionOldVariables, parsedQuestions } = useSurveyStore()
   const [editedQuestion, setEditedQuestion] = useState<ParsedQuestion>(question)
   const [newOptionCode, setNewOptionCode] = useState<string>('')
@@ -808,46 +809,15 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
     // Generate terminate_if condition from multiple conditions before saving
     let fullTerminateCondition = generateTerminateIfConditionFromMultiple(terminateIfConditions, terminateIfConnectors)
     
-    // If no terminate_if from conditions but has options with codeType = 'Terminate', create it
-    if (!fullTerminateCondition && currentQuestion.options) {
-      const terminateOptions = currentQuestion.options.filter(opt => opt.codeType === 'Terminate')
-      if (terminateOptions.length > 0) {
-        const terminateCodes = new Set<string | number>()
-        terminateOptions.forEach(opt => {
-          if (opt.code !== undefined && opt.code !== null) {
-            terminateCodes.add(opt.code)
-          }
-        })
-        
-        if (terminateCodes.size > 0) {
-          const isMA = currentQuestion.type === 'MA' || currentQuestion.type === 'MA_Grid'
-          const codesArray = Array.from(terminateCodes)
-          let terminateConditionStr = ''
-          
-          if (codesArray.length === 1) {
-            const code = codesArray[0]
-            terminateConditionStr = isMA ? `${currentQuestion.id}R${code} = ${code}` : `${currentQuestion.id} = ${code}`
-          } else {
-            const conditions = codesArray.map(code => 
-              isMA ? `${currentQuestion.id}R${code} = ${code}` : `${currentQuestion.id} = ${code}`
-            ).join(' or ')
-            terminateConditionStr = `(${conditions})`
-          }
-          
-          // Merge with existing terminate_if if any
-          if (currentQuestion.logic?.terminate_if && currentQuestion.logic.terminate_if.trim()) {
-            const existing = currentQuestion.logic.terminate_if.trim()
-            // Only merge if the new condition is different from existing
-            if (!existing.includes(terminateConditionStr)) {
-              fullTerminateCondition = `${existing} AND ${terminateConditionStr}`
-            } else {
-              fullTerminateCondition = existing
-            }
-          } else {
-            fullTerminateCondition = terminateConditionStr
-          }
-        }
-      }
+    // Rebuild from Trap/Terminate options - no merge to prevent A or (A or B) duplication
+    const trapTermOpts = (currentQuestion.options || []).filter(o => o.codeType === 'Trap' || o.codeType === 'Terminate')
+    const trapTermRows = (currentQuestion.rows || []).filter(r => r.codeType === 'Trap' || r.codeType === 'Terminate')
+    const trapTermArr = currentQuestion.type === 'MA_Grid' || currentQuestion.type === 'SA_Grid' || currentQuestion.type === 'OE_Grid' ? trapTermRows : trapTermOpts
+
+    if (trapTermArr.length > 0) {
+      const isMA = currentQuestion.type === 'MA' || currentQuestion.type === 'MA_Grid'
+      const conds = trapTermArr.map(opt => isMA ? `${currentQuestion.id}R${opt.code} = ${opt.code}` : `${currentQuestion.id} = ${opt.code}`)
+      fullTerminateCondition = `IF (${conds.join(' OR ')})`
     }
     
     // If still no terminate_if but had one before, preserve it (user might have cleared conditions but want to keep existing)
@@ -1039,24 +1009,24 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           onClick={(e) => e.stopPropagation()}
-          className="relative bg-white dark:bg-surface-dark-lighter rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700"
+          className="relative bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-border-light dark:border-border-dark"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-surface-dark">
+          <div className="flex items-center justify-between p-6 border-b border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <FileText className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Edit Question</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Question ID: {editedQuestion.id}</p>
+                <h2 className="text-xl font-bold text-foreground">Edit Question</h2>
+                <p className="text-sm text-muted-foreground">Question ID: {editedQuestion.id}</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="p-2 hover:bg-surface-light dark:hover:bg-surface-dark rounded-lg transition-colors"
             >
-              <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <X className="w-5 h-5 text-muted-foreground" />
             </button>
           </div>
 
@@ -1064,33 +1034,33 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
           <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
             {/* Basic Information */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                 <FileText className="w-4 h-4" />
                 Basic Information
               </h3>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Question ID
                   </label>
                   <input
                     type="text"
                     value={editedQuestion.id}
                     onChange={(e) => updateField('id', e.target.value)}
-                    className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
+                  <label className="block text-sm font-medium text-foreground mb-1 flex items-center gap-2">
                     <Type className="w-4 h-4" />
                     Question Type
                   </label>
                   <select
                     value={editedQuestion.type}
                     onChange={(e) => updateField('type', e.target.value as ParsedQuestion['type'])}
-                    className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
                   >
                     {QUESTION_TYPES.map(type => (
                       <option key={type} value={type}>{type}</option>
@@ -1100,40 +1070,40 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Question Label
                 </label>
                 <textarea
                   value={editedQuestion.label}
                   onChange={(e) => updateField('label', e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                  className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors resize-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Instruction (Optional)
                 </label>
                 <textarea
                   value={editedQuestion.instruction || ''}
                   onChange={(e) => updateField('instruction', e.target.value || undefined)}
                   rows={2}
-                  className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                  className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors resize-none"
                   placeholder="Script, notes, etc."
                 />
               </div>
 
               {isRankType && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Ranking Limit
                   </label>
                   <input
                     type="number"
                     value={editedQuestion.limit || ''}
                     onChange={(e) => updateField('limit', e.target.value ? Number(e.target.value) : undefined)}
-                    className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
                     placeholder="e.g., 5"
                   />
                 </div>
@@ -1142,23 +1112,23 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
 
             {/* Old Variables */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                 <Code2 className="w-4 h-4" />
                 Old Variables ({variableCount} required)
               </h3>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Paste old variable names (one per line, in order)
                 </label>
                 <textarea
                   value={oldVariablesText}
                   onChange={(e) => setOldVariablesText(e.target.value)}
                   rows={Math.max(3, Math.min(8, variableCount))}
-                  className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none font-mono text-sm"
+                  className="w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors resize-none font-mono text-sm"
                   placeholder={`Paste ${variableCount} old variable name(s), one per line...`}
                 />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-xs text-muted-foreground">
                   {oldVariablesText.split('\n').filter(l => l.trim()).length} of {variableCount} variables provided
                 </p>
               </div>
@@ -1166,20 +1136,20 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
 
             {/* Logic */}
             <div className="space-y-6">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
                 <Zap className="w-4 h-4" />
                 Logic
               </h3>
               
               {/* Logic Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Logic Type
                 </label>
                 <select
                   value={editedQuestion.logic?.type || 'Normal'}
                   onChange={(e) => updateLogic('type', e.target.value as QuestionLogic['type'])}
-                  className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
                 >
                   {LOGIC_TYPES.map(type => (
                     <option key={type} value={type}>{type}</option>
@@ -1188,19 +1158,19 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
               </div>
 
               {/* Piping Source - Redesigned */}
-              <div className="p-4 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
+              <div className="p-4 bg-surface-light dark:bg-surface-dark rounded-lg border border-primary/20">
                 <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <label className="block text-sm font-semibold text-foreground">
                     Piping Source
                   </label>
-                  <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">
+                  <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
                     Pipe codes from another question
                   </span>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                    <label className="block text-xs font-medium text-muted-foreground mb-1.5">
                       Source Question
                     </label>
                     <select
@@ -1238,7 +1208,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                           }
                         }
                       }}
-                      className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                      className="w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors text-sm"
                     >
                       <option value="">None</option>
                       {/* Include current question */}
@@ -1257,13 +1227,13 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
 
                   {editedQuestion.logic?.piping_source && (
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                      <label className="block text-xs font-medium text-muted-foreground mb-1.5">
                         Logic Operator
                       </label>
                       <select
                         value={pipingOperator}
                         onChange={(e) => setPipingOperator(e.target.value)}
-                        className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                        className="w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors text-sm"
                       >
                         {LOGIC_OPERATORS.map(op => (
                           <option key={op.value} value={op.value}>{op.label}</option>
@@ -1279,7 +1249,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                   
                   if (isSourceGrid) {
                     return (
-                      <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                      <p className="mt-2 text-xs text-muted-foreground">
                         Rows (codes and labels) from source Grid question will be used
                         {editedQuestion.type === 'MA_Grid' || editedQuestion.type === 'SA_Grid' 
                           ? ' as columns'
@@ -1288,7 +1258,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                     )
                   } else {
                     return (
-                      <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                      <p className="mt-2 text-xs text-muted-foreground">
                         {editedQuestion.type === 'MA' 
                           ? 'Options will be copied from source question'
                           : 'Codes will be piped from the selected question'}
@@ -1298,14 +1268,15 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                 })()}
               </div>
 
-              {/* Ask If Condition - Multiple Conditions with AND/OR */}
+              {/* Ask If Condition - hidden when opened from Terminate/Trap node */}
+              {editingContext !== 'terminate' && editingContext !== 'trap' && (
               <div className="p-4 bg-gradient-to-br from-orange-50/50 to-red-50/50 dark:from-orange-900/10 dark:to-red-900/10 rounded-lg border border-orange-200/50 dark:border-orange-800/50 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-semibold text-foreground mb-1">
                       Ask If Condition
                     </label>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       Show this question only when condition(s) are met
                     </p>
                   </div>
@@ -1331,7 +1302,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                 </div>
                 
                 {askIfConditions.length === 0 ? (
-                  <div className="text-center py-4 text-sm text-gray-500 dark:text-gray-400">
+                  <div className="text-center py-4 text-sm text-muted-foreground">
                     No conditions. Click "Add Condition" to add one.
                   </div>
                 ) : (
@@ -1350,7 +1321,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                 const fullCondition = generateAskIfConditionFromMultiple(askIfConditions, newConnectors)
                                 updateLogic('ask_if_condition', fullCondition)
                               }}
-                              className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 font-semibold"
+                              className="px-3 py-1 text-sm bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors font-semibold"
                             >
                               <option value="AND">AND</option>
                               <option value="OR">OR</option>
@@ -1359,9 +1330,9 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                         )}
                         
                         {/* Condition block */}
-                        <div className="p-3 bg-gray-50 dark:bg-surface-dark rounded-lg border border-gray-200 dark:border-gray-700">
+                        <div className="p-3 bg-surface-light dark:bg-surface-dark rounded-lg border border-border-light dark:border-border-dark">
                           <div className="flex items-start justify-between mb-2">
-                            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Condition {index + 1}</span>
+                            <span className="text-xs font-semibold text-muted-foreground">Condition {index + 1}</span>
                             {askIfConditions.length > 1 && (
                               <button
                                 onClick={() => {
@@ -1387,7 +1358,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                           
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                              <label className="block text-xs font-medium text-muted-foreground mb-1">
                                 Source Question
                               </label>
                               <select
@@ -1409,7 +1380,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                     updateLogic('ask_if_condition', fullCondition)
                                   }
                                 }}
-                                className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                                className="w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors text-sm"
                               >
                                 <option value="">None</option>
                                 {/* Include current question */}
@@ -1428,7 +1399,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
 
                             {condition.source && (
                               <div>
-                                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">
                                   Logic Operator
                                 </label>
                                 <select
@@ -1445,7 +1416,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                     const fullCondition = generateAskIfConditionFromMultiple(newConditions, askIfConnectors)
                                     updateLogic('ask_if_condition', fullCondition)
                                   }}
-                                  className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                                  className="w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors text-sm"
                                 >
                                   {LOGIC_OPERATORS.map(op => (
                                     <option key={op.value} value={op.value}>{op.label}</option>
@@ -1460,15 +1431,15 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                            condition.operator !== 'is_answered' && 
                            condition.operator !== 'is_not_answered' && (
                             <div className="mt-3">
-                              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                              <label className="block text-xs font-semibold text-foreground mb-2">
                                 Select Codes
                               </label>
-                              <div className="max-h-96 overflow-y-auto p-4 bg-white dark:bg-surface-dark-lighter rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                              <div className="max-h-96 overflow-y-auto p-4 bg-surface-light dark:bg-surface-dark rounded-lg border border-border-light dark:border-border-dark shadow-sm">
                                 {(() => {
                                   const sourceQuestion = parsedQuestions.find(q => q.id === condition.source) || 
                                                          (condition.source === editedQuestion.id ? editedQuestion : null)
                                   if (!sourceQuestion) {
-                                    return <p className="text-xs text-gray-500 dark:text-gray-400">Question not found</p>
+                                    return <p className="text-xs text-muted-foreground">Question not found</p>
                                   }
 
                                   // Check if this is a Matrix MA question (MA_Grid or MA with rows and columns)
@@ -1482,24 +1453,24 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                     const sourceCols = sourceQuestion.columns || []
                                     return (
                                       <div className="space-y-2">
-                                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                        <div className="text-xs text-muted-foreground mb-2">
                                           Matrix: {sourceRows.length} rows × {sourceCols.length} columns
                                         </div>
                                         <div className="overflow-x-auto">
                                           <table className="w-full border-collapse text-xs">
                                             <thead>
-                                              <tr className="bg-gray-50 dark:bg-surface-dark-lighter border-b-2 border-gray-300 dark:border-gray-600">
-                                                <th className="px-3 py-2 text-left font-semibold text-gray-800 dark:text-gray-200 border-r border-gray-300 dark:border-gray-600 sticky left-0 bg-gray-50 dark:bg-surface-dark-lighter z-10">
+                                              <tr className="bg-background-light dark:bg-background-dark border-b-2 border-border-light dark:border-border-dark">
+                                                <th className="px-3 py-2 text-left font-semibold text-foreground border-r border-border-light dark:border-border-dark sticky left-0 bg-background-light dark:bg-background-dark z-10">
                                                   <div className="flex flex-col">
                                                     <span className="text-xs">CODE</span>
-                                                    <span className="text-[10px] font-normal text-gray-600 dark:text-gray-400">VN</span>
+                                                    <span className="text-[10px] font-normal text-muted-foreground">VN</span>
                                                   </div>
                                                 </th>
                                                 {sourceCols.map((column, colIdx) => (
-                                                  <th key={colIdx} className="px-3 py-2 text-center font-semibold text-gray-800 dark:text-gray-200 border-r border-gray-300 dark:border-gray-600 last:border-r-0 min-w-[80px]">
+                                                  <th key={colIdx} className="px-3 py-2 text-center font-semibold text-foreground border-r border-border-light dark:border-border-dark last:border-r-0 min-w-[80px]">
                                                     <div className="flex flex-col items-center">
                                                       <span className="font-mono font-bold text-primary text-sm">{column.code}</span>
-                                                      <span className="text-[10px] font-normal text-gray-600 dark:text-gray-400 mt-0.5 leading-tight">{column.label}</span>
+                                                      <span className="text-[10px] font-normal text-muted-foreground mt-0.5 leading-tight">{column.label}</span>
                                                     </div>
                                                   </th>
                                                 ))}
@@ -1509,12 +1480,12 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                               {sourceRows.map((row, rowIdx) => (
                                                 <tr
                                                   key={rowIdx}
-                                                  className="border-b border-gray-200 dark:border-gray-700 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors"
+                                                  className="border-b border-border-light dark:border-border-dark hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors"
                                                 >
-                                                  <td className="px-3 py-2 border-r border-gray-300 dark:border-gray-600 sticky left-0 bg-white dark:bg-surface-dark z-10">
+                                                  <td className="px-3 py-2 border-r border-border-light dark:border-border-dark sticky left-0 bg-white dark:bg-surface-dark z-10">
                                                     <div className="flex flex-col">
                                                       <span className="font-mono font-bold text-primary text-sm">{row.code}</span>
-                                                      <span className="text-[10px] text-gray-600 dark:text-gray-400 mt-0.5 leading-tight">{row.label}</span>
+                                                      <span className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{row.label}</span>
                                                     </div>
                                                   </td>
                                                   {sourceCols.map((column, colIdx) => {
@@ -1527,7 +1498,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                                     return (
                                                       <td
                                                         key={colIdx}
-                                                        className="px-3 py-2 text-center border-r border-gray-300 dark:border-gray-600 last:border-r-0"
+                                                        className="px-3 py-2 text-center border-r border-border-light dark:border-border-dark last:border-r-0"
                                                       >
                                                         <label className="flex items-center justify-center cursor-pointer group relative">
                                                           <input
@@ -1572,7 +1543,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                   const mainOptions = options.filter(opt => !String(opt.code).endsWith('_O'))
 
                                   if (mainOptions.length === 0) {
-                                    return <p className="text-xs text-gray-500 dark:text-gray-400">No options available</p>
+                                    return <p className="text-xs text-muted-foreground">No options available</p>
                                   }
 
                                   return (
@@ -1585,7 +1556,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                             className={`flex items-center gap-2.5 p-3 rounded-lg cursor-pointer transition-all border ${
                                               isChecked 
                                                 ? 'bg-primary/10 dark:bg-primary/20 border-primary/30 shadow-sm' 
-                                                : 'bg-gray-50 dark:bg-surface-dark border-gray-200 dark:border-gray-700 hover:border-primary/20 hover:bg-gray-100 dark:hover:bg-surface-dark-lighter'
+                                                : 'bg-surface-light dark:bg-surface-dark border-border-light dark:border-border-dark hover:border-primary/20 hover:bg-surface-light dark:hover:bg-surface-dark'
                                             }`}
                                           >
                                             <input
@@ -1609,11 +1580,11 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                               }}
                                               className="w-5 h-5 text-primary border-gray-300 rounded focus:ring-2 focus:ring-primary/50 shrink-0 cursor-pointer"
                                             />
-                                            <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2 flex-1">
+                                            <span className="text-sm text-foreground flex items-center gap-2 flex-1">
                                               <span className={`font-mono text-xs font-bold px-2 py-1 rounded ${
                                                 isChecked 
                                                   ? 'bg-primary text-white' 
-                                                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                                  : 'bg-surface-light dark:bg-surface-dark text-muted-foreground'
                                               }`}>
                                                 {option.code}
                                               </span>
@@ -1636,21 +1607,22 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
 
                 {/* Preview generated condition */}
                 {editedQuestion.logic?.ask_if_condition && (
-                  <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
-                    <p className="text-xs font-medium text-blue-900 dark:text-blue-300 mb-1">Generated Condition:</p>
-                    <p className="text-xs font-mono text-blue-800 dark:text-blue-200">{editedQuestion.logic.ask_if_condition}</p>
+                  <div className="mt-2 p-2 bg-surface-light dark:bg-surface-dark rounded border border-primary/20">
+                    <p className="text-xs font-medium text-foreground mb-1">Generated Condition:</p>
+                    <p className="text-xs font-mono text-foreground">{editedQuestion.logic.ask_if_condition}</p>
                   </div>
                 )}
               </div>
+              )}
 
-              {/* Terminate If Condition - Multiple Conditions with AND/OR */}
-              <div className="p-4 bg-gradient-to-br from-red-50/50 to-pink-50/50 dark:from-red-900/10 dark:to-pink-900/10 rounded-lg border border-red-200/50 dark:border-red-800/50 space-y-3">
+              {/* Terminate If Condition - "Terminate Condition" when opened from Terminate/Trap node */}
+              <div className={`p-4 rounded-lg border space-y-3 ${editingContext === 'terminate' || editingContext === 'trap' ? 'bg-gradient-to-br from-red-50/50 to-orange-50/50 dark:from-red-900/10 dark:to-orange-900/10 border-red-200/50 dark:border-red-800/50' : 'bg-surface-light dark:bg-surface-dark border-primary/20'}`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Terminate If Condition
+                    <label className="block text-sm font-semibold text-foreground mb-1">
+                      {editingContext === 'terminate' || editingContext === 'trap' ? 'Terminate Condition' : 'Terminate If Condition'}
                     </label>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       End survey when condition(s) are met
                     </p>
                   </div>
@@ -1676,7 +1648,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                 </div>
                 
                 {terminateIfConditions.length === 0 ? (
-                  <div className="text-center py-4 text-sm text-gray-500 dark:text-gray-400 bg-white/50 dark:bg-surface-dark/50 rounded-lg">
+                    <div className="text-center py-4 text-sm text-muted-foreground bg-surface-light dark:bg-surface-dark rounded-lg">
                     No conditions. Click "Add Condition" to add one.
                   </div>
                 ) : (
@@ -1695,7 +1667,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                 const fullCondition = generateTerminateIfConditionFromMultiple(terminateIfConditions, newConnectors)
                                 updateLogic('terminate_if', fullCondition)
                               }}
-                              className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 font-semibold"
+                              className="px-3 py-1 text-sm bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors font-semibold"
                             >
                               <option value="AND">AND</option>
                               <option value="OR">OR</option>
@@ -1704,9 +1676,9 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                         )}
                         
                         {/* Condition block */}
-                        <div className="p-3 bg-white dark:bg-surface-dark-lighter rounded-lg border border-gray-200 dark:border-gray-700">
+                        <div className="p-3 bg-surface-light dark:bg-surface-dark rounded-lg border border-border-light dark:border-border-dark">
                           <div className="flex items-start justify-between mb-2">
-                            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Condition {index + 1}</span>
+                            <span className="text-xs font-semibold text-muted-foreground">Condition {index + 1}</span>
                             {terminateIfConditions.length > 1 && (
                               <button
                                 onClick={() => {
@@ -1726,7 +1698,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                           
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                              <label className="block text-xs font-medium text-muted-foreground mb-1">
                                 Source Question
                               </label>
                               <select
@@ -1744,7 +1716,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                     updateLogic('terminate_if', fullCondition)
                                   }
                                 }}
-                                className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                                className="w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors text-sm"
                               >
                                 <option value="">None</option>
                                 {/* Include current question */}
@@ -1763,7 +1735,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
 
                             {condition.source && (
                               <div>
-                                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">
                                   Logic Operator
                                 </label>
                                 <select
@@ -1780,7 +1752,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                     const fullCondition = generateTerminateIfConditionFromMultiple(newConditions, terminateIfConnectors)
                                     updateLogic('terminate_if', fullCondition)
                                   }}
-                                  className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                                  className="w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors text-sm"
                                 >
                                   {LOGIC_OPERATORS.map(op => (
                                     <option key={op.value} value={op.value}>{op.label}</option>
@@ -1795,15 +1767,15 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                            condition.operator !== 'is_answered' && 
                            condition.operator !== 'is_not_answered' && (
                             <div className="mt-3">
-                              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                              <label className="block text-xs font-semibold text-foreground mb-2">
                                 Select Codes
                               </label>
-                              <div className="max-h-96 overflow-y-auto p-4 bg-white dark:bg-surface-dark-lighter rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                              <div className="max-h-96 overflow-y-auto p-4 bg-surface-light dark:bg-surface-dark rounded-lg border border-border-light dark:border-border-dark shadow-sm">
                                 {(() => {
                                   const sourceQuestion = parsedQuestions.find(q => q.id === condition.source) || 
                                                          (condition.source === editedQuestion.id ? editedQuestion : null)
                                   if (!sourceQuestion) {
-                                    return <p className="text-xs text-gray-500 dark:text-gray-400">Question not found</p>
+                                    return <p className="text-xs text-muted-foreground">Question not found</p>
                                   }
 
                                   // Check if this is a Matrix MA question
@@ -1817,24 +1789,24 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                     const sourceCols = sourceQuestion.columns || []
                                     return (
                                       <div className="space-y-2">
-                                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                        <div className="text-xs text-muted-foreground mb-2">
                                           Matrix: {sourceRows.length} rows × {sourceCols.length} columns
                                         </div>
                                         <div className="overflow-x-auto">
                                           <table className="w-full border-collapse text-xs">
                                             <thead>
-                                              <tr className="bg-gray-50 dark:bg-surface-dark-lighter border-b-2 border-gray-300 dark:border-gray-600">
-                                                <th className="px-3 py-2 text-left font-semibold text-gray-800 dark:text-gray-200 border-r border-gray-300 dark:border-gray-600 sticky left-0 bg-gray-50 dark:bg-surface-dark-lighter z-10">
+                                              <tr className="bg-background-light dark:bg-background-dark border-b-2 border-border-light dark:border-border-dark">
+                                                <th className="px-3 py-2 text-left font-semibold text-foreground border-r border-border-light dark:border-border-dark sticky left-0 bg-background-light dark:bg-background-dark z-10">
                                                   <div className="flex flex-col">
                                                     <span className="text-xs">CODE</span>
-                                                    <span className="text-[10px] font-normal text-gray-600 dark:text-gray-400">VN</span>
+                                                    <span className="text-[10px] font-normal text-muted-foreground">VN</span>
                                                   </div>
                                                 </th>
                                                 {sourceCols.map((column, colIdx) => (
-                                                  <th key={colIdx} className="px-3 py-2 text-center font-semibold text-gray-800 dark:text-gray-200 border-r border-gray-300 dark:border-gray-600 last:border-r-0 min-w-[80px]">
+                                                  <th key={colIdx} className="px-3 py-2 text-center font-semibold text-foreground border-r border-border-light dark:border-border-dark last:border-r-0 min-w-[80px]">
                                                     <div className="flex flex-col items-center">
                                                       <span className="font-mono font-bold text-primary text-sm">{column.code}</span>
-                                                      <span className="text-[10px] font-normal text-gray-600 dark:text-gray-400 mt-0.5 leading-tight">{column.label}</span>
+                                                      <span className="text-[10px] font-normal text-muted-foreground mt-0.5 leading-tight">{column.label}</span>
                                                     </div>
                                                   </th>
                                                 ))}
@@ -1844,12 +1816,12 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                               {sourceRows.map((row, rowIdx) => (
                                                 <tr
                                                   key={rowIdx}
-                                                  className="border-b border-gray-200 dark:border-gray-700 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors"
+                                                  className="border-b border-border-light dark:border-border-dark hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors"
                                                 >
-                                                  <td className="px-3 py-2 border-r border-gray-300 dark:border-gray-600 sticky left-0 bg-white dark:bg-surface-dark z-10">
+                                                  <td className="px-3 py-2 border-r border-border-light dark:border-border-dark sticky left-0 bg-white dark:bg-surface-dark z-10">
                                                     <div className="flex flex-col">
                                                       <span className="font-mono font-bold text-primary text-sm">{row.code}</span>
-                                                      <span className="text-[10px] text-gray-600 dark:text-gray-400 mt-0.5 leading-tight">{row.label}</span>
+                                                      <span className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{row.label}</span>
                                                     </div>
                                                   </td>
                                                   {sourceCols.map((column, colIdx) => {
@@ -1859,7 +1831,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                                     return (
                                                       <td
                                                         key={colIdx}
-                                                        className="px-3 py-2 text-center border-r border-gray-300 dark:border-gray-600 last:border-r-0"
+                                                        className="px-3 py-2 text-center border-r border-border-light dark:border-border-dark last:border-r-0"
                                                       >
                                                         <label className="flex items-center justify-center cursor-pointer group relative">
                                                           <input
@@ -1904,7 +1876,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                   const mainOptions = options.filter(opt => !String(opt.code).endsWith('_O'))
 
                                   if (mainOptions.length === 0) {
-                                    return <p className="text-xs text-gray-500 dark:text-gray-400">No options available</p>
+                                    return <p className="text-xs text-muted-foreground">No options available</p>
                                   }
 
                                   return (
@@ -1917,7 +1889,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                             className={`flex items-center gap-2.5 p-3 rounded-lg cursor-pointer transition-all border ${
                                               isChecked 
                                                 ? 'bg-primary/10 dark:bg-primary/20 border-primary/30 shadow-sm' 
-                                                : 'bg-gray-50 dark:bg-surface-dark border-gray-200 dark:border-gray-700 hover:border-primary/20 hover:bg-gray-100 dark:hover:bg-surface-dark-lighter'
+                                                : 'bg-surface-light dark:bg-surface-dark border-border-light dark:border-border-dark hover:border-primary/20 hover:bg-surface-light dark:hover:bg-surface-dark'
                                             }`}
                                           >
                                             <input
@@ -1941,11 +1913,11 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                               }}
                                               className="w-5 h-5 text-primary border-gray-300 rounded focus:ring-2 focus:ring-primary/50 shrink-0 cursor-pointer"
                                             />
-                                            <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2 flex-1">
+                                            <span className="text-sm text-foreground flex items-center gap-2 flex-1">
                                               <span className={`font-mono text-xs font-bold px-2 py-1 rounded ${
                                                 isChecked 
                                                   ? 'bg-primary text-white' 
-                                                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                                  : 'bg-surface-light dark:bg-surface-dark text-muted-foreground'
                                               }`}>
                                                 {option.code}
                                               </span>
@@ -1980,41 +1952,41 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
             {!isGridType && !isOE && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
                     <List className="w-4 h-4" />
                     Options ({(editedQuestion.options || []).length})
                   </h3>
                 </div>
 
                 {/* Add New Option */}
-                <div className="p-4 bg-gray-50 dark:bg-surface-dark rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="p-4 bg-surface-light dark:bg-surface-dark rounded-lg border border-border-light dark:border-border-dark">
                   <div className="grid grid-cols-12 gap-2 items-end">
                     <div className="col-span-2">
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Code</label>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">Code</label>
                       <input
                         type="text"
                         value={newOptionCode}
                         onChange={(e) => setNewOptionCode(e.target.value)}
-                        className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                        className="w-full px-2 py-1.5 text-sm bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
                         placeholder="1"
                       />
                     </div>
                     <div className="col-span-7">
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Label</label>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">Label</label>
                       <input
                         type="text"
                         value={newOptionLabel}
                         onChange={(e) => setNewOptionLabel(e.target.value)}
-                        className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                        className="w-full px-2 py-1.5 text-sm bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
                         placeholder="Option label"
                       />
                     </div>
                     <div className="col-span-2">
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Type</label>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">Type</label>
                       <select
                         value={newOptionCodeType || 'Normal'}
                         onChange={(e) => setNewOptionCodeType(e.target.value as QuestionOption['codeType'])}
-                        className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                        className="w-full px-2 py-1.5 text-sm bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
                       >
                         {CODE_TYPES.map(type => (
                           <option key={type} value={type}>{type}</option>
@@ -2034,8 +2006,13 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
 
                 {/* Options List */}
                 <div className="space-y-2">
-                  {(editedQuestion.options || []).map((option, index) => (
-                    <div key={index} className="p-3 bg-gray-50 dark:bg-surface-dark rounded-lg border border-gray-200 dark:border-gray-700">
+                  {(editedQuestion.options || []).map((option, index) => {
+                    const isOther = option.codeType === 'Other'
+                    const outputName = isOther ? (editedQuestion.type === 'SA'
+                      ? `${editedQuestion.id}_O`
+                      : `${editedQuestion.id}R${option.code}_O`) : null
+                    return (
+                    <div key={index} className="p-3 bg-surface-light dark:bg-surface-dark rounded-lg border border-border-light dark:border-border-dark">
                       <div className="grid grid-cols-12 gap-2 items-center">
                         <div className="col-span-2">
                           <input
@@ -2045,22 +2022,27 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                               const val = isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value)
                               updateOption(index, 'code', val)
                             }}
-                            className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50 font-mono"
+                            className="w-full px-2 py-1.5 text-sm bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50 font-mono"
                           />
+                          {outputName && (
+                            <p className="mt-1 text-[10px] font-mono text-primary/80" title="Predicted text variable">
+                              Output: {outputName}
+                            </p>
+                          )}
                         </div>
                         <div className="col-span-7">
                           <input
                             type="text"
                             value={option.label}
                             onChange={(e) => updateOption(index, 'label', e.target.value)}
-                            className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                            className="w-full px-2 py-1.5 text-sm bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
                           />
                         </div>
                         <div className="col-span-2">
                           <select
                             value={option.codeType || 'Normal'}
                             onChange={(e) => updateOption(index, 'codeType', e.target.value as QuestionOption['codeType'])}
-                            className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                            className="w-full px-2 py-1.5 text-sm bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
                           >
                             {CODE_TYPES.map(type => (
                               <option key={type} value={type}>{type}</option>
@@ -2077,7 +2059,8 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                         </div>
                       </div>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -2086,31 +2069,31 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
             {isGridType && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
                     <Grid className="w-4 h-4" />
                     Rows ({(editedQuestion.rows || []).length})
                   </h3>
                 </div>
 
                 {/* Add New Row */}
-                <div className="p-4 bg-gray-50 dark:bg-surface-dark rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="p-4 bg-surface-light dark:bg-surface-dark rounded-lg border border-border-light dark:border-border-dark">
                   <div className="grid grid-cols-12 gap-2 items-end">
                     <div className="col-span-2">
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Code</label>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">Code</label>
                       <input
                         type="text"
                         value={newOptionCode}
                         onChange={(e) => setNewOptionCode(e.target.value)}
-                        className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                        className="w-full px-2 py-1.5 text-sm bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
                       />
                     </div>
                     <div className="col-span-9">
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Label</label>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">Label</label>
                       <input
                         type="text"
                         value={newOptionLabel}
                         onChange={(e) => setNewOptionLabel(e.target.value)}
-                        className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                        className="w-full px-2 py-1.5 text-sm bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
                       />
                     </div>
                     <div className="col-span-1">
@@ -2126,8 +2109,19 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
 
                 {/* Rows List */}
                 <div className="space-y-2">
-                  {(editedQuestion.rows || []).map((row, index) => (
-                    <div key={index} className="p-3 bg-gray-50 dark:bg-surface-dark rounded-lg border border-gray-200 dark:border-gray-700">
+                  {(editedQuestion.rows || []).map((row, index) => {
+                    const isOtherRow = row.codeType === 'Other'
+                    const rowCode = typeof row.code === 'number' ? row.code : parseInt(String(row.code).replace(/_O$/, ''), 10)
+                    const outputNames = isOtherRow && editedQuestion.type === 'MA_Grid' && editedQuestion.columns
+                      ? editedQuestion.columns.map(col => {
+                          const colCode = typeof col.code === 'number' ? col.code : col.code
+                          return `${editedQuestion.id}_${colCode}R${isNaN(rowCode) ? row.code : rowCode}_O`
+                        })
+                      : isOtherRow && editedQuestion.type === 'SA_Grid'
+                        ? [`${editedQuestion.id}_${row.code}_O`]
+                        : []
+                    return (
+                    <div key={index} className="p-3 bg-surface-light dark:bg-surface-dark rounded-lg border border-border-light dark:border-border-dark">
                       <div className="grid grid-cols-12 gap-2 items-center">
                         <div className="col-span-2">
                           <input
@@ -2137,15 +2131,20 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                               const val = isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value)
                               updateRow(index, 'code', val)
                             }}
-                            className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50 font-mono"
+                            className="w-full px-2 py-1.5 text-sm bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50 font-mono"
                           />
+                          {outputNames.length > 0 && (
+                            <p className="mt-1 text-[10px] font-mono text-primary/80" title="Predicted text variable(s)">
+                              Output: {outputNames.join(', ')}
+                            </p>
+                          )}
                         </div>
                         <div className="col-span-9">
                           <input
                             type="text"
                             value={row.label}
                             onChange={(e) => updateRow(index, 'label', e.target.value)}
-                            className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                            className="w-full px-2 py-1.5 text-sm bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
                           />
                         </div>
                         <div className="col-span-1">
@@ -2158,7 +2157,8 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                         </div>
                       </div>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -2168,7 +2168,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
                       <Grid className="w-4 h-4" />
                       Columns ({(editedQuestion.columns || []).length})
                     </h3>
@@ -2177,7 +2177,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                       const isSourceGrid = sourceQuestion && (sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'SA_Grid')
                       if (isSourceGrid) {
                         return (
-                          <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded border border-blue-200 dark:border-blue-800">
+                          <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded border border-primary/20">
                             Piped from {editedQuestion.logic.piping_source} (rows)
                           </span>
                         )
@@ -2193,8 +2193,8 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                   const isSourceGrid = sourceQuestion && (sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'SA_Grid')
                   if (isSourceGrid) {
                     return (
-                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                      <div className="p-3 bg-surface-light dark:bg-surface-dark rounded-lg border border-primary/20">
+                        <p className="text-xs text-foreground">
                           <span className="font-semibold">Columns initially synced from {editedQuestion.logic.piping_source}</span>
                           {' '}(rows from source Grid question). You can still edit these columns if needed.
                         </p>
@@ -2205,24 +2205,24 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                 })()}
 
                 {/* Add New Column */}
-                <div className="p-4 bg-gray-50 dark:bg-surface-dark rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="p-4 bg-surface-light dark:bg-surface-dark rounded-lg border border-border-light dark:border-border-dark">
                   <div className="grid grid-cols-12 gap-2 items-end">
                     <div className="col-span-2">
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Code</label>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">Code</label>
                       <input
                         type="text"
                         value={newOptionCode}
                         onChange={(e) => setNewOptionCode(e.target.value)}
-                        className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                        className="w-full px-2 py-1.5 text-sm bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
                       />
                     </div>
                     <div className="col-span-9">
-                      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Label</label>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">Label</label>
                       <input
                         type="text"
                         value={newOptionLabel}
                         onChange={(e) => setNewOptionLabel(e.target.value)}
-                        className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                        className="w-full px-2 py-1.5 text-sm bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
                       />
                     </div>
                     <div className="col-span-1">
@@ -2245,8 +2245,8 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                     })()
                     
                     return (
-                      <div key={index} className={`p-3 bg-gray-50 dark:bg-surface-dark rounded-lg border border-gray-200 dark:border-gray-700 ${
-                        isPiped ? 'bg-blue-50/30 dark:bg-blue-900/10 border-blue-200/50 dark:border-blue-800/50' : ''
+                      <div key={index} className={`p-3 bg-surface-light dark:bg-surface-dark rounded-lg border border-border-light dark:border-border-dark ${
+                        isPiped ? 'bg-surface-light dark:bg-surface-dark border-primary/20' : ''
                       }`}>
                         <div className="grid grid-cols-12 gap-2 items-center">
                           <div className="col-span-2">
@@ -2257,7 +2257,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                                 const val = isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value)
                                 updateColumn(index, 'code', val)
                               }}
-                              className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50 font-mono"
+                              className="w-full px-2 py-1.5 text-sm bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50 font-mono"
                             />
                           </div>
                           <div className="col-span-9">
@@ -2265,7 +2265,7 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
                               type="text"
                               value={col.label}
                               onChange={(e) => updateColumn(index, 'label', e.target.value)}
-                              className="w-full px-2 py-1.5 text-sm bg-white dark:bg-surface-dark-lighter border border-gray-200 dark:border-gray-700 rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                              className="w-full px-2 py-1.5 text-sm bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
                             />
                           </div>
                           <div className="col-span-1">
@@ -2286,10 +2286,10 @@ export default function EditQuestionModal({ question, isOpen, onClose, onSave }:
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-surface-dark">
+          <div className="flex items-center justify-end gap-3 p-6 border-t border-border-light dark:border-border-dark bg-surface-light dark:bg-surface-dark">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="px-4 py-2 text-foreground hover:bg-surface-light dark:hover:bg-surface-dark rounded-lg transition-colors"
             >
               Cancel
             </button>

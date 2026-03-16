@@ -1,17 +1,18 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { Loader2, ChevronDown } from 'lucide-react'
-import { ParsedQuestion } from '@/lib/geminiParser'
+import { useState, useEffect } from 'react'
+import { Loader2, Search } from 'lucide-react'
+import { ParsedQuestion } from '@/lib/types'
+import QuestionSelectorModal from './QuestionSelectorModal'
 
 interface RerankFormProps {
   mode: 'manual' | 'auto'
   questions?: ParsedQuestion[]
-  onSyntaxGenerated: (syntax: string) => void
+  setGlobalSyntax: (syntax: string) => void
   onError: (error: string) => void
 }
 
-export default function RerankForm({ mode, questions = [], onSyntaxGenerated, onError }: RerankFormProps) {
+export default function RerankForm({ mode, questions = [], setGlobalSyntax, onError }: RerankFormProps) {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     baseVar: '',
@@ -20,25 +21,7 @@ export default function RerankForm({ mode, questions = [], onSyntaxGenerated, on
   })
 
   const [selectedQuestion, setSelectedQuestion] = useState<string>('')
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false)
-      }
-    }
-
-    if (dropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [dropdownOpen])
+  const [modalOpen, setModalOpen] = useState(false)
 
   // Auto-populate from selected question
   useEffect(() => {
@@ -73,7 +56,7 @@ export default function RerankForm({ mode, questions = [], onSyntaxGenerated, on
 
       const result = await response.json()
       if (result.success) {
-        onSyntaxGenerated(result.syntax)
+        setGlobalSyntax(result.syntax)
       } else {
         onError(result.error || 'Failed to generate syntax')
       }
@@ -93,79 +76,38 @@ export default function RerankForm({ mode, questions = [], onSyntaxGenerated, on
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-2 text-white">
+          <label className="block text-white font-semibold text-sm mb-2">
             1. Chọn câu hỏi Rank:
           </label>
-          <div className="relative" ref={dropdownRef}>
-            <button
-              type="button"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-full px-4 py-3 bg-glass-panel border-2 border-glass-border-light dark:border-glass-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
-            >
-              <span className="text-sm font-medium text-white">
-                {selectedQuestion 
-                  ? availableQuestions.find(q => q.id === selectedQuestion) 
-                    ? `${availableQuestions.find(q => q.id === selectedQuestion)?.id} [${availableQuestions.find(q => q.id === selectedQuestion)?.type}]`
-                    : 'Chọn câu hỏi'
-                  : 'Chọn câu hỏi'}
-              </span>
-              <ChevronDown className={`size-5 transition-transform text-white ${dropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-            
-            {dropdownOpen && (
-              <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-lg shadow-xl max-h-72 overflow-y-auto custom-scrollbar">
-                {availableQuestions.length === 0 ? (
-                  <p className="p-3 text-sm text-gray-500 dark:text-gray-400">
-                    Không có câu hỏi Rank nào. Vui lòng import dữ liệu trước.
-                  </p>
-                ) : (
-                  availableQuestions.map((q) => {
-                    const isSelected = selectedQuestion === q.id
-                    return (
-                      <button
-                        key={q.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedQuestion(q.id)
-                          setDropdownOpen(false)
-                        }}
-                        className={`w-full text-left p-4 cursor-pointer transition-all ${
-                          isSelected 
-                            ? 'bg-primary/20 border-l-4 border-primary' 
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-700 border-l-4 border-transparent'
-                        } border-b border-gray-200 dark:border-gray-700 last:border-b-0`}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`text-sm font-medium ${
-                            isSelected ? 'text-primary' : 'text-black dark:text-white'
-                          }`}>
-                            {q.id}
-                          </span>
-                          <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded">
-                            {q.type}
-                          </span>
-                          {q.limit && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              (limit: {q.limit})
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-xs text-gray-600 dark:text-gray-300 block truncate">
-                          {q.label.substring(0, 60)}{q.label.length > 60 ? '...' : ''}
-                        </span>
-                      </button>
-                    )
-                  })
-                )}
-              </div>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="w-full px-4 py-3 bg-surface-light dark:bg-surface-dark border-2 border-border-light dark:border-border-dark rounded-lg text-left flex items-center justify-between text-white hover:border-primary/50 transition-all shadow-sm"
+          >
+            <span className="text-sm font-medium text-white flex items-center gap-2">
+              <Search className="size-4 text-gray-400" />
+              {selectedQuestion && availableQuestions.find(q => q.id === selectedQuestion) ? (
+                <>[{availableQuestions.find(q => q.id === selectedQuestion)?.id}] {availableQuestions.find(q => q.id === selectedQuestion)?.label?.substring(0, 40)}{(availableQuestions.find(q => q.id === selectedQuestion)?.label?.length || 0) > 40 ? '...' : ''}</>
+              ) : (
+                'Select Question...'
+              )}
+            </span>
+          </button>
+          <QuestionSelectorModal
+            isOpen={modalOpen}
+            onClose={() => setModalOpen(false)}
+            onSelect={(id) => setSelectedQuestion(typeof id === 'string' ? id : Array.isArray(id) ? id[0] || '' : '')}
+            parsedQuestions={availableQuestions}
+            multiSelect={false}
+            title="Select Question (Rerank)"
+            initialSelection={selectedQuestion || undefined}
+          />
         </div>
 
         {selectedQuestion && (
           <>
             <div>
-              <label className="block text-sm font-medium mb-2 text-white">
+              <label className="block text-white font-semibold text-sm mb-2">
                 2. Số lượng Rank (tự động điền):
               </label>
               <input
@@ -175,21 +117,21 @@ export default function RerankForm({ mode, questions = [], onSyntaxGenerated, on
                 placeholder="3"
                 required
                 min="1"
-                className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2 text-white">
+              <label className="block text-white font-semibold text-sm mb-2">
                 3. Danh sách nhãn (tự động điền, mỗi nhãn 1 dòng):
               </label>
               <textarea
                 value={formData.labels}
                 onChange={(e) => setFormData({ ...formData, labels: e.target.value })}
                 rows={10}
-                placeholder="Label 1&#10;Label 2&#10;Label 3"
+                placeholder={"Label 1\nLabel 2\nLabel 3"}
                 required
-                className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm text-black dark:text-white"
+                className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg font-mono text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
               />
             </div>
           </>
@@ -217,7 +159,7 @@ export default function RerankForm({ mode, questions = [], onSyntaxGenerated, on
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium mb-2">
+        <label className="block text-white font-semibold text-sm mb-2">
           1. Tên biến gốc:
         </label>
         <input
@@ -226,12 +168,12 @@ export default function RerankForm({ mode, questions = [], onSyntaxGenerated, on
           onChange={(e) => setFormData({ ...formData, baseVar: e.target.value })}
           placeholder="Q17A"
           required
-          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+          className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2">
+        <label className="block text-white font-semibold text-sm mb-2">
           2. Số lượng Rank:
         </label>
         <input
@@ -241,21 +183,21 @@ export default function RerankForm({ mode, questions = [], onSyntaxGenerated, on
           placeholder="3"
           required
           min="1"
-          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+          className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2">
+        <label className="block text-white font-semibold text-sm mb-2">
           3. Danh sách nhãn (mỗi nhãn 1 dòng):
         </label>
         <textarea
           value={formData.labels}
           onChange={(e) => setFormData({ ...formData, labels: e.target.value })}
           rows={10}
-          placeholder="Label 1&#10;Label 2&#10;Label 3"
+          placeholder={"Label 1\nLabel 2\nLabel 3"}
           required
-          className="w-full px-3 py-2 bg-glass-panel border border-glass-border-light dark:border-glass-border-dark rounded-lg font-mono text-sm"
+          className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg font-mono text-sm text-gray-200 placeholder:text-gray-500 placeholder:text-xs placeholder:font-light"
         />
       </div>
 
