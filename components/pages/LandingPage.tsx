@@ -36,9 +36,9 @@ export default function LandingPage() {
             <Link href="/processing" className="text-gray-300 hover:text-primary transition-colors text-sm font-medium">
               Processing
             </Link>
-            <a href="#" className="text-gray-300 hover:text-primary transition-colors text-sm font-medium">
+            <Link href="/documentation" className="text-gray-300 hover:text-primary transition-colors text-sm font-medium">
               Documentation
-            </a>
+            </Link>
           </div>
           <div className="flex items-center gap-4">
             <Link
@@ -248,9 +248,13 @@ export default function LandingPage() {
                 <div key={section.title} className="flex flex-col gap-4">
                   <h4 className="text-white text-xs font-bold uppercase tracking-widest">{section.title}</h4>
                   {section.links.map((link) => (
-                    <a key={link} href="#" className="text-gray-500 hover:text-primary text-sm">
+                    <Link
+                      key={link}
+                      href={link === 'Documentation' ? '/documentation' : '#'}
+                      className="text-gray-500 hover:text-primary text-sm"
+                    >
                       {link}
-                    </a>
+                    </Link>
                   ))}
                 </div>
               ))}

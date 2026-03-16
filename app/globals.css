@@ -124,6 +124,16 @@ body {
   background: rgba(0, 0, 0, 0.1);
 }
 
+/* Documentation Hub prose styling */
+.prose-doc h1 { font-size: 1.875rem; font-weight: 700; margin-bottom: 1rem; }
+.prose-doc h2 { font-size: 1.25rem; font-weight: 600; margin-top: 2rem; margin-bottom: 0.75rem; }
+.prose-doc p { margin-bottom: 1rem; }
+.prose-doc ul { margin-bottom: 1rem; padding-left: 1.5rem; }
+.prose-doc ol { margin-bottom: 1rem; padding-left: 1.5rem; }
+.prose-doc li { margin-bottom: 0.25rem; }
+.prose-doc code { font-family: 'JetBrains Mono', monospace; }
+.prose-doc pre { margin-bottom: 1.5rem; }
+
 /* Grid Background */
 .bg-grid-pattern {
   background-size: 50px 50px;
