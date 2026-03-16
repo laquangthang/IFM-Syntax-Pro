@@ -1,0 +1,35 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build
+.next
+out
+build
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Env (secrets - use Cloud Run env vars instead)
+.env
+.env.*
+!.env.example
+
+# Misc
+.DS_Store
+*.pem
+*.log
+coverage
+.vercel
+
+# Docs
+*.md
+!README.md

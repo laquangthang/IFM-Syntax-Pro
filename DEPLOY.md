@@ -200,6 +200,31 @@
 
 ---
 
+### 6. **Google Cloud Run** (Docker)
+
+**Ưu điểm:**
+- ✅ Chạy container trên GCP
+- ✅ Auto-scale, pay-per-use
+- ✅ Tích hợp với Cloud Build
+
+**Cách Deploy:**
+
+1. **Build và push image:**
+   ```bash
+   gcloud builds submit --config cloudbuild.yaml
+   ```
+
+2. **Hoặc build local rồi push:**
+   ```bash
+   docker build -t gcr.io/YOUR_PROJECT_ID/ifm-syntax-pro .
+   docker push gcr.io/YOUR_PROJECT_ID/ifm-syntax-pro
+   gcloud run deploy ifm-syntax-pro --image gcr.io/YOUR_PROJECT_ID/ifm-syntax-pro --region asia-southeast1 --allow-unauthenticated
+   ```
+
+3. **Environment Variables:** Vào Cloud Run Console → Edit & Deploy → Variables & Secrets → thêm `GEMINI_API_KEY`
+
+---
+
 ## 🆘 Troubleshooting
 
 ### Lỗi "GEMINI_API_KEY is not set"
