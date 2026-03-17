@@ -769,6 +769,7 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     rows: Map<string, string> // row code → row label
     labels: Map<string, string> // column code → column label (from first occurrence)
     baseLabel: string
+    columnOptions: Map<string, QuestionOption[]> // colCode → options (for homogeneity check)
   }>()
   
   // Scan questionMap for MA_Grid pattern
@@ -785,12 +786,14 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
           rows: new Map(),
           labels: new Map(),
           baseLabel: qData.label,
+          columnOptions: new Map(),
         })
       }
       
       const candidate = maGridCandidates.get(baseQId)!
       candidate.columns.add(colCode)
       candidate.labels.set(colCode, qData.label)
+      candidate.columnOptions.set(colCode, [...qData.options])
       
       // Extract rows from options (R1, R2, ...)
       for (const opt of qData.options) {
@@ -802,6 +805,21 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     }
   }
   
+  /** Only merge if all columns have same option labels (homogeneous matrix) */
+  const isHomogeneousMAGrid = (candidate: { columnOptions: Map<string, QuestionOption[]> }): boolean => {
+    const opts = Array.from(candidate.columnOptions.values())
+    if (opts.length < 2) return true
+    const first = opts[0].map(o => String(o.label).trim())
+    for (let i = 1; i < opts.length; i++) {
+      const curr = opts[i].map(o => String(o.label).trim())
+      if (curr.length !== first.length) return false
+      for (let j = 0; j < first.length; j++) {
+        if (curr[j] !== first[j]) return false
+      }
+    }
+    return true
+  }
+  
   // Merge MA_Grid candidates
   for (const [baseQId, candidate] of maGridCandidates.entries()) {
     // CRITICAL: Do NOT merge if baseQId already exists as Rank/Sum/Numeric - would destroy standalone question
@@ -810,8 +828,8 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
       continue
     }
 
-    // Only merge if we have multiple columns (otherwise it's just MA)
-    if (candidate.columns.size >= 2) {
+    // Only merge if we have multiple columns AND homogeneous (same option labels across columns)
+    if (candidate.columns.size >= 2 && isHomogeneousMAGrid(candidate)) {
       // Remove individual sub-questions (Q15_1, Q15_2) - never touch baseQId if it exists as different type
       for (const colCode of candidate.columns) {
         const subQId = `${baseQId}_${colCode}`
@@ -1026,16 +1044,16 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
   const textCompanionsMap: Record<string, Record<string, string>> = {}
   
   // Build a map of sub-question IDs to base question IDs (for merged MA_Grid and SA_Grid)
+  // Only add when we actually merged (base exists as MA_Grid) - skip when kept as separate MA
   const subToBaseMap = new Map<string, string>()
   for (const [baseQId, candidate] of maGridCandidates.entries()) {
     if (candidate.columns.size >= 2) {
       const existingBase = questionMap.get(baseQId)
-      if (existingBase && ['Rank_Fixed', 'Rank_Upto', 'Sum', 'Numeric'].includes(existingBase.type)) {
-        continue
-      }
-      for (const colCode of candidate.columns) {
-        const subQId = `${baseQId}_${colCode}`
-        subToBaseMap.set(subQId, baseQId)
+      if (existingBase?.type === 'MA_Grid') {
+        for (const colCode of candidate.columns) {
+          const subQId = `${baseQId}_${colCode}`
+          subToBaseMap.set(subQId, baseQId)
+        }
       }
     }
   }
