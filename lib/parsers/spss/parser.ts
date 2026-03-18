@@ -225,6 +225,7 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     const matchSum = /\[Sum\]/i.test(col2) ? col2.match(/:(\S+)/) : null
     
     // Case 1: var{id} with 2 segments (SA with question ID)
+    // Multiple vars with same baseId (e.g. var200..var206 all :Q18) = SA_Grid rows. Assign Q18_1, Q18_2, ...
     if (/^var\d+$/.test(col1) && segments.length === 2) {
       const baseId = extractStrictBaseId(segments[1])
       const gridMatch = parseGridPrefixPattern(baseId)
@@ -238,13 +239,9 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
         rowMap.get(rowCode)!.push({ rawVar: col1, label: segments[0] || baseId })
         continue
       }
-      const questionId = resolveQuestionId(baseId, col1, idRegistry)
-      
-      if (!groupCounts[questionId]) {
-        groupCounts[questionId] = 1
-      } else {
-        groupCounts[questionId]++
-      }
+      if (!groupCounts[baseId]) groupCounts[baseId] = 0
+      groupCounts[baseId]++
+      const questionId = `${baseId}_${groupCounts[baseId]}`
       
       // Track question
       if (!questionMap.has(questionId)) {
