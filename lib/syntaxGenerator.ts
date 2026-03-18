@@ -155,10 +155,12 @@ function generateSAGridSyntax(question: ParsedQuestion, oldVariables: string[] =
     return output
   }
 
-  if (!question.options || question.options.length === 0) return output
+  // SA_Grid with rows (from Case 1 merge: var200..var206 :Q18 → Q18_1..Q18_11)
+  const rowItems = question.rows && question.rows.length > 0 ? question.rows : question.options
+  if (!rowItems || rowItems.length === 0) return output
 
   let varIndex = 0
-  question.options.forEach((option) => {
+  rowItems.forEach((option) => {
     const baseVar = oldVariables[varIndex] || `varXXXO${1000 + varIndex}`
     const baseVarName = `${question.id}_${option.code}`
     const otherVarName = `${baseVarName}_O`
