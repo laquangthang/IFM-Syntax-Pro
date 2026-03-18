@@ -264,10 +264,10 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
         optionLabel: segments[0],
       })
     }
-    // Case 2: var{id}O{n} with Rank
+    // Case 2: var{id}O{n} with Rank - all options share same questionId
     else if (/^var\d+O\d+$/.test(col1) && matchRank && !matchSum) {
       const baseId = extractStrictBaseId(matchRank[1])
-      const firstWord = resolveQuestionId(baseId, col1, idRegistry)
+      const firstWord = baseId
       const text = col2.substring(0, col2.indexOf(':' + firstWord))
       
       if (!rankMapping[firstWord]) {
@@ -301,10 +301,10 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
         optionLabel: text,
       })
     }
-    // Case 3: var{id}O{n} with Sum
+    // Case 3: var{id}O{n} with Sum - all options share same questionId
     else if (/^var\d+O\d+$/.test(col1) && matchSum && !matchRank) {
       const baseId = extractStrictBaseId(matchSum[1])
-      const firstWord = resolveQuestionId(baseId, col1, idRegistry)
+      const firstWord = baseId
       const text = col2.substring(0, col2.indexOf(':' + firstWord))
       
       if (!sumMapping[firstWord]) {
@@ -442,13 +442,15 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
       })
     }
     // Case 6: var{id}O{n} (MA) - 2 segments (Label: QuestionID) or 1 segment (label only, use last questionId)
+    // MA: All options share the SAME questionId (e.g. Q17). Do NOT use resolveQuestionId - different rawVars
+    // are OPTIONS of the same question, not separate questions.
     else if (/^var\d+O\d+$/.test(col1) && !matchSum && !matchRank) {
       const varIdMatch = col1.match(/^(var\d+)/)
       const varId = varIdMatch ? varIdMatch[1] : ''
       let questionId: string
       if (segments.length >= 2) {
         const baseId = extractStrictBaseId(segments[1])
-        questionId = resolveQuestionId(baseId, col1, idRegistry)
+        questionId = baseId
       } else {
         questionId = lastMAQuestionIdByVarId[varId] || 'Unknown'
       }
