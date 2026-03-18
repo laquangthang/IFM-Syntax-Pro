@@ -134,7 +134,8 @@ function generateMASyntax(question: ParsedQuestion, oldVariables: string[] = [])
 
 /**
  * Generate syntax for SA_Grid questions
- * SA_Grid uses options as codes (Q5_1, Q5_2, etc.)
+ * When rawVariables exists: iterate directly (100% 1-to-1 mapping, never skip variables)
+ * Otherwise: SA_Grid uses options as codes (Q5_1, Q5_2, etc.)
  */
 function generateSAGridSyntax(question: ParsedQuestion, oldVariables: string[] = []): SyntaxOutput {
   const output: SyntaxOutput = {
@@ -142,6 +143,16 @@ function generateSAGridSyntax(question: ParsedQuestion, oldVariables: string[] =
     varLabStatements: [],
     recodeStatements: [],
     valLabStatements: [],
+  }
+
+  // CRITICAL: When rawVariables exists, iterate directly - never skip variables
+  if (question.rawVariables && question.rawVariables.length > 0) {
+    question.rawVariables.forEach((v) => {
+      output.renameStatements.push(`Rename Variables ${v.rawVar} = ${v.generatedId}.`)
+      const cleanLabel = (v.label || '').replace(/"/g, '""')
+      output.varLabStatements.push(`Var lab ${v.generatedId}"${v.generatedId}. ${cleanLabel}".`)
+    })
+    return output
   }
 
   if (!question.options || question.options.length === 0) return output
@@ -172,8 +183,8 @@ function generateSAGridSyntax(question: ParsedQuestion, oldVariables: string[] =
 
 /**
  * Generate syntax for MA_Grid questions
- * MA_Grid: Variables = columns × rows (Q8_1R1, Q8_1R2, Q8_2R1, etc.)
- * Format: Q{id}_{columnCode}R{rowCode}
+ * When rawVariables exists: iterate directly (100% 1-to-1 mapping)
+ * Otherwise: MA_Grid: Variables = columns × rows (Q8_1R1, Q8_1R2, etc.)
  */
 function generateMAGridSyntax(question: ParsedQuestion, oldVariables: string[] = []): SyntaxOutput {
   const output: SyntaxOutput = {
@@ -181,6 +192,15 @@ function generateMAGridSyntax(question: ParsedQuestion, oldVariables: string[] =
     varLabStatements: [],
     recodeStatements: [],
     valLabStatements: [],
+  }
+
+  if (question.rawVariables && question.rawVariables.length > 0) {
+    question.rawVariables.forEach((v) => {
+      output.renameStatements.push(`Rename Variables ${v.rawVar} = ${v.generatedId}.`)
+      const cleanLabel = (v.label || '').replace(/"/g, '""')
+      output.varLabStatements.push(`Var lab ${v.generatedId}"${v.generatedId}. ${cleanLabel}".`)
+    })
+    return output
   }
 
   // MA_Grid: Variables = columns × rows

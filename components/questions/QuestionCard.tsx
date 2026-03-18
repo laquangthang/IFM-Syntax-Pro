@@ -47,6 +47,15 @@ function SAGridRowsDisplay({
     const indexStr = String(rowIndex)
     return question.rowOptionsMap[indexStr] || []
   }
+
+  /** For multi-variable rows (e.g. A2_1_1, A2_1_2): get rawVariables belonging to this row */
+  const getRowRawVariables = (rowCode: string | number) => {
+    if (!question.rawVariables?.length) return []
+    const prefix = `${question.id}_${rowCode}`
+    return question.rawVariables.filter(
+      (v) => v.generatedId === prefix || v.generatedId.startsWith(prefix + '_')
+    )
+  }
   
   const updateRowOptions = (rowIndex: string | number, updatedOptions: QuestionOption[]) => {
     if (!onUpdate) return
@@ -66,6 +75,8 @@ function SAGridRowsDisplay({
           const rowIndex = String(row.code)
           const isExpanded = expandedRows.has(rowIndex)
           const rowOptions = getRowOptions(row.code)
+          const rowRawVars = getRowRawVariables(row.code)
+          const hasExpandableContent = rowOptions.length > 0 || rowRawVars.length > 0
           
           return (
             <div key={idx} className="border-b border-border-light dark:border-border-dark last:border-b-0">
@@ -97,24 +108,45 @@ function SAGridRowsDisplay({
                   }}
                   className="w-full bg-transparent text-sm text-white border-none focus:ring-0 p-0"
                 />
-                {rowOptions.length > 0 && (
+                {(rowOptions.length > 0 || rowRawVars.length > 0) && (
                   <span className="text-xs text-muted-foreground ml-2">
-                    ({rowOptions.length} codes)
+                    {rowOptions.length > 0 ? `(${rowOptions.length} codes)` : null}
+                    {rowRawVars.length > 0 ? (rowOptions.length > 0 ? ` · ` : '') + `${rowRawVars.length} var(s)` : null}
                   </span>
                 )}
               </div>
               
-              {/* Expanded Options for this Row */}
-              {isExpanded && rowOptions.length > 0 && (
+              {/* Expanded: rowOptions (codes) or rawVariables (multi-var rows) */}
+              {isExpanded && hasExpandableContent && (
                 <div className="bg-surface-light dark:bg-surface-dark border-t border-border-light dark:border-border-dark">
-                  {/* Table Header */}
-                  <div className="grid grid-cols-[60px_1fr] gap-0 bg-background-light dark:bg-background-dark border-b border-border-light dark:border-border-dark px-3 py-2">
-                    <span className="text-xs font-mono text-muted-foreground">CODE</span>
-                    <span className="text-xs font-mono text-muted-foreground">LABEL</span>
-                  </div>
-                  
-                  {/* Table Rows */}
-                  {rowOptions.map((option, optIdx) => (
+                  {/* Multi-variable rows: show rawVar → generatedId */}
+                  {rowRawVars.length > 0 && (
+                    <>
+                      <div className="grid grid-cols-[80px_1fr_1fr] gap-0 bg-background-light dark:bg-background-dark border-b border-border-light dark:border-border-dark px-3 py-2">
+                        <span className="text-xs font-mono text-muted-foreground">RAW VAR</span>
+                        <span className="text-xs font-mono text-muted-foreground">GENERATED ID</span>
+                        <span className="text-xs font-mono text-muted-foreground">LABEL</span>
+                      </div>
+                      {rowRawVars.map((v, vi) => (
+                        <div
+                          key={vi}
+                          className="grid grid-cols-[80px_1fr_1fr] gap-0 border-b border-border-light dark:border-border-dark items-center px-3 py-1.5 hover:bg-surface-light dark:hover:bg-surface-dark transition-colors"
+                        >
+                          <span className="font-mono text-sm text-muted-foreground">{v.rawVar}</span>
+                          <span className="font-mono text-sm text-primary">{v.generatedId}</span>
+                          <span className="text-sm text-white truncate" title={v.label}>{v.label}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {/* Row options (codes from sheet 2) */}
+                  {rowOptions.length > 0 && (
+                    <>
+                      <div className="grid grid-cols-[60px_1fr] gap-0 bg-background-light dark:bg-background-dark border-b border-border-light dark:border-border-dark px-3 py-2">
+                        <span className="text-xs font-mono text-muted-foreground">CODE</span>
+                        <span className="text-xs font-mono text-muted-foreground">LABEL</span>
+                      </div>
+                      {rowOptions.map((option, optIdx) => (
                     <div
                       key={optIdx}
                       className="grid grid-cols-[60px_1fr] gap-0 border-b border-border-light dark:border-border-dark items-center px-3 py-1.5 hover:bg-surface-light dark:hover:bg-surface-dark transition-colors"
@@ -149,11 +181,13 @@ function SAGridRowsDisplay({
                       />
                     </div>
                   ))}
+                    </>
+                  )}
                 </div>
               )}
-              {isExpanded && rowOptions.length === 0 && (
+              {isExpanded && !hasExpandableContent && (
                 <div className="bg-surface-light dark:bg-surface-dark border-t border-border-light dark:border-border-dark px-3 py-2 text-xs text-muted-foreground">
-                  No codes found for this sub-question
+                  No codes or variables for this sub-question
                 </div>
               )}
             </div>

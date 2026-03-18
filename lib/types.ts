@@ -41,4 +41,6 @@ export interface ParsedQuestion {
   textCompanions?: Record<string, string>
   /** SA questions with multiple open-ended fields (e.g. Q3, Q23). Companion vars in order for Rename to Q3_1_O, Q3_2_O. */
   saTextCompanions?: string[]
+  /** Grid: explicit raw→generated mapping. When present, Clean Label iterates over this instead of oldVariableMapping. */
+  rawVariables?: Array<{ rawVar: string; generatedId: string; label: string }>
 }

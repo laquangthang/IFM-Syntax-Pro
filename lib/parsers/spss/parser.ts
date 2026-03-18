@@ -17,6 +17,10 @@ import {
   isTextCompanion,
   getBaseVarFromTextCompanion,
   getSABaseVarFromTextCompanion,
+  extractStrictBaseId,
+  resolveQuestionId,
+  parseGridPrefixPattern,
+  type IdRegistry,
 } from './utils'
 
 const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -41,8 +45,17 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     rowOptionsMap?: Record<string, QuestionOption[]>
     textCompanionVar?: string
     saTextCompanions?: string[]
+    rawVariables?: Array<{ rawVar: string; generatedId: string; label: string }>
   }>()
   
+  // Strict prefix extraction & deduplication for duplicate IDs
+  const assignedIds: Record<string, string> = {}
+  const idCounters: Record<string, number> = {}
+  const idRegistry: IdRegistry = { assignedIds, idCounters }
+
+  // Grid prefix accumulation: prefix -> rowCode -> [{ rawVar, label }] (multi-var rows supported)
+  const gridVarAccumulator = new Map<string, Map<string, Array<{ rawVar: string; label: string }>>>()
+
   // Counters for variable structure (optionCode, subIndex, etc.)
   const groupCounts: Record<string, number> = {}
   const qrMapping: Record<string, number> = {}
@@ -213,7 +226,19 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     
     // Case 1: var{id} with 2 segments (SA with question ID)
     if (/^var\d+$/.test(col1) && segments.length === 2) {
-      const questionId = segments[1]
+      const baseId = extractStrictBaseId(segments[1])
+      const gridMatch = parseGridPrefixPattern(baseId)
+      if (gridMatch) {
+        const { prefix, rowCode } = gridMatch
+        if (!gridVarAccumulator.has(prefix)) {
+          gridVarAccumulator.set(prefix, new Map())
+        }
+        const rowMap = gridVarAccumulator.get(prefix)!
+        if (!rowMap.has(rowCode)) rowMap.set(rowCode, [])
+        rowMap.get(rowCode)!.push({ rawVar: col1, label: segments[0] || baseId })
+        continue
+      }
+      const questionId = resolveQuestionId(baseId, col1, idRegistry)
       
       if (!groupCounts[questionId]) {
         groupCounts[questionId] = 1
@@ -241,7 +266,8 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     }
     // Case 2: var{id}O{n} with Rank
     else if (/^var\d+O\d+$/.test(col1) && matchRank && !matchSum) {
-      const firstWord = matchRank[1]
+      const baseId = extractStrictBaseId(matchRank[1])
+      const firstWord = resolveQuestionId(baseId, col1, idRegistry)
       const text = col2.substring(0, col2.indexOf(':' + firstWord))
       
       if (!rankMapping[firstWord]) {
@@ -277,7 +303,8 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     }
     // Case 3: var{id}O{n} with Sum
     else if (/^var\d+O\d+$/.test(col1) && matchSum && !matchRank) {
-      const firstWord = matchSum[1]
+      const baseId = extractStrictBaseId(matchSum[1])
+      const firstWord = resolveQuestionId(baseId, col1, idRegistry)
       const text = col2.substring(0, col2.indexOf(':' + firstWord))
       
       if (!sumMapping[firstWord]) {
@@ -310,7 +337,20 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     // Case 4: var{id} simple (SA without suffix)
     else if (/^var\d+$/.test(col1) && segments.length === 1) {
       const firstWordMatch = col2.match(/\S+/)
-      const firstWord = firstWordMatch ? firstWordMatch[0] : 'Unknown'
+      const rawFirst = firstWordMatch ? firstWordMatch[0] : ''
+      const baseId = extractStrictBaseId(rawFirst)
+      const gridMatch = parseGridPrefixPattern(baseId)
+      if (gridMatch) {
+        const { prefix, rowCode } = gridMatch
+        if (!gridVarAccumulator.has(prefix)) {
+          gridVarAccumulator.set(prefix, new Map())
+        }
+        const rowMap = gridVarAccumulator.get(prefix)!
+        if (!rowMap.has(rowCode)) rowMap.set(rowCode, [])
+        rowMap.get(rowCode)!.push({ rawVar: col1, label: col2 })
+        continue
+      }
+      const firstWord = resolveQuestionId(baseId, col1, idRegistry)
       
       // Track question
       if (!questionMap.has(firstWord)) {
@@ -407,9 +447,8 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
       const varId = varIdMatch ? varIdMatch[1] : ''
       let questionId: string
       if (segments.length >= 2) {
-        const rawId = segments[1]
-        const idMatch = rawId.match(/^([A-Za-z]+\d+[a-zA-Z0-9_]*)/)
-        questionId = idMatch ? idMatch[1] : rawId
+        const baseId = extractStrictBaseId(segments[1])
+        questionId = resolveQuestionId(baseId, col1, idRegistry)
       } else {
         questionId = lastMAQuestionIdByVarId[varId] || 'Unknown'
       }
@@ -456,7 +495,9 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
       
       const [, varId, optionId, othrFlag, pnRaw] = match
       const matchQuestion = col2.match(/:(\S+)/)
-      const questionId = matchQuestion ? matchQuestion[1] : 'Unknown'
+      const rawId = matchQuestion ? matchQuestion[1] : ''
+      const baseId = extractStrictBaseId(rawId)
+      const questionId = resolveQuestionId(baseId, col1, idRegistry)
       
       // Extract PN number
       const pnNumbers = col1.match(/PN(\d+(?:_\d+)*)/)
@@ -521,7 +562,9 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
         
         const [, varId, pnId] = matchPN
         const matchQuestion = col2.match(/^(\S+)/)
-        const questionId = matchQuestion ? matchQuestion[1] : 'Unknown'
+        const rawId = matchQuestion ? matchQuestion[1] : ''
+        const baseId = extractStrictBaseId(rawId)
+        const questionId = resolveQuestionId(baseId, col1, idRegistry)
         
         // Track question
         if (!questionMap.has(questionId)) {
@@ -546,7 +589,8 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
         const matchPN = col1.match(/var(\d+)(PN[\d_]+)$/)
         if (!matchPN) continue
         
-        const questionId = temp[1]
+        const baseId = extractStrictBaseId(temp[1])
+        const questionId = resolveQuestionId(baseId, col1, idRegistry)
         const subQuestion = removeTrailingNumberGroup(temp[0])
         const pnNow = extractLastNumber(temp[0])
         
@@ -597,7 +641,8 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
       
       if (temp.length === 2) {
         const recordId = temp[0]
-        const questionId = temp[1]
+        const baseId = extractStrictBaseId(temp[1])
+        const questionId = resolveQuestionId(baseId, col1, idRegistry)
         
         // Track question
         if (!questionMap.has(questionId)) {
@@ -620,7 +665,8 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
         })
       } else if (temp.length === 3) {
         const recordId = temp[0]
-        const questionId = temp[2]
+        const baseId = extractStrictBaseId(temp[2])
+        const questionId = resolveQuestionId(baseId, col1, idRegistry)
         
         // Track question
         if (!questionMap.has(questionId)) {
@@ -650,7 +696,9 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
       
       const [, varId, optionId, othrFlag, qnRaw] = match
       const segments3 = splitByColonSegments(col2)
-      const questionId = segments3.length >= 3 ? segments3[2] : 'Unknown'
+      const rawId = segments3.length >= 3 ? segments3[2] : ''
+      const baseId = extractStrictBaseId(rawId)
+      const questionId = resolveQuestionId(baseId, col1, idRegistry)
       
       // Extract QN number
       const qnNumbers = col1.match(/QN(\d+(?:_\d+)*)/)
@@ -935,6 +983,36 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     }
   }
   
+  // Convert gridVarAccumulator into SA_Grid questions (Smart Grid Prefix Detection)
+  // Supports multi-variable rows (e.g. A2_1 with var262 + var263 → A2_1_1, A2_1_2)
+  for (const [prefix, rowMap] of gridVarAccumulator.entries()) {
+    const sortedRows = Array.from(rowMap.entries()).sort((a, b) => {
+      const aNum = parseInt(a[0]) || 0
+      const bNum = parseInt(b[0]) || 0
+      return aNum - bNum
+    })
+    const rawVariables: Array<{ rawVar: string; generatedId: string; label: string }> = []
+    const rows: QuestionOption[] = []
+    for (const [rowCode, vars] of sortedRows) {
+      const rowLabel = vars[0]?.label || `${prefix}_${rowCode}`
+      rows.push({ code: parseInt(rowCode) || rowCode, label: rowLabel })
+      vars.forEach((v, subIdx) => {
+        const subIndex = vars.length > 1 ? subIdx + 1 : null
+        const generatedId = subIndex != null ? `${prefix}_${rowCode}_${subIndex}` : `${prefix}_${rowCode}`
+        rawVariables.push({ rawVar: v.rawVar, generatedId, label: v.label })
+      })
+    }
+    questionMap.set(prefix, {
+      id: prefix,
+      type: 'SA_Grid',
+      label: prefix,
+      options: [],
+      rows,
+      rowOptionsMap: undefined,
+      rawVariables,
+    })
+  }
+
   // Post-process: Merge SA variables with _X pattern into SA_Grid
   // Pattern: Q24_1, Q24_2, Q24_3, ..., Q24_8 → Q24 (SA_Grid) with rows [1, 2, 3, ..., 8]
   // Each row (sub-question) has its own options from sheet 2
@@ -946,8 +1024,8 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
   
   // Scan questionMap for SA_Grid pattern
   for (const [qId, qData] of questionMap.entries()) {
-    // Check if this looks like a SA_Grid sub-variable: Q24_1, Q24_2, Q24_3, ... (SA type with _number pattern)
-    const subMatch = qId.match(/^([A-Za-z]+\d+)_(\d+)$/i)
+    // Check if this looks like a SA_Grid sub-variable: Q24_1, A1a_1, etc. (SA type with prefix_row pattern)
+    const subMatch = qId.match(/^([A-Za-z0-9]+)_(\d+)$/i)
     if (subMatch && qData.type === 'SA') {
       const baseQId = subMatch[1] // Q24
       const rowIndex = subMatch[2] // 1, 2, 3, ...
@@ -1023,6 +1101,7 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     columns: q.columns && q.columns.length > 0 ? q.columns : undefined,
     rowOptionsMap: q.rowOptionsMap,
     saTextCompanions: q.saTextCompanions && q.saTextCompanions.length > 0 ? Array.from(new Set(q.saTextCompanions)) : undefined,
+    rawVariables: q.rawVariables,
     logic: {
       type: 'Normal',
       piping_source: null,

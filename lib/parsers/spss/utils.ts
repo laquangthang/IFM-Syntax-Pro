@@ -2,6 +2,44 @@
  * Utility functions for SPSS Excel parsing
  */
 
+/** Grid prefix pattern: Prefix_RowCode (e.g. A1a_1, A2_1). Returns { prefix, rowCode } or null. */
+export function parseGridPrefixPattern(baseId: string): { prefix: string; rowCode: string } | null {
+  const match = String(baseId || '').trim().match(/^([A-Za-z0-9]+)_(\d+)$/)
+  return match ? { prefix: match[1], rowCode: match[2] } : null
+}
+
+/** Strict first-word extraction. Never falls back to trailing chars (e.g. underscores). */
+export function extractStrictBaseId(cleanedLabel: string): string {
+  const trimmed = String(cleanedLabel || '').trim()
+  const match = trimmed.match(/^([A-Za-z0-9]+(?:_[A-Za-z0-9]+)*)/)
+  return match ? match[1] : 'Unknown'
+}
+
+export type IdRegistry = {
+  assignedIds: Record<string, string>
+  idCounters: Record<string, number>
+}
+
+/** Resolve question ID with deduplication. Same rawVar reuses baseId; different rawVar gets suffix. */
+export function resolveQuestionId(
+  baseId: string,
+  rawVarName: string,
+  registry: IdRegistry
+): string {
+  const { assignedIds, idCounters } = registry
+  if (!assignedIds[baseId]) {
+    assignedIds[baseId] = rawVarName
+    return baseId
+  }
+  if (assignedIds[baseId] === rawVarName) {
+    return baseId
+  }
+  idCounters[baseId] = (idCounters[baseId] || 1) + 1
+  const newId = `${baseId}_${idCounters[baseId]}`
+  assignedIds[newId] = rawVarName
+  return newId
+}
+
 export function splitByColonSegments(text: string): string[] {
   const positions: number[] = []
   let depth = 0
