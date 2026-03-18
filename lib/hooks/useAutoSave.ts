@@ -14,6 +14,8 @@ export function useAutoSave() {
   const currentProjectId = useProjectStore((s) => s.currentProjectId)
   const parsedQuestions = useSurveyStore((s) => s.parsedQuestions)
   const oldVariableMapping = useSurveyStore((s) => s.oldVariableMapping)
+  const pristineParsedQuestions = useSurveyStore((s) => s.pristineParsedQuestions)
+  const pristineOldVariableMapping = useSurveyStore((s) => s.pristineOldVariableMapping)
   const qcLogicGraph = useSurveyStore((s) => s.qcLogicGraph)
 
   useEffect(() => {
@@ -21,7 +23,9 @@ export function useAutoSave() {
     saveCurrentProjectData({
       parsedQuestions,
       oldVariableMapping,
+      pristineParsedQuestions,
+      pristineOldVariableMapping,
       qcLogicGraph,
     })
-  }, [currentProjectId, parsedQuestions, oldVariableMapping, qcLogicGraph, saveCurrentProjectData])
+  }, [currentProjectId, parsedQuestions, oldVariableMapping, pristineParsedQuestions, pristineOldVariableMapping, qcLogicGraph, saveCurrentProjectData])
 }

@@ -12,6 +12,9 @@ export interface ProjectData {
   updatedAt: string
   parsedQuestions: ParsedQuestion[]
   oldVariableMapping: OldVariableMapping
+  /** Pristine data from Excel - for Clean Label only. Optional for backward compat. */
+  pristineParsedQuestions?: ParsedQuestion[]
+  pristineOldVariableMapping?: OldVariableMapping
   qcLogicGraph: QCLogicGraph | null
 }
 
@@ -28,6 +31,8 @@ interface ProjectState {
   saveCurrentProjectData: (data: {
     parsedQuestions: ParsedQuestion[]
     oldVariableMapping: OldVariableMapping
+    pristineParsedQuestions?: ParsedQuestion[]
+    pristineOldVariableMapping?: OldVariableMapping
     qcLogicGraph: QCLogicGraph | null
   }) => void
   getCurrentProject: () => ProjectData | null
@@ -101,6 +106,8 @@ export const useProjectStore = create<ProjectState>()(
         get().updateProject(currentProjectId, {
           parsedQuestions: data.parsedQuestions,
           oldVariableMapping: data.oldVariableMapping,
+          pristineParsedQuestions: data.pristineParsedQuestions,
+          pristineOldVariableMapping: data.pristineOldVariableMapping,
           qcLogicGraph: data.qcLogicGraph,
         })
       },

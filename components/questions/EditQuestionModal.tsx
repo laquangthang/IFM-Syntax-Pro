@@ -606,36 +606,8 @@ export default function EditQuestionModal({ question, isOpen, editingContext = '
         }
       }
       
-      // Auto-sync from piping source
-      if (questionToLoad.logic?.piping_source) {
-        const sourceQuestion = parsedQuestions.find(q => q.id === questionToLoad.logic?.piping_source)
-        if (sourceQuestion) {
-          // If source question is a Grid question, use its ROWS as piping source
-          const isSourceGrid = sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'SA_Grid'
-          
-          if (isSourceGrid && sourceQuestion.rows && sourceQuestion.rows.length > 0) {
-            // Source is Grid → use rows from source
-            if (questionToLoad.type === 'MA_Grid' || questionToLoad.type === 'SA_Grid') {
-              // Target is also Grid → sync rows from source as columns
-              questionToLoad.columns = [...sourceQuestion.rows]
-            } else if (questionToLoad.type === 'MA') {
-              // Target is MA → use source rows as options
-              questionToLoad.options = [...sourceQuestion.rows]
-            }
-          }
-          // If source is regular MA question, use its options
-          else if (sourceQuestion.type === 'MA' && sourceQuestion.options && sourceQuestion.options.length > 0) {
-            if (questionToLoad.type === 'MA_Grid' || questionToLoad.type === 'SA_Grid') {
-              // Target is Grid → use source options as columns
-              questionToLoad.columns = [...sourceQuestion.options]
-            } else if (questionToLoad.type === 'MA') {
-              // Target is MA → sync options
-              questionToLoad.options = [...sourceQuestion.options]
-            }
-          }
-        }
-      }
-      
+      // NOTE: Piping does NOT mutate columns/options. Clean Label uses pristine Excel data only.
+      // QC Logic infers piping from edges; target structure stays from Excel.
       setEditedQuestion(questionToLoad)
       setNewOptionCode('')
       setNewOptionLabel('')
@@ -702,45 +674,6 @@ export default function EditQuestionModal({ question, isOpen, editingContext = '
     }
   }, [question, isOpen, oldVariableMapping, parsedQuestions])
   
-  // Additional effect to sync columns when parsedQuestions changes (e.g., Q7 data becomes available)
-  // This ensures columns are synced even if source question data loads after modal opens
-  useEffect(() => {
-    if (isOpen && editedQuestion.logic?.piping_source && (editedQuestion.type === 'MA_Grid' || editedQuestion.type === 'SA_Grid')) {
-      const sourceQuestion = parsedQuestions.find(q => q.id === editedQuestion.logic?.piping_source)
-      if (sourceQuestion) {
-        const isSourceGrid = sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'SA_Grid'
-        
-        if (isSourceGrid && sourceQuestion.rows && sourceQuestion.rows.length > 0) {
-          // Always sync columns from source rows when piping is active
-          // This ensures columns are up-to-date even if question had old Excel data
-          const sourceRows = sourceQuestion.rows
-          
-          // Use functional update to check current state and sync if needed
-          setEditedQuestion(prev => {
-            const currentColumns = prev.columns || []
-            
-            // Check if sync is needed (different length or different content)
-            const needsSync = currentColumns.length !== sourceRows.length || 
-              currentColumns.some((col, idx) => {
-                const sourceRow = sourceRows[idx]
-                return !sourceRow || col.code !== sourceRow.code || col.label !== sourceRow.label
-              })
-            
-            if (needsSync) {
-              // Force sync columns from source rows
-              return {
-                ...prev,
-                columns: [...sourceRows]
-              }
-            }
-            
-            return prev
-          })
-        }
-      }
-    }
-  }, [isOpen, editedQuestion.logic?.piping_source, editedQuestion.type, parsedQuestions])
-
   // Prevent background scrolling when modal is open
   useEffect(() => {
     if (!isOpen) return
@@ -1178,35 +1111,7 @@ export default function EditQuestionModal({ question, isOpen, editingContext = '
                       onChange={(e) => {
                         const sourceId = e.target.value || null
                         updateLogic('piping_source', sourceId)
-                        
-                        if (sourceId) {
-                          const sourceQuestion = parsedQuestions.find(q => q.id === sourceId)
-                          if (sourceQuestion) {
-                            // If source question is a Grid question, use its ROWS as piping source
-                            const isSourceGrid = sourceQuestion.type === 'MA_Grid' || sourceQuestion.type === 'SA_Grid'
-                            
-                            if (isSourceGrid && sourceQuestion.rows) {
-                              // Source is Grid → use rows from source
-                              if (editedQuestion.type === 'MA_Grid' || editedQuestion.type === 'SA_Grid') {
-                                // Target is also Grid → copy rows from source as columns
-                                updateField('columns', [...sourceQuestion.rows])
-                              } else if (editedQuestion.type === 'MA') {
-                                // Target is MA → use source rows as options
-                                updateField('options', [...sourceQuestion.rows])
-                              }
-                            }
-                            // If source is regular MA question, use its options
-                            else if (sourceQuestion.type === 'MA' && sourceQuestion.options) {
-                              if (editedQuestion.type === 'MA_Grid' || editedQuestion.type === 'SA_Grid') {
-                                // Target is Grid → use source options as columns
-                                updateField('columns', [...sourceQuestion.options])
-                              } else if (editedQuestion.type === 'MA') {
-                                // Target is MA → copy options
-                                updateField('options', [...sourceQuestion.options])
-                              }
-                            }
-                          }
-                        }
+                        // NOTE: Do NOT mutate columns/options. Piping only affects QC Logic, not Clean Label.
                       }}
                       className="w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-border-dark rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors text-sm"
                     >

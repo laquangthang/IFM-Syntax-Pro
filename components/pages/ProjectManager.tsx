@@ -131,6 +131,8 @@ export default function ProjectManager() {
       loadProjectData({
         parsedQuestions: project.parsedQuestions,
         oldVariableMapping: project.oldVariableMapping,
+        pristineParsedQuestions: project.pristineParsedQuestions,
+        pristineOldVariableMapping: project.pristineOldVariableMapping,
         qcLogicGraph: project.qcLogicGraph,
       })
       router.push('/import')
@@ -145,6 +147,8 @@ export default function ProjectManager() {
       loadProjectData({
         parsedQuestions: [],
         oldVariableMapping: {},
+        pristineParsedQuestions: [],
+        pristineOldVariableMapping: {},
         qcLogicGraph: null,
       })
     }

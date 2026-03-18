@@ -13,7 +13,7 @@ import ThemeToggle from '../ThemeToggle'
 
 export default function DataImport() {
   const router = useRouter()
-  const { setParsedQuestions, setLoading, setError, setCurrentStep, isLoading, error, setOldVariableMapping } = useSurveyStore()
+  const { setParsedQuestions, setOldVariableMapping, setPristineData, setLoading, setError, setCurrentStep, isLoading, error } = useSurveyStore()
   const [isDragging, setIsDragging] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [progress, setProgress] = useState(0)
@@ -100,6 +100,7 @@ export default function DataImport() {
         if (result.oldVariableMapping) {
           setOldVariableMapping(result.oldVariableMapping)
         }
+        setPristineData(result.questions, result.oldVariableMapping || {})
       }
       setProgress(100)
       setPhaseInfo({ phase: 'Complete', details: `Extracted ${result.questions.length} questions, ${result.variables.length} variables` })

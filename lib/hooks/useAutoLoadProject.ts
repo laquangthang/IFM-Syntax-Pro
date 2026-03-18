@@ -18,6 +18,8 @@ export function useAutoLoadProject() {
         loadProjectData({
           parsedQuestions: project.parsedQuestions,
           oldVariableMapping: project.oldVariableMapping,
+          pristineParsedQuestions: project.pristineParsedQuestions,
+          pristineOldVariableMapping: project.pristineOldVariableMapping,
           qcLogicGraph: project.qcLogicGraph,
         })
       }

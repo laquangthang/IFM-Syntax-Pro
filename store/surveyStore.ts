@@ -33,6 +33,9 @@ interface SurveyState {
   parsedQuestions: ParsedQuestion[]
   questionsMap: Map<string, ParsedQuestion>
   oldVariableMapping: OldVariableMapping // Mapping of question ID to old variable names
+  /** Pristine data from Excel import - used by Clean Label generator only. Never mutated by Piping/Canvas. */
+  pristineParsedQuestions: ParsedQuestion[]
+  pristineOldVariableMapping: OldVariableMapping
   qcLogicGraph: QCLogicGraph | null // QC Logic Graph generated from questions
   editingQuestionId: string | null // Global: which question is being edited (for Edit modal from Canvas or Tab)
   editingContext: 'default' | 'terminate' | 'trap' // Context when opened from Terminate/Trap node
@@ -43,6 +46,7 @@ interface SurveyState {
   // Actions
   setEditingQuestionId: (id: string | null, context?: 'default' | 'terminate' | 'trap') => void
   setParsedQuestions: (questions: ParsedQuestion[]) => void
+  setPristineData: (questions: ParsedQuestion[], oldVariableMapping?: OldVariableMapping) => void
   appendParsedQuestions: (questions: ParsedQuestion[]) => void // Append questions (for chunked parsing)
   setQuestionsMap: (map: Map<string, ParsedQuestion>) => void
   updateQuestion: (id: string, question: Partial<ParsedQuestion>) => void
@@ -57,6 +61,8 @@ interface SurveyState {
   loadProjectData: (data: {
     parsedQuestions: ParsedQuestion[]
     oldVariableMapping: OldVariableMapping
+    pristineParsedQuestions?: ParsedQuestion[]
+    pristineOldVariableMapping?: OldVariableMapping
     qcLogicGraph: QCLogicGraph | null
   }) => void
   reset: () => void
@@ -66,6 +72,8 @@ const initialState = {
   parsedQuestions: [],
   questionsMap: new Map<string, ParsedQuestion>(),
   oldVariableMapping: {} as OldVariableMapping,
+  pristineParsedQuestions: [] as ParsedQuestion[],
+  pristineOldVariableMapping: {} as OldVariableMapping,
   qcLogicGraph: null as QCLogicGraph | null,
   editingQuestionId: null as string | null,
   editingContext: 'default' as const,
@@ -82,6 +90,12 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
     const map = questionsToMap(processedQuestions)
     set({ parsedQuestions: processedQuestions, questionsMap: map })
     // QC graph is computed lazily when user navigates to /qc-logic (QCLogicNebula)
+  },
+
+  /** Set pristine data from Excel import. Clean Label generator uses this - never mutated by Piping/Canvas. */
+  setPristineData: (questions, oldVariableMapping) => {
+    const processed = autoConvertTerminateOptions(questions)
+    set({ pristineParsedQuestions: processed, pristineOldVariableMapping: oldVariableMapping || {} })
   },
   
   appendParsedQuestions: (newQuestions) => {
@@ -176,6 +190,8 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
   loadProjectData: (data: {
     parsedQuestions: ParsedQuestion[]
     oldVariableMapping: OldVariableMapping
+    pristineParsedQuestions?: ParsedQuestion[]
+    pristineOldVariableMapping?: OldVariableMapping
     qcLogicGraph: QCLogicGraph | null
   }) => {
     const map = questionsToMap(data.parsedQuestions)
@@ -183,6 +199,8 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       parsedQuestions: data.parsedQuestions,
       questionsMap: map,
       oldVariableMapping: data.oldVariableMapping,
+      pristineParsedQuestions: data.pristineParsedQuestions ?? [],
+      pristineOldVariableMapping: data.pristineOldVariableMapping ?? {},
       qcLogicGraph: data.qcLogicGraph,
     })
   },
