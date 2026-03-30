@@ -156,8 +156,6 @@ export default function QuestionManager() {
     setParsedQuestions,
     setPristineData,
     oldVariableMapping,
-    pristineParsedQuestions,
-    pristineOldVariableMapping,
     setQuestionOldVariables,
     setOldVariableMapping,
     isLoading,
@@ -267,14 +265,12 @@ export default function QuestionManager() {
     URL.revokeObjectURL(url)
   }
 
-  // Generate SPSS Syntax
+  // Generate SPSS Syntax - use parsedQuestions so UI edits (row codes, etc.) sync
   const handleGenerateSyntax = () => {
-    const { pristineParsedQuestions, pristineOldVariableMapping, parsedQuestions, oldVariableMapping } = useSurveyStore.getState()
-    const questions = pristineParsedQuestions.length > 0 ? pristineParsedQuestions : parsedQuestions
-    const mapping = pristineParsedQuestions.length > 0 ? pristineOldVariableMapping : oldVariableMapping
-    if (questions.length === 0) return
+    const { parsedQuestions, oldVariableMapping } = useSurveyStore.getState()
+    if (parsedQuestions.length === 0) return
     
-    const syntax = generateCompleteSyntax(questions, mapping)
+    const syntax = generateCompleteSyntax(parsedQuestions, oldVariableMapping)
     setGeneratedSyntax(syntax)
     setShowSyntaxModal(true)
   }

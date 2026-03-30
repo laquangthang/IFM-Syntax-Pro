@@ -1048,6 +1048,7 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     }
   }
   
+  const saGridMergedSubIds = new Map<string, string>()
   // Merge SA_Grid candidates (only if we have multiple rows)
   for (const [baseQId, candidate] of saGridCandidates.entries()) {
     const existingBase = questionMap.get(baseQId)
@@ -1058,6 +1059,7 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
       for (const rowIndex of candidate.rows.keys()) {
         const subQId = `${baseQId}_${rowIndex}`
         questionMap.delete(subQId)
+        saGridMergedSubIds.set(subQId, baseQId)
       }
       // Sort rows by index (numeric)
       const sortedRows = Array.from(candidate.rows.entries()).sort((a, b) => {
@@ -1136,15 +1138,8 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
     }
   }
   
-  for (const [baseQId, candidate] of saGridCandidates.entries()) {
-    if (candidate.rows.size >= 2) {
-      const existingBase = questionMap.get(baseQId)
-      if (existingBase) continue
-      for (const rowIndex of candidate.rows.keys()) {
-        const subQId = `${baseQId}_${rowIndex}`
-        subToBaseMap.set(subQId, baseQId)
-      }
-    }
+  for (const [subQId, baseQId] of saGridMergedSubIds.entries()) {
+    subToBaseMap.set(subQId, baseQId)
   }
   
   for (const v of variables) {
