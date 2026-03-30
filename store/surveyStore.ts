@@ -1,10 +1,27 @@
 import { create } from 'zustand'
-import { ParsedQuestion, OldVariableMapping } from '@/lib/types'
+import { ParsedQuestion, OldVariableMapping, QuestionOption } from '@/lib/types'
 
 export type { OldVariableMapping }
 import { questionsToMap, mapToQuestions } from '@/lib/jsonLoader'
 import { QCLogicGraph } from '@/lib/qcLogicTypes'
 import { convertQuestionsToQCGraph } from '@/lib/qcGraphConverter'
+import { cascadeCodeRename } from '@/lib/utils/cascadeCodeRename'
+
+/** Detect code renames between old and new option/row arrays (same index = same logical item). */
+function detectCodeRenames(
+  oldItems: QuestionOption[] | undefined,
+  newItems: QuestionOption[] | undefined
+): Array<{ oldCode: string | number; newCode: string | number }> {
+  if (!oldItems || !newItems) return []
+  const renames: Array<{ oldCode: string | number; newCode: string | number }> = []
+  const len = Math.min(oldItems.length, newItems.length)
+  for (let i = 0; i < len; i++) {
+    if (String(oldItems[i].code) !== String(newItems[i].code)) {
+      renames.push({ oldCode: oldItems[i].code, newCode: newItems[i].code })
+    }
+  }
+  return renames
+}
 
 /**
  * Rebuild terminate_if from Trap/Terminate options - no recursive merge.
@@ -135,10 +152,26 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
   updateQuestion: (id, updates) => {
     const { questionsMap } = get()
     const question = questionsMap.get(id)
-    if (question) {
-      const updated = { ...question, ...updates }
-      const newMap = new Map(questionsMap)
-      newMap.set(id, updated)
+    if (!question) return
+
+    const updated = { ...question, ...updates }
+    const newMap = new Map(questionsMap)
+    newMap.set(id, updated)
+
+    // Detect option/row code renames and cascade into other questions' logic
+    const renames = [
+      ...detectCodeRenames(question.options, updated.options),
+      ...detectCodeRenames(question.rows, updated.rows),
+      ...detectCodeRenames(question.columns, updated.columns),
+    ]
+    if (renames.length > 0) {
+      let allQuestions = mapToQuestions(newMap)
+      for (const { oldCode, newCode } of renames) {
+        allQuestions = cascadeCodeRename(allQuestions, id, oldCode, newCode)
+      }
+      const cascadedMap = questionsToMap(allQuestions)
+      set({ parsedQuestions: allQuestions, questionsMap: cascadedMap, qcLogicGraph: null })
+    } else {
       get().setQuestionsMap(newMap)
     }
   },

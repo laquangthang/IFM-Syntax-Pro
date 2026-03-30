@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { useProjectStore } from '@/store/projectStore'
+import { useProjectStore, type ProjectExportData } from '@/store/projectStore'
 import { useSurveyStore } from '@/store/surveyStore'
 import MainLayout from '../Layout/MainLayout'
 import ThemeToggle from '../ThemeToggle'
@@ -17,7 +17,11 @@ import {
   X,
   FileText,
   Calendar,
-  Save
+  Save,
+  Download,
+  Upload,
+  AlertTriangle,
+  HardDrive,
 } from 'lucide-react'
 
 export default function ProjectManager() {
@@ -31,7 +35,13 @@ export default function ProjectManager() {
     deleteProject, 
     loadProject,
     setCurrentProject,
-    getCurrentProject
+    getCurrentProject,
+    exportProject,
+    importProject,
+    lastSaveError,
+    clearSaveError,
+    storageUsageBytes,
+    refreshStorageUsage,
   } = useProjectStore()
   
   const { 
@@ -94,6 +104,9 @@ export default function ProjectManager() {
   const [newProjectDescription, setNewProjectDescription] = useState('')
   const [showNewForm, setShowNewForm] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const importFileRef = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => { refreshStorageUsage() }, [projects.length, refreshStorageUsage])
 
   // Auto-save current data when it changes
   useEffect(() => {
@@ -178,6 +191,53 @@ export default function ProjectManager() {
     setEditDescription('')
   }
 
+  const handleExportProject = (id: string) => {
+    const data = exportProject(id)
+    if (!data) return
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${data.project.name?.replace(/[^a-zA-Z0-9_-]/g, '_') || 'project'}_${new Date().toISOString().split('T')[0]}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImportProject = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result as string) as ProjectExportData
+        if (data?._format !== 'ifm-syntax-pro-project') {
+          alert('Invalid project file format.')
+          return
+        }
+        const id = importProject(data)
+        if (id) {
+          const project = useProjectStore.getState().projects.find(p => p.id === id)
+          if (project) {
+            loadProjectData({
+              parsedQuestions: project.parsedQuestions,
+              oldVariableMapping: project.oldVariableMapping,
+              pristineParsedQuestions: project.pristineParsedQuestions,
+              pristineOldVariableMapping: project.pristineOldVariableMapping,
+              qcLogicGraph: project.qcLogicGraph,
+            })
+          }
+        }
+      } catch {
+        alert('Failed to parse project file.')
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
+  const storageMB = (storageUsageBytes / 1024 / 1024).toFixed(1)
+  const storagePercent = Math.min(100, (storageUsageBytes / (5 * 1024 * 1024)) * 100)
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('vi-VN', {
@@ -214,17 +274,77 @@ export default function ProjectManager() {
             </div>
           </div>
 
-          {/* New Project Button */}
+          {/* Storage usage bar */}
+          <div className="mb-4 p-3 rounded-lg glass-panel border border-glass-border-light dark:border-glass-border-dark">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <HardDrive className="size-3" />
+                <span>Storage: {storageMB}MB / 5MB</span>
+              </div>
+              {storagePercent >= 80 && (
+                <span className="flex items-center gap-1 text-xs text-amber-400">
+                  <AlertTriangle className="size-3" />
+                  {storagePercent >= 95 ? 'Almost full!' : 'Getting full'}
+                </span>
+              )}
+            </div>
+            <div className="w-full h-1.5 rounded-full bg-background-light dark:bg-background-dark overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${storagePercent >= 95 ? 'bg-red-500' : storagePercent >= 80 ? 'bg-amber-400' : 'bg-primary'}`}
+                style={{ width: `${storagePercent}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Save error toast */}
+          <AnimatePresence>
+            {lastSaveError && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2 text-sm text-red-400">
+                  <AlertTriangle className="size-4 shrink-0" />
+                  <span>{lastSaveError}</span>
+                </div>
+                <button onClick={clearSaveError} className="p-1 hover:bg-red-500/20 rounded transition-colors">
+                  <X className="size-4 text-red-400" />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Action buttons */}
           {!showNewForm && (
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setShowNewForm(true)}
-              className="mb-6 px-4 py-2 bg-primary text-primary-foreground rounded-lg flex items-center gap-2 hover:bg-primary/90 transition-colors"
-            >
-              <FolderPlus className="size-5" />
-              New Project
-            </motion.button>
+            <div className="mb-6 flex items-center gap-3">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowNewForm(true)}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg flex items-center gap-2 hover:bg-primary/90 transition-colors"
+              >
+                <FolderPlus className="size-5" />
+                New Project
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => importFileRef.current?.click()}
+                className="px-4 py-2 bg-background-light dark:bg-background-dark border border-glass-border-light dark:border-glass-border-dark rounded-lg flex items-center gap-2 hover:bg-white/5 transition-colors text-foreground"
+              >
+                <Upload className="size-5" />
+                Import Project
+              </motion.button>
+              <input
+                ref={importFileRef}
+                type="file"
+                accept=".json"
+                onChange={handleImportProject}
+                className="hidden"
+              />
+            </div>
           )}
 
           {/* New Project Form */}
@@ -364,6 +484,13 @@ export default function ProjectManager() {
                           )}
                         </div>
                         <div className="flex gap-1 ml-2">
+                          <button
+                            onClick={() => handleExportProject(project.id)}
+                            className="p-1.5 hover:bg-white/5 rounded transition-colors"
+                            title="Export"
+                          >
+                            <Download className="size-4 text-muted-foreground" />
+                          </button>
                           <button
                             onClick={() => handleStartEdit(project)}
                             className="p-1.5 hover:bg-white/5 rounded transition-colors"
