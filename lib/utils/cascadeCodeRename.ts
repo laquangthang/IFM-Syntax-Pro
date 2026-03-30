@@ -1,4 +1,4 @@
-import { ParsedQuestion } from '@/lib/types'
+import { ParsedQuestion, OldVariableMapping } from '@/lib/types'
 
 const escRe = (s: string) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -57,4 +57,66 @@ export function cascadeCodeRename(
 
     return changed ? { ...q, logic } : q
   })
+}
+
+/**
+ * Replace all occurrences of oldQId in a condition string with newQId.
+ * Handles patterns: H27R5, H27_5, H27 = 5, standalone H27.
+ */
+function replaceQuestionIdInCondition(condition: string, oldQId: string, newQId: string): string {
+  const escaped = escRe(oldQId)
+  // Replace oldQId wherever it appears as a word-boundary token
+  return condition.replace(new RegExp(`\\b${escaped}\\b`, 'g'), newQId)
+}
+
+/**
+ * After user renames a question ID (e.g. H27 → H10000), propagate into all
+ * other questions' logic references: piping_source, ask_if_condition, terminate_if.
+ * Also migrates oldVariableMapping key.
+ * Returns { questions, oldVariableMapping } — immutable.
+ */
+export function cascadeQuestionIdRename(
+  questions: ParsedQuestion[],
+  oldId: string,
+  newId: string,
+  oldVariableMapping: OldVariableMapping
+): { questions: ParsedQuestion[]; oldVariableMapping: OldVariableMapping } {
+  if (oldId === newId) return { questions, oldVariableMapping }
+
+  const updatedQuestions = questions.map(q => {
+    let changed = false
+    const logic = { ...q.logic }
+
+    if (logic.ask_if_condition) {
+      const updated = replaceQuestionIdInCondition(logic.ask_if_condition, oldId, newId)
+      if (updated !== logic.ask_if_condition) {
+        logic.ask_if_condition = updated
+        changed = true
+      }
+    }
+
+    if (logic.terminate_if) {
+      const updated = replaceQuestionIdInCondition(logic.terminate_if, oldId, newId)
+      if (updated !== logic.terminate_if) {
+        logic.terminate_if = updated
+        changed = true
+      }
+    }
+
+    if (logic.piping_source === oldId) {
+      logic.piping_source = newId
+      changed = true
+    }
+
+    return changed ? { ...q, logic } : q
+  })
+
+  // Migrate oldVariableMapping: oldId → newId
+  const newMapping = { ...oldVariableMapping }
+  if (newMapping[oldId]) {
+    newMapping[newId] = newMapping[oldId]
+    delete newMapping[oldId]
+  }
+
+  return { questions: updatedQuestions, oldVariableMapping: newMapping }
 }

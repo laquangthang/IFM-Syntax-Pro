@@ -793,8 +793,8 @@ export default function EditQuestionModal({ question, isOpen, editingContext = '
     // Update local state for UI consistency (even though we're about to save)
     setEditedQuestion(finalQuestion)
     
-    // Save old variables to store (outside of setState to avoid render-phase updates)
-    setQuestionOldVariables(finalQuestion.id, oldVars)
+    // Save old variables keyed by the ORIGINAL id — updateQuestion handles migration if id changed
+    setQuestionOldVariables(question.id, oldVars)
     
     // Save the final question with all updates
     onSave(finalQuestion)

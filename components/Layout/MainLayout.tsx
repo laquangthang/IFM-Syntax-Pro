@@ -47,7 +47,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           editingContext={editingContext}
           onClose={() => setEditingQuestionId(null)}
           onSave={(updatedQuestion) => {
-            updateQuestion(updatedQuestion.id, updatedQuestion)
+            updateQuestion(editingQuestionId!, updatedQuestion)
             setEditingQuestionId(null)
           }}
         />

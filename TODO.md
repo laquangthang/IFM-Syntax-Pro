@@ -2,16 +2,18 @@
 
 ## Completed
 
-### Cascade Code Rename — Auto-sync logic references when code changes - 2025-03-30
+### Cascade Code Rename & Question ID Rename — 2025-03-30
 
 - **Spec**: `docs/cascade-code-rename-spec.md`
 - **Utility**: `lib/utils/cascadeCodeRename.ts`
-  - `cascadeCodeRename(questions, targetQuestionId, oldCode, newCode)` → immutable update
-  - Regex replaces `{qId}R{old}`, `{qId}_{old}`, `{qId} = {old}` in `ask_if_condition`
-  - Array replace in `piping_excluded_codes` for matching `piping_source`
-- **Store integration**: `store/surveyStore.ts`
-  - `updateQuestion` detects code renames in options/rows/columns via `detectCodeRenames`
-  - Applies `cascadeCodeRename` across all questions and sets `qcLogicGraph: null`
+  - `cascadeCodeRename(questions, targetQuestionId, oldCode, newCode)` — option/row code rename
+  - `cascadeQuestionIdRename(questions, oldId, newId, oldVariableMapping)` — question ID rename
+- **Store**: `store/surveyStore.ts` — `updateQuestion` enhanced:
+  - Detects question ID change → moves map key, migrates `oldVariableMapping`, cascades into logic
+  - Detects option/row code renames → cascades into `ask_if_condition`, `piping_excluded_codes`
+  - Invalidates `qcLogicGraph` on any rename
+- **MainLayout.tsx**: Fixed to pass OLD `editingQuestionId` to `updateQuestion`
+- **EditQuestionModal.tsx**: Fixed `setQuestionOldVariables` to use original `question.id`
 
 ### Upgraded Auto-mode Question Selection to Data Dictionary Popup Modal - 2025-03-15
 

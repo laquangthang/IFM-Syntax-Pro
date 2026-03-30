@@ -5,7 +5,7 @@ export type { OldVariableMapping }
 import { questionsToMap, mapToQuestions } from '@/lib/jsonLoader'
 import { QCLogicGraph } from '@/lib/qcLogicTypes'
 import { convertQuestionsToQCGraph } from '@/lib/qcGraphConverter'
-import { cascadeCodeRename } from '@/lib/utils/cascadeCodeRename'
+import { cascadeCodeRename, cascadeQuestionIdRename } from '@/lib/utils/cascadeCodeRename'
 
 /** Detect code renames between old and new option/row arrays (same index = same logical item). */
 function detectCodeRenames(
@@ -150,13 +150,30 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
   },
   
   updateQuestion: (id, updates) => {
-    const { questionsMap } = get()
+    const { questionsMap, oldVariableMapping } = get()
     const question = questionsMap.get(id)
     if (!question) return
 
     const updated = { ...question, ...updates }
+    const newId = updated.id
+    const isIdChanged = newId !== id
+
     const newMap = new Map(questionsMap)
-    newMap.set(id, updated)
+    if (isIdChanged) {
+      newMap.delete(id)
+    }
+    newMap.set(newId, updated)
+
+    let allQuestions = mapToQuestions(newMap)
+    let mapping = oldVariableMapping
+    let needsGraphInvalidation = isIdChanged
+
+    // Cascade question ID rename into all other questions' logic
+    if (isIdChanged) {
+      const result = cascadeQuestionIdRename(allQuestions, id, newId, mapping)
+      allQuestions = result.questions
+      mapping = result.oldVariableMapping
+    }
 
     // Detect option/row code renames and cascade into other questions' logic
     const renames = [
@@ -165,12 +182,20 @@ export const useSurveyStore = create<SurveyState>((set, get) => ({
       ...detectCodeRenames(question.columns, updated.columns),
     ]
     if (renames.length > 0) {
-      let allQuestions = mapToQuestions(newMap)
       for (const { oldCode, newCode } of renames) {
-        allQuestions = cascadeCodeRename(allQuestions, id, oldCode, newCode)
+        allQuestions = cascadeCodeRename(allQuestions, newId, oldCode, newCode)
       }
+      needsGraphInvalidation = true
+    }
+
+    if (needsGraphInvalidation) {
       const cascadedMap = questionsToMap(allQuestions)
-      set({ parsedQuestions: allQuestions, questionsMap: cascadedMap, qcLogicGraph: null })
+      set({
+        parsedQuestions: allQuestions,
+        questionsMap: cascadedMap,
+        oldVariableMapping: mapping,
+        qcLogicGraph: null,
+      })
     } else {
       get().setQuestionsMap(newMap)
     }
