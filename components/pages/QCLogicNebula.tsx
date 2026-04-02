@@ -280,17 +280,30 @@ function isConnectionFromSourceAllowed(sourceNode: Node): boolean {
   return false
 }
 
-/** Generate a basic ask_if condition from source node (e.g. "IF Q1 = 1" or "IF Q1R1 = 1") */
-function generateBasicAskIfCondition(sourceNodeId: string, sourceHandle: string | null): string {
-  const isTerminateHandle = sourceHandle === 'top-source' || sourceHandle === 'terminate'
-  if (isTerminateHandle) {
-    const qId = getSourceQuestionId(sourceNodeId)
-    return `IF ${sourceNodeId} = 1`
+/** Generate a basic ask_if condition from source node.
+ *  SA option:  H3R1   → IF H3 = 1      (SA has single var; use parent ID)
+ *  MA option:  H3AR5  → IF H3AR5 = 5   (MA: each option is its own var)
+ *  Grid sub:   H3_5   → IF H3_5 = 5
+ *  OE option:  H3R1   → IF H3 = 1      (same as SA)
+ *  Rank:       H3_5   → IF H3_5 = 5
+ *  Parent:     H3     → IF H3 = 1      (placeholder)
+ */
+function generateBasicAskIfCondition(
+  sourceNodeId: string,
+  _sourceHandle: string | null,
+  sourceQuestionType?: string
+): string {
+  const code = extractCodeFromPipingSource(sourceNodeId)
+  if (!code) return `IF ${sourceNodeId} = 1`
+
+  // SA / OE: single variable — condition on parent question ID, not child node
+  if (sourceQuestionType === 'SA' || sourceQuestionType === 'OE') {
+    const parentId = getSourceQuestionId(sourceNodeId)
+    return `IF ${parentId} = ${code}`
   }
-  if (sourceNodeId.includes('R') || sourceNodeId.includes('_')) {
-    return `IF ${sourceNodeId} = 1`
-  }
-  return `IF ${sourceNodeId} = 1`
+
+  // MA, Grid, Rank: variable name = node ID
+  return `IF ${sourceNodeId} = ${code}`
 }
 
 function QCLogicCanvas() {
@@ -617,7 +630,26 @@ function QCLogicCanvas() {
       const question = parsedQuestions.find((q) => q.id === targetQuestionId)
       if (!question) return
       const sourceQId = getSourceQuestionId(source)
-      const condition = generateBasicAskIfCondition(source, sourceHandle)
+      const sourceQuestion = parsedQuestions.find((q) => q.id === sourceQId)
+      const newCondition = generateBasicAskIfCondition(source, sourceHandle, sourceQuestion?.type)
+
+      // Accumulate: if existing ask_if already has a condition from the same source question, merge with OR
+      const existing = question.logic?.ask_if_condition
+      let mergedCondition: string
+      if (existing && question.logic?.piping_source === sourceQId) {
+        const existingBody = existing.replace(/^IF\s+/i, '').trim()
+        const newBody = newCondition.replace(/^IF\s+/i, '').trim()
+        // Avoid duplicates
+        if (existingBody.includes(newBody)) {
+          mergedCondition = existing
+        } else {
+          const stripped = existingBody.replace(/^\(|\)$/g, '').trim()
+          mergedCondition = `IF (${stripped} OR ${newBody})`
+        }
+      } else {
+        mergedCondition = newCondition
+      }
+
       const code = extractCodeFromPipingSource(source)
       const excluded = question.logic?.piping_excluded_codes || []
       const newExcluded = code ? excluded.filter((c) => String(c) !== code) : excluded
@@ -625,7 +657,7 @@ function QCLogicCanvas() {
         logic: {
           ...question.logic,
           piping_source: sourceQId,
-          ask_if_condition: condition,
+          ask_if_condition: mergedCondition,
           piping_excluded_codes: newExcluded.length > 0 ? newExcluded : undefined,
         },
       })
@@ -657,7 +689,8 @@ function QCLogicCanvas() {
       }
       if (newQuestion) {
         const sourceQId = getSourceQuestionId(source)
-        const condition = generateBasicAskIfCondition(source, sourceHandle)
+        const sourceQuestion = parsedQuestions.find((q) => q.id === sourceQId)
+        const condition = generateBasicAskIfCondition(source, sourceHandle, sourceQuestion?.type)
         updateQuestion(newQuestion.id, {
           logic: { ...newQuestion.logic, piping_source: sourceQId, ask_if_condition: condition },
         })
@@ -729,11 +762,13 @@ function QCLogicCanvas() {
       if (['ASK_IF', 'PIPING'].includes(newType)) {
         const sourceId = edge.source
         const sourceQId = getSourceQuestionId(sourceId)
+        const sourceQuestion = parsedQuestions.find((q) => q.id === sourceQId)
+        const condition = generateBasicAskIfCondition(sourceId, null, sourceQuestion?.type)
         updateQuestion(question.id, {
           logic: {
             ...question.logic,
             piping_source: sourceQId,
-            ask_if_condition: `IF ${sourceId} = 1`,
+            ask_if_condition: condition,
           },
         })
       } else {

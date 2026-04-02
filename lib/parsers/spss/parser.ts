@@ -983,8 +983,33 @@ export function parseSPSSExcel(workbook: XLSX.WorkBook): SPSSParseResult {
   }
   
   // Convert gridVarAccumulator into SA_Grid questions (Smart Grid Prefix Detection)
-  // Supports multi-variable rows (e.g. A2_1 with var262 + var263 → A2_1_1, A2_1_2)
+  // Minimum-rows rule: only create SA_Grid when >= 2 distinct row codes exist.
+  // Single-row entries are rescued as standalone SA questions.
   for (const [prefix, rowMap] of gridVarAccumulator.entries()) {
+    if (rowMap.size < 2) {
+      // Single row: rescue as standalone SA question(s), not a grid
+      for (const [rowCode, vars] of rowMap.entries()) {
+        const rescuedId = `${prefix}_${rowCode}`
+        if (!questionMap.has(rescuedId)) {
+          questionMap.set(rescuedId, {
+            id: rescuedId,
+            type: 'SA',
+            label: vars[0]?.label || rescuedId,
+            options: [],
+          })
+        }
+        for (const v of vars) {
+          variables.push({
+            originalVar: v.rawVar,
+            label: v.label,
+            questionId: rescuedId,
+            variableType: 'SA',
+          })
+        }
+      }
+      continue
+    }
+    // >= 2 rows: genuine grid
     const sortedRows = Array.from(rowMap.entries()).sort((a, b) => {
       const aNum = parseInt(a[0]) || 0
       const bNum = parseInt(b[0]) || 0

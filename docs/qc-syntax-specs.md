@@ -34,6 +34,24 @@ Blocks are separated by blank lines. Forward and Backward are only generated whe
 
 ---
 
+## 5. ASK_IF Condition Value Rule
+
+When creating an ASK_IF edge from an MA option node, the condition value must match the **option code** (not 1).
+
+| Source Node | Code | Correct Condition | Wrong |
+|-------------|------|-------------------|-------|
+| `H3AR5` | 5 | `IF H3AR5 = 5` | `IF H3AR5 = 1` |
+| `H3AR7` | 7 | `IF H3AR7 = 7` | `IF H3AR7 = 1` |
+| `Q5_3` (Grid) | 3 | `IF Q5_3 = 3` | `IF Q5_3 = 1` |
+| `Q1` (SA parent) | — | `IF Q1 = 1` (placeholder) | — |
+
+After Clean Label recode (`Recode H3AR5(0=sysmis)(1=5)`), the variable value is **the code**, not the binary 0/1.
+
+**Accumulation:** Multiple ASK_IF edges from the same source question to the same target merge with OR:
+`IF (H3AR5 = 5 OR H3AR7 = 7)`
+
+---
+
 ## 3. Bi-directional Sync (MA_Grid Columns ↔ Piping Edges)
 
 | Action | Effect |
